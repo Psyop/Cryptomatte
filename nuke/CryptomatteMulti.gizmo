@@ -1,0 +1,170 @@
+#
+#  Copyright Psyop 2014, 2015, all rights reserved. 
+#  Shared with the Cryptomatte Committee- please do not redistribute. 
+#
+#! P:/global/apps/TheFoundry/Nuke/win64/Nuke7.0v10/Nuke7.0.exe -nx
+version 7.0 v10
+add_layer {uCryptoObject uCryptoObject.red uCryptoObject.green uCryptoObject.blue uCryptoObject.alpha}
+add_layer {uCryptoObject00 uCryptoObject00.red uCryptoObject00.green uCryptoObject00.blue uCryptoObject00.alpha}
+Gizmo {
+ addUserKnob {20 cryptomatte l Cryptomatte}
+ addUserKnob {18 pickerAdd l "Picker Add" t "Key objects to add to the Matte List here. "}
+ pickerAdd {0 0 0}
+ addUserKnob {18 pickerRemove l "Picker Remove" t "Key objects to remove from the Matte List here. "}
+ pickerRemove {0 0 0}
+ addUserKnob {26 notUndoableWarning l "" +STARTLINE T "Warning: Changes made to the matte list using the pickers are not undoable. "}
+ addUserKnob {26 ""}
+ addUserKnob {6 matteOnly l "Matte Only" +STARTLINE}
+ addUserKnob {6 RemoveChannels l "Remove Channels" t "Removes all non-RGBA channels for the output. This will leave the downstream cleaner. " -STARTLINE}
+ RemoveChannels true
+ addUserKnob {26 ""}
+ addUserKnob {1 matteList l "Matte List" t "The list of names the mattes are built from. Color picking values with the color fields above works by populating this field. "}
+ addUserKnob {22 clear l "Clear" t "Clears the selection in this Gizmo" T "try: \n   import cryptomatte_utilities as cu\n   cu.clear_cryptomatte_multi_gizmo(nuke.thisNode())\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. Please check with Pipeline that the Cryptomatte python plugin is available on this project. \n\nError Traceback (send this to Pipeline): \n\n%s''' % traceback.format_exc())" +STARTLINE}
+ addUserKnob {22 forceUpdate l "Force Update" t "Updates the Gizmo based on which channels are available in the input. \n\nThis happens automatically when input changes, when loading the nuke script, or when a new gizmo is created. This is how it deals with differently named channels in the different Cryptomatte layers, and different depths that it's possible to render at. " T "try: \n   import cryptomatte_utilities as cu\n   cu.update_cryptomatte_multi_gizmo(nuke.thisNode(), True)\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. Please check with Pipeline that the Cryptomatte python plugin is available on this project. \n\nError Traceback (send this to Pipeline): \n\n%s''' % traceback.format_exc())" -STARTLINE}
+ addUserKnob {6 stopAutoUpdate l "Stop Auto Update" t "Stops the automatic update of this copy of the Gizmo." -STARTLINE}
+ addUserKnob {26 ""}
+ addUserKnob {41 expression t "The built expression. This knob is set automatically and is only left exposed as information for the user. " T Expression_ExpressionMode.expr0}
+ addUserKnob {20 Advanced}
+ addUserKnob {19 ColorKey l "Name Checker" t "Key an object here to check its name. It will not effect your mattes. "}
+ ColorKey {0 0 0 1}
+ addUserKnob {1 keyedName l "Keyed Name" t "This field is for information only."}
+ addUserKnob {26 ""}
+ addUserKnob {41 previewChannel +HIDDEN T ShuffleCopy_in_keyable.in2}
+ addUserKnob {41 in00 +HIDDEN T Shuffle0.in}
+ addUserKnob {26 "" +HIDDEN}
+ addUserKnob {22 forceUpdateAll l "Force Update All Gizmos in script" t "Forces update on all Crytomatte gizmos in the Nuke script." T "try: \n   import cryptomatte_utilities as cu\n   cu.update_all_cryptomatte_gizmos()\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. Please check with Pipeline that the Cryptomatte python plugin is available on this project. \n\nError Traceback (send this to Pipeline): \n\n%s''' % traceback.format_exc())" +STARTLINE}
+}
+ Input {
+  inputs 0
+  name Input1
+  xpos -780
+  ypos -468
+ }
+ Dot {
+  name Dot1
+  xpos -746
+  ypos -366
+ }
+set N4a36a740 [stack 0]
+ Dot {
+  name Dot7
+  xpos -650
+  ypos -290
+ }
+set N4a36aab0 [stack 0]
+ Expression {
+  temp_name0 ID
+  temp_expr0 parent.ColorKey.b
+  channel0 alpha
+  name Expression_ExpressionMode
+  xpos -684
+  ypos -20
+ }
+set N4a36ae20 [stack 0]
+ Shuffle {
+  red alpha
+  green alpha
+  blue alpha
+  name Shuffle_toAlpha
+  xpos -554
+  ypos 57
+ }
+ Dot {
+  name Dot6
+  xpos -520
+  ypos 183
+ }
+push $N4a36ae20
+push $N4a36aab0
+ Shuffle {
+  in uCryptoObject00
+  green black
+  blue black
+  alpha green
+  name Shuffle0
+  xpos -554
+  ypos -240
+ }
+push $N4a36a740
+ ShuffleCopy {
+  inputs 2
+  in2 uCryptoObject
+  red blue2
+  blue red
+  name ShuffleCopy_in_keyable
+  xpos -780
+  ypos -172
+ }
+ Dot {
+  name Dot5
+  xpos -746
+  ypos 40
+ }
+ ShuffleCopy {
+  inputs 2
+  name ShuffleCopy2
+  xpos -708
+  ypos 91
+ }
+ Dot {
+  name Dot2
+  xpos -674
+  ypos 142
+ }
+set N4a36d3f0 [stack 0]
+ Shuffle {
+  red alpha
+  green alpha
+  blue black
+  alpha black
+  name visual_feedback_shuffle
+  xpos -666
+  ypos 190
+ }
+push $N4a36d3f0
+ Grade {
+  channels {rgba.red rgba.green -rgba.blue none}
+  white {0.25 0.25 0 1}
+  black_clamp false
+  name visual_feedback_grade
+  selected true
+  xpos -776
+  ypos 176
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  Achannels {rgba.red rgba.green -rgba.blue -rgba.alpha}
+  name visual_feedback_merge
+  xpos -723
+  ypos 233
+ }
+ Switch {
+  inputs 2
+  which {{parent.matteOnly}}
+  name Switch_matte_only
+  xpos -572
+  ypos 276
+ }
+set N4a268e50 [stack 0]
+ Remove {
+  operation keep
+  channels rgba
+  name Remove2
+  xpos -507
+  ypos 341
+ }
+push $N4a268e50
+ Switch {
+  inputs 2
+  which {{parent.RemoveChannels}}
+  name Switch_remove_channels
+  xpos -572
+  ypos 388
+ }
+ Output {
+  name Output2
+  xpos -572
+  ypos 462
+ }
+end_group
