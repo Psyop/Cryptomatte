@@ -1,5 +1,5 @@
 #
-#  Copyright Psyop 2014, 2015, all rights reserved. 
+#  Copyright (c) 2014, 2015, Psyop Media Company, LLC
 #  Shared with the Cryptomatte Committee- please do not redistribute. 
 #
 
@@ -13,10 +13,7 @@ nuke.addKnobChanged(lambda: cu.cryptomatte_multi_knob_changed_event(
 if nuke.GUI:
     toolbar = nuke.menu("Nodes")
     automatte_menu = toolbar.addMenu("Cryptomatte", "cryptomatte_logo.png")
-    automatte_menu.addCommand(
-        "CryptomatteKeyer", "cu.cryptomatte_keyer_create();")
-    automatte_menu.addCommand(
-        "CryptomatteMulti", "cu.cryptomatte_multi_create();")
+    automatte_menu.addCommand("CryptomatteKeyer", "cu.cryptomatte_keyer_create();")
+    automatte_menu.addCommand("CryptomatteMulti", "cu.cryptomatte_multi_create();")
     automatte_menu.addCommand("Decryptomatte All", "cu.decryptomatte_all();")
-    automatte_menu.addCommand(
-        "Decryptomatte Selection", "cu.decryptomatte_selected();")
+    automatte_menu.addCommand("Decryptomatte Selection", "cu.decryptomatte_selected();")

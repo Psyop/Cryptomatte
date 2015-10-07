@@ -1,5 +1,5 @@
 #
-#  Copyright Psyop 2014, 2015, all rights reserved. 
+#  Copyright (c) 2014, 2015, Psyop Media Company, LLC
 #  Shared with the Cryptomatte Committee- please do not redistribute. 
 #
 
