@@ -28,15 +28,15 @@ def test_manifest(node_to_check=None):
     ids = {}
     errors = [];
     collisions = []
-    for id, name in id_name_pairs:
-        if djb2_hash(name) != id:
-            errors.append("computed ID doesn't match manifest ID: ", id, djb2_hash(name))
+    for idvalue, name in id_name_pairs:
+        if djb2_hash(name) != idvalue:
+            errors.append("computed ID doesn't match manifest ID: " % (idvalue, djb2_hash(name)))
         else:
-            if id in ids:
-                collisions.append("colliding: %s %s" % ids[id], name)
-            ids[id] = name
+            if idvalue in ids:
+                collisions.append("colliding: %s %s" % (ids[idvalue], name))
+            ids[idvalue] = name
 
-    print "Tested %s" % node.name()
+    print "Tested %s, %s names" % (node.name(), len(id_name_pairs))
     print len(errors), "non-matching IDs between python and c++."
     for error in errors:
         print error
