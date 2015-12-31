@@ -5,6 +5,7 @@
 
 
 import nuke
+import struct
 
 MANIFEST_PREFIX = r"exr/manifest/"
 
@@ -29,8 +30,8 @@ def test_manifest(node_to_check=None):
     errors = [];
     collisions = []
     for idvalue, name in id_name_pairs:
-        if djb2_hash(name) != idvalue:
-            errors.append("computed ID doesn't match manifest ID: " % (idvalue, djb2_hash(name)))
+        if mm3hash_float(name) != idvalue:
+            errors.append("computed ID doesn't match manifest ID: (%s, %s)" % (idvalue, mm3hash_float(name)))
         else:
             if idvalue in ids:
                 collisions.append("colliding: %s %s" % (ids[idvalue], name))
@@ -38,8 +39,6 @@ def test_manifest(node_to_check=None):
 
     print "Tested %s, %s names" % (node.name(), len(id_name_pairs))
     print len(errors), "non-matching IDs between python and c++."
-    for error in errors:
-        print error
     print len(collisions), "hash collisions in manifest."
     for error in errors:
         print error
@@ -229,26 +228,26 @@ def parse_metadata(gizmo, sort_by_name=True, searchForNumber=None):
 
 
 #############################################
-# New DJB2 & friends
+# Hash to float
 #############################################
 
-def djb2_hash(name):
-    import struct
-    max_64_int = 18446744073709551616 # 2^64    
-    hash_64 = 5381    
-    for k in name:
-        hash_64 = ((hash_64 << 5) + hash_64 + ord(k)) % max_64_int
-    for i in range(16):
-        hash_64 = ((hash_64 << 5) + hash_64) % max_64_int
+try:
+    # try with a fast c-implementation, if available ...
+    import mmh3 as mmh3
+except ImportError:
+    # ... otherwise fallback to the pure python version
+    import pymmh3 as mmh3
 
-    mantissa = hash_64 & pow(2, 23)-1
-    exponent = ((hash_64 >> 24) % pow(2, 8))
-    exponent = max(exponent, 1)
-    exponent = min(exponent, 254)
-    exponent = exponent << 23
-    sign = (hash_64 >> 32) % 2
-    float_bits = exponent | mantissa
+def mm3hash_float(name):
+    hash_32 = mmh3.hash(name)
 
+    mantissa = hash_32 & ((1 << 23) - 1)
+    exp = (hash_32 >> 23) & ((1 << 8) - 1)
+    exp = max(exp, 1)
+    exp = min(exp, 254)
+    exp =  exp << 23
+    sign = (hash_32 >> 31);
+    float_bits = exp | mantissa
     packed = struct.pack('@l', float_bits)
     if sign == 1:
         return -struct.unpack('@f', packed)[0]
@@ -454,7 +453,7 @@ def _set_multi_expression(gizmo, cryptomatte_channels):
             ID_value = single_precision( float(name[1:-1]) )
             ID_list.append(ID_value)
         else:
-            ID_list.append( djb2_hash(name) )
+            ID_list.append( mm3hash_float(name) )
 
     expression = _build_multi_expression(cryptomatte_channels, ID_list)
 

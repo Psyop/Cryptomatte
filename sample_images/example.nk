@@ -73,7 +73,7 @@ CryptomatteMulti {
  xpos 654
  ypos 8
  matteList "big_speedy_bunny, transparent_grid5"
- expression "((uCryptoObject00.red == 8.65960634352e+14 || uCryptoObject00.red == 1.45081255592e+25) ? uCryptoObject00.green : 0.0) + ((uCryptoObject00.blue == 8.65960634352e+14 || uCryptoObject00.blue == 1.45081255592e+25) ? uCryptoObject00.alpha : 0.0) + ((uCryptoObject01.red == 8.65960634352e+14 || uCryptoObject01.red == 1.45081255592e+25) ? uCryptoObject01.green : 0.0) + ((uCryptoObject01.blue == 8.65960634352e+14 || uCryptoObject01.blue == 1.45081255592e+25) ? uCryptoObject01.alpha : 0.0) + ((uCryptoObject02.red == 8.65960634352e+14 || uCryptoObject02.red == 1.45081255592e+25) ? uCryptoObject02.green : 0.0) + ((uCryptoObject02.blue == 8.65960634352e+14 || uCryptoObject02.blue == 1.45081255592e+25) ? uCryptoObject02.alpha : 0.0) + 0"
+ expression "((uCryptoObject00.red == 4.30894573356e-08 || uCryptoObject00.red == -1.75571512978e-32) ? uCryptoObject00.green : 0.0) + ((uCryptoObject00.blue == 4.30894573356e-08 || uCryptoObject00.blue == -1.75571512978e-32) ? uCryptoObject00.alpha : 0.0) + ((uCryptoObject01.red == 4.30894573356e-08 || uCryptoObject01.red == -1.75571512978e-32) ? uCryptoObject01.green : 0.0) + ((uCryptoObject01.blue == 4.30894573356e-08 || uCryptoObject01.blue == -1.75571512978e-32) ? uCryptoObject01.alpha : 0.0) + ((uCryptoObject02.red == 4.30894573356e-08 || uCryptoObject02.red == -1.75571512978e-32) ? uCryptoObject02.green : 0.0) + ((uCryptoObject02.blue == 4.30894573356e-08 || uCryptoObject02.blue == -1.75571512978e-32) ? uCryptoObject02.alpha : 0.0) + 0"
  keyedName big_speedy_bunny
  previewChannel uCryptoObject
  in00 uCryptoObject00
@@ -100,7 +100,7 @@ CryptomatteMulti {
  xpos 369
  ypos 12
  matteList "bunny_porcelain_mat, flowerStem_mat"
- expression "((uCryptoMaterial00.red == 5.6750744591e+35 || uCryptoMaterial00.red == 2.55725031707e+37) ? uCryptoMaterial00.green : 0.0) + ((uCryptoMaterial00.blue == 5.6750744591e+35 || uCryptoMaterial00.blue == 2.55725031707e+37) ? uCryptoMaterial00.alpha : 0.0) + ((uCryptoMaterial01.red == 5.6750744591e+35 || uCryptoMaterial01.red == 2.55725031707e+37) ? uCryptoMaterial01.green : 0.0) + ((uCryptoMaterial01.blue == 5.6750744591e+35 || uCryptoMaterial01.blue == 2.55725031707e+37) ? uCryptoMaterial01.alpha : 0.0) + ((uCryptoMaterial02.red == 5.6750744591e+35 || uCryptoMaterial02.red == 2.55725031707e+37) ? uCryptoMaterial02.green : 0.0) + ((uCryptoMaterial02.blue == 5.6750744591e+35 || uCryptoMaterial02.blue == 2.55725031707e+37) ? uCryptoMaterial02.alpha : 0.0) + 0"
+ expression "((uCryptoMaterial00.red == 1.90612260038e+38 || uCryptoMaterial00.red == -1.18249836589e-08) ? uCryptoMaterial00.green : 0.0) + ((uCryptoMaterial00.blue == 1.90612260038e+38 || uCryptoMaterial00.blue == -1.18249836589e-08) ? uCryptoMaterial00.alpha : 0.0) + ((uCryptoMaterial01.red == 1.90612260038e+38 || uCryptoMaterial01.red == -1.18249836589e-08) ? uCryptoMaterial01.green : 0.0) + ((uCryptoMaterial01.blue == 1.90612260038e+38 || uCryptoMaterial01.blue == -1.18249836589e-08) ? uCryptoMaterial01.alpha : 0.0) + ((uCryptoMaterial02.red == 1.90612260038e+38 || uCryptoMaterial02.red == -1.18249836589e-08) ? uCryptoMaterial02.green : 0.0) + ((uCryptoMaterial02.blue == 1.90612260038e+38 || uCryptoMaterial02.blue == -1.18249836589e-08) ? uCryptoMaterial02.alpha : 0.0) + 0"
  keyedName flowerStem_mat
  previewChannel uCryptoMaterial
  in00 uCryptoMaterial00
