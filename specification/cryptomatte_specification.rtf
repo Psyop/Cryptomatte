@@ -1,137 +1,205 @@
-{\rtf1\ansi\ansicpg1252\deff0\deflang1033\deflangfe2052{\fonttbl{\f0\fswiss\fprq2\fcharset0 Arial;}{\f1\fnil\fcharset0 Consolas;}}
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033\deflangfe2052{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset0 Calibri;}{\f2\fnil\fcharset0 Consolas;}{\f3\fnil\fcharset2 Symbol;}}
 {\colortbl ;\red0\green0\blue0;}
-{\*\generator Msftedit 5.41.21.2510;}\viewkind4\uc1\pard\sl276\slmult1\cf1\b\f0\fs36 Cryptomatte Specification version 0.2.0\b0\fs22\par
-\b\fs24\par
-\fs22 Version 0.1.0\par
-\par
-\b0 This version of the specification is just a formal writeup of what the Psyop tool is doing currently. It is only meant as a starting point for the committee. \par
-\pard\sl276\slmult1\b\fs24\par
-\pard\sl276\slmult1\fs22 Version 0.2.0\par
-\par
-\b0 Changes the hash to MurmurHash3. \b\par
-\par
-Table of Contents:\par
-\fs24\par
-\pard\fi-360\li720\sl276\slmult1\tx360\b0 1.\tab EXR File\par
-\pard\fi-360\li1440\sl276\slmult1\tx1080 a.\tab Overview\par
+{\*\generator Riched20 6.3.9600}{\*\mmathPr\mnaryLim0\mdispDef1\mwrapIndent1440 }\viewkind4\uc1 
+\pard\sl276\slmult1\cf1\b\fs36\lang9 Cryptomatte Specification version 0.3.0\par
+\cf0\b0\f1\fs22\par
+\cf1\b\f0 Version 0.1.0\par
+\cf0\b0\f1\par
+\cf1\f0 This version of the specification is just a formal writeup of what the Psyop tool is doing currently. It is only meant as a starting point for the committee. \par
+\cf0\f1\par
+\cf1\b\f0 Version 0.2.0\par
+\cf0\b0\f1\par
+\cf1\f0 Changes the hash to MurmurHash3. \par
+\cf0\f1\par
+\cf1\b\f0 Version 0.3.0\par
+\cf0\b0\f1\par
+\cf1\f0 Changed the format of the metadata to allow multiple cryptomatte types per image and required the metadata to specify both the hash and conversion method for each of the cryptomatte types in the EXR file. \par
+\cf0\f1\par
+\cf1\b\f0 Table of Contents:\par
+\cf0\b0\f1\par
+
+\pard\fi-1080\li1440\sl276\slmult1\tx1080\cf1\f0\fs24 1.\tab EXR File\par
+
+\pard\fi-1800\li2880\sl276\slmult1\tx2520 a.\tab Overview\par
 b.\tab Channel Naming\par
 c.\tab Channel Contents\par
-d.\tab Manifest\par
-\pard\fi-360\li720\sl276\slmult1\tx360 2.\tab ID Generation\par
-\pard\fi-360\li1440\sl276\slmult1\tx1080 a.\tab Overview\par
+d.\tab Metadata\par
+e.\tab Manifest\par
+
+\pard\fi-1080\li1440\sl276\slmult1\tx1080 2.\tab ID Generation\par
+
+\pard\fi-1800\li2880\sl276\slmult1\tx2520 a.\tab Overview\par
 b.\tab Names\par
 c.\tab Hash\par
 d.\tab Example code\par
-\pard\fi-360\li720\sl276\slmult1\tx360 3.\tab Ranking Pixel Filter\par
-\pard\fi-360\li1440\sl276\slmult1\tx1080 a.\tab Overview\par
-\pard\sl276\slmult1\par
+
+\pard\fi-1080\li1440\sl276\slmult1\tx1080 3.\tab Ranking Pixel Filter\par
+
+\pard\fi-1800\li2880\sl276\slmult1\tx2520 a.\tab Overview\par
+
+\pard\sl276\slmult1\cf0\f1\fs22\par
 \par
 \par
-\b\fs36 EXR File:\par
-\b0\fs22\par
-\b Overview\par
 \par
-\b0 The format consists of RGBA images in a multichannel EXR, which use a naming convention to allow detection as a series of channels cryptomatte can use. EXR header metadata is used to store a manifest. \par
-\par
-\b Channel naming\par
-\b0\par
-An example:\par
-\par
-\pard\li720\sl276\slmult1\f1\fs18 CryptoObject\par
+\cf1\b\f0\fs36 EXR File:\par
+\cf0\b0\f1\fs22\par
+\cf1\b\f0 Overview\par
+\cf0\b0\f1\par
+\cf1\f0 The format consists of RGBA images in a multichannel EXR, which use a naming convention to allow detection as a series of channels cryptomatte can use. EXR header metadata is used to store a manifest. \par
+\cf0\f1\par
+\cf1\b\f0 Channel naming\par
+\cf0\b0\f1\par
+\cf1\f0 An example:\par
+\cf0\f1\par
+
+\pard\fi-720\li1440\sl276\slmult1\cf1\f2\fs18 CryptoObject\par
 CryptoObject00\par
 CryptoObject01\par
 \'85\par
-\pard\sl276\slmult1\f0\fs22\par
-Or more formally, there is no requirement to use the word \ldblquote Crypto\rdblquote  in the name. \par
-\f1\par
-\pard\li720\sl276\slmult1\fs18\{typename\}\par
+
+\pard\sl276\slmult1\cf0\f1\fs22\par
+\cf1\f0 Or more formally, there is no requirement to use the word \ldblquote Crypto\rdblquote  in the name. \par
+\cf0\f1\par
+
+\pard\fi-720\li1440\sl276\slmult1\cf1\f2\fs18\{typename\}\par
 \{typename\}00\par
 \{typename\}01\par
 \{typename\}02\par
 \'85\par
-\pard\sl276\slmult1\f0\fs22\par
-\b Channel contents\par
-\par
-\b0 An arbitrary number of numbered channels in this format are allowed. The number of channels used should be the same for all frames of the image sequence rendered. Otherwise it may be set automatically, manually, or to a given value based on any criteria the implementer desires. The suggested default value is 6 levels, meaning 3 numbered EXR layers (00, 01, and 02). \par
-\b\par
-\b0 The contents of these layers are:\par
-\par
-\pard\li720\sl276\slmult1\f1\fs18\{typename\}.r   - Ordinarily filtered color generated from IDs\par
+
+\pard\sl276\slmult1\cf0\f1\fs22\par
+\cf1\b\f0 Channel contents\par
+\cf0\b0\f1\par
+\cf1\f0 An arbitrary number of channels, numbered in this format are allowed. The number of channels used should be the same for all frames of the image sequence rendered. Otherwise it may be set automatically, manually, or to a given value based on any criteria the implementer desires. The suggested default value is 6 levels, meaning 3 numbered EXR layers (00, 01, and 02). \par
+\cf0\f1\par
+\cf1\f0 The contents of these layers are:\par
+\cf0\f1\par
+
+\pard\fi-720\li1440\sl276\slmult1\cf1\f2\fs18\{typename\}.r   - Ordinarily filtered color generated from IDs\par
 \{typename\}.g   - Ordinarily filtered color generated from IDs\par
 \{typename\}.b   - Unused (black)\par
 \{typename\}.a   - Unused (black)\par
-\par
-\{typename\}00.r - ID rank 0\par
+\cf0\f1\fs22\par
+\cf1\f2\fs18\{typename\}00.r - ID rank 0\par
 \{typename\}00.g - Coverage for ID rank 0\par
 \{typename\}00.b - ID rank 1\par
 \{typename\}00.a - Coverage for ID rank 1\par
-\par
-\{typename\}01.r - ID rank 2\par
+\cf0\f1\fs22\par
+\cf1\f2\fs18\{typename\}01.r - ID rank 2\par
 \{typename\}01.g - Coverage for ID rank 2\par
 \{typename\}01.b - ID rank 3\par
 \{typename\}01.a - Coverage for ID rank 3\par
-\par
-\{typename\}02.r - ID rank 4\par
+\cf0\f1\fs22\par
+\cf1\f2\fs18\{typename\}02.r - ID rank 4\par
 \{typename\}02.g - Coverage for ID rank 4\par
 \{typename\}02.b - ID rank 5\par
 \{typename\}02.a - Coverage for ID rank 5\par
-\pard\sl276\slmult1\fs22\par
-\b\f0 Manifest\par
-\b0\par
-The file should (but is not required to) contain a manifest in the EXR header. The manifest encodes a list of alternating hashes and names. The metadata entry name is \ldblquote cryptoManifest\rdblquote .\par
+
+\pard\sl276\slmult1\cf0\f1\fs22\par
+\cf1\b\f0 Metadata\par
+\cf0\b0\f1\par
+\cf1\f0 The file is required to provide metadata about the cryptomatte layer(s) it contains. It is, however, not required to contain a manifest. Each "type" of Cryptomatte contained is assigned an integer, which will be used to index the metadata for each of them. \par
+\cf0\f1\par
+\cf1\f0 The required metadata are:\par
+\cf0\f1\par
+
+\pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\li360\sl276\slmult1\cf1\b\f0 name\b0 : the name of the cryptomatte type, for example, CryptoAsset. \par
+{\pntext\f3\'B7\tab}\b hash\b0 : the type of hash used. "MurmurHash3_32" is the only one currently supported. \par
+{\pntext\f3\'B7\tab}\b conversion\b0 : The conversion method used to convert the hash value into pixel color data. Only one conversion method, "uint32_to_float32", is supported.\par
+
+\pard\sl276\slmult1\cf0\f1\par
+\cf1\f0 Optional metadata are:\par
+\cf0\f1\par
+
+\pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\li360\sl276\slmult1\cf1\b\f0 manifest: \b0 The manifest encoded as a JSON manifest. See: manifest\par
+{\pntext\f3\'B7\tab}\b manifest_file\b0 : A path to a text file which contains the manifest. This may be a relative path to the exr image, such as a "sidecar" file. See: manifest\par
+
+\pard\sl276\slmult1\cf0\f1\par
+\cf1\f0 For example, on a file containing three sets of Cryptomattes, the last of which has its manifest in a separate file:\line\par
+
+\pard\fi-720\li1440\sl276\slmult1\f2\fs20 exr/cryptomatte/0/name = CryptoAsset\par
+exr/cryptomatte/0/hash = MurmurHash3_32\par
+exr/cryptomatte/0/conversion = uint32_to_float32\par
+exr/cryptomatte/0/manifest = \{"bunny":"13851a76","default":"42c9679f"\}\par
+exr/cryptomatte/1/name = CryptoMaterial\par
+exr/cryptomatte/1/hash = MurmurHash3_32\par
+exr/cryptomatte/1/conversion = uint32_to_float32\par
+exr/cryptomatte/1/manifest = \{"bunny_porcelain_mat":"b24b26d4"\}\par
+exr/cryptomatte/2/name = CryptoObject\par
+exr/cryptomatte/2/hash = MurmurHash3_32\par
+exr/cryptomatte/2/conversion = uint32_to_float32\par
+exr/cryptomatte/2/manifest_file = ./manifest.json\par
+\cf0\f1\fs22\par
+
+\pard\sl276\slmult1\cf1\b\f0 Manifest\par
+\cf0\b0\f1\par
+\cf1\f0 The manifest contains encodes both the names and the IDs of all of the objects in the Cryptomatte type. It may be included in full in the header, or it may be a separate file. The format of the manifest is a JSON dictionary, where the names are the keys and the hashes are the values are the IDs. \par
+\cf0\f1\par
+
+\pard\fi-720\li1440\sl276\slmult1\cf1\f2\fs20 exr/cryptomatte/0/manifest = \{"bunny":"13851a76","default":"42c9679f"\}\par
+
+\pard\sl276\slmult1\cf0\f1\fs22\par
+\cf1\f0 In the case of \f2\fs20 uint32_to_float32 \f0\fs22 style conversion (the only style currently supported), the hashes are hexadecimal versions of bytes making up the 32-bit float hashes. These are always 8 digits of hexadecimal.\par
+\cf0\f1\par
+\cf1\f0 In this C++ sample code for converting a floating point hash to hexadecimal, \f2\fs18 float_value \f0\fs22 is the value which will be used in the pixels of the image. Its bits are copied to unsigned integer, and the hex digits of this integer are written to a string:\par
+\cf0\f1\par
+\cf1\f2\fs18         uint32_t float_bits;\par
+        std::memcpy(&float_bits, &hash_value, 4);\par
+        char hex_chars[9];\par
+        sprintf(hex_chars, "%08x", float_bits);\par
+\cf0\f1\fs22\par
+\cf1\f0 These strings of hex characters are decoded back into floats in Python using the struct module. In this example, hex_string is a string containing 8 characters of hexadecimal:\par
+\cf0\f1\par
+
+\pard\fi-720\li1440\sl276\slmult1\cf1\f2\fs20 import struct\par
+float_value = struct.unpack('!f', hex_string.decode('hex'))[0]\par
+
+\pard\sl276\slmult1\cf0\f1\fs22\par
+\cf1\f0 Including the manifest is optional but very good for user experience when decoding. Decoders should not rely on it to accurately extract mattes.\par
+\cf0\f1\par
 \par
-\pard\li720\sl276\slmult1\fs18 exr/cryptoManifest = \f1 <hash>0.5634760857<name>bunny<hash>4.446198463<name>default<hash>1.600968361<name>flowerA<hash>3.584468842<name>flowerB<hash>2.320055485<name>heroflower<hash>5.530207157<name>plant<hash>7.99622488<name>set\f0\par
-\pard\sl276\slmult1\fs22\par
-The hash values are encoded in decimal, to enough precision that all floating points can be unambiguously represented (10 places). \par
 \par
-\pard\li720\sl276\slmult1\f1\fs18 char hash_float_char[20];\par
-memset(hash_float_char, 0, sizeof(hash_float_char));\par
-sprintf(hash_float_char, "%.10g", hash_value);\par
-\pard\sl276\slmult1\f0\fs22\par
-Including the manifest is optional but very good for user experience when decoding. Decoders should not rely on it to accurately extract mattes. The only characters not allowed in the manifest are angle brackets, \ldblquote <\rdblquote  and \ldblquote >\rdblquote . \par
-\par
-\par
-\par
-\b\fs36 ID Generation\par
-\b0\fs22\par
-\b Overview\par
-\b0\par
-IDs are generated from string values inside the renderer. In our implementation, we use names, but any string values may be used.\par
-\par
-\b Names\par
-\b0\par
-Any per-object string values may be used to compute IDs. Where these string values overlap, the IDs will be combined (an expected and desired behavior). \par
-\par
-It\rquote s suggested that in most implementations, the most useful groupings will come from namespace, object name (sans namespace), and material name (also sans namespace), but arbitrary data can be used. \par
-\par
-Each set of names should be written to the manifest. If this is not possible (due to deferred loading), matte extraction will still work but users will not have access to the names. \par
-\par
-\b Hash\par
-\par
-\b0 We use the standard 32 bit variant of MurmurHash3 as our hashing algorithm. \par
-\par
-Our implementation generates IDs while ray tracing. This is an implementation specific decision to handle edge cases such as delayed load render archives. Precaching the hash values per object is also fine. \par
-\par
-If there is no object in the sample,  the recorded hash value should be zero. \par
-\par
-\b Floating point conversion\par
-\b0\par
-We store our IDs as 32 bit floating point values. While not ideal, this is necessary for a variety of software specific reasons reasons and works fine in practice. \par
-\par
-We use as many 32-bit floating point values as possible to help minimize hash collisions.  Unfortunately, all 32 bits cannot be used, due to NaN and inf signal values potentially being indistinguishable from each other in certain contexts, and being problematic for computation in general.\par
-\par
-Our conversion of the 32 bit integer hash to a 32 bit float is effectively a reinterpret_cast, with logic to clamp the exponent to acceptable values. The exponent is modified, clamped to be within the [1:254] range. \par
-\par
-\b Example code\par
-\par
-\b0 This example code shows conversion of hashes to float. The hash used is standard MurmurHash3 and is not shown here. The C++ example also shows a method for creating two additional channels of data for the normally filtered \ldblquote keyable\rdblquote  image. \par
-\par
-Python:\par
-\pard\li720\sl276\slmult1\f1\fs18 def mm3hash_float(name):\par
+\cf1\b\f0\fs36 ID Generation\par
+\cf0\b0\f1\fs22\par
+\cf1\b\f0 Overview\par
+\cf0\b0\f1\par
+\cf1\f0 IDs are generated from string values inside the renderer. In our implementation, we use names, but any string values may be used.\par
+\cf0\f1\par
+\cf1\b\f0 Names\par
+\cf0\b0\f1\par
+\cf1\f0 Any per-object string values may be used to compute IDs. Where these string values overlap, the IDs will be combined (an expected and desired behavior). \par
+\cf0\f1\par
+\cf1\f0 It\rquote s suggested that in most implementations, the most useful groupings will come from namespace, object name (sans namespace), and material name (also sans namespace), but arbitrary data can be used. \par
+\cf0\f1\par
+\cf1\f0 Each set of names should be written to the manifest. If this is not possible (due to deferred loading), matte extraction will still work but users will not have access to the names. \par
+\cf0\f1\par
+\cf1\b\f0 Hash\par
+\cf0\b0\f1\par
+\cf1\f0 Only one hash is currently supported, the 32 bit variant of MurmurHash3. \par
+\cf0\f1\par
+\cf1\f0 If there is no object in the sample,  the recorded hash value should be zero. \par
+\cf0\f1\par
+\cf1\f0 Hashes may be computed while rendering or may be pre-cached. Our implementation does hashing while ray tracing, allowing it to handle edge cases such as delayed load render archives. MurmurHash3's speed enables us to do this.\par
+\cf0\f1\par
+\cf1\b\f0 Floating point conversion\par
+\cf0\b0\f1\par
+\cf1\f0 We store our IDs as 32 bit floating point values. While not ideal, this is necessary for a variety of software specific reasons and works fine in practice. \par
+\cf0\f1\par
+\cf1\f0 We use as many 32-bit floating point values as possible to help minimize hash collisions.  Unfortunately, all 32 bits cannot be used, due to NaN and inf signal values potentially being indistinguishable from each other in certain contexts, and being problematic for computation in general.\par
+\cf0\f1\par
+\cf1\f0 Our conversion of the 32 bit integer hash to a 32 bit float is effectively a bit for bit copy, with logic to clamp the exponent to acceptable values. The exponent is modified by clamping it to be within the [1:254] range. \par
+\cf0\f1\par
+\cf1\b\f0 Example code\par
+\cf0\b0\f1\par
+\cf1\f0 This example code shows conversion of hashes to float in Python and C++. The hash used is standard MurmurHash3 and is not shown here. The C++ example also shows a method for creating two additional channels of data for the normally filtered \ldblquote keyable\rdblquote  image. \par
+\cf0\f1\par
+\cf1\f0 Python:\par
+
+\pard\fi-720\li1440\sl276\slmult1\f2\fs18 def mm3hash_float(name):\par
     import pymmh3\par
     hash_32 = pymmh3.hash(name)\par
-\par
-    mantissa = hash_32 & ((1 << 23) - 1)\par
+\cf0\f1\fs22\par
+\cf1\f2\fs18     mantissa = hash_32 & ((1 << 23) - 1)\par
     exp = (hash_32 >> 23) & ((1 << 8) - 1)\par
     exp = max(exp, 1)\par
     exp = min(exp, 254)\par
@@ -143,9 +211,11 @@ Python:\par
         return -struct.unpack('@f', packed)[0]\par
     elif sign == 0:\par
         return struct.unpack('@f', packed)[0]\par
-\par
-\pard\sl276\slmult1\f0\fs22 C++: \par
-\pard\li720\sl276\slmult1\f1\fs16 float hash_to_float(uint32_t hash) \{\par
+\cf0\f1\fs22\par
+
+\pard\sl276\slmult1\cf1\f0 C++: \par
+
+\pard\fi-720\li1440\sl276\slmult1\f2\fs16 float hash_to_float(uint32_t hash) \{\par
     uint32_t mantissa = hash & (( 1 << 23) - 1);\par
     uint32_t exponent = (hash >> 23) & ((1 << 8) - 1);\par
     exponent = std::max(exponent, (uint32_t) 1);\par
@@ -154,10 +224,12 @@ Python:\par
     uint32_t sign = (hash >> 31);\par
     sign = sign << 31;\par
     uint32_t float_bits = sign | exponent | mantissa;\par
-    return *reinterpret_cast<float*>(&float_bits);\par
+    float f;\par
+    std::memcpy(&f, &float_bits, 4);\par
+    return f;\par
 \}\par
-\par
-void hash_name_rgb(char * name, AtColor* out_color) \{\par
+\cf0\f1\fs22\par
+\cf1\f2\fs16 void hash_name_rgb(char * name, AtColor* out_color) \{\par
     // This puts the float ID into the red channel, and the human-readable\par
     // versions into the G and B channels. \par
     uint32_t m3hash = 0;\par
@@ -166,15 +238,28 @@ void hash_name_rgb(char * name, AtColor* out_color) \{\par
     out_color->g = ((float) ((m3hash << 8)) /  (float) UINT32_MAX);\par
     out_color->b = ((float) ((m3hash << 16)) / (float) UINT32_MAX);\par
 \}\par
-\pard\sl276\slmult1\f0\fs22\par
+
+\pard\sl276\slmult1\cf0\f1\fs22\par
 \par
 \par
-\b\fs36 Ranking Pixel Filter\par
-\b0\fs22\par
-\b Overview \par
+\cf1\b\f0\fs36 Ranking Pixel Filter\par
+\cf0\b0\f1\fs22\par
+\cf1\b\f0 Overview \par
+\cf0\b0\f1\par
+\cf1\f0 To encode Cryptomattes, a ranking pixel filter is required. For a better illustration of this, please see the poster, Fully Automatic ID Mattes with Support for Motion Blur and Transparency. \par
+\cf0\f1\par
+\cf1\f0 Non-refractive transparency should be taken into account by the filter as well while weighting samples,  in whatever way matches the way the renderer computes opacity. \par
+\cf0\f1\par
+\cf1\f0 While rendering, computed IDs per sample are stored in AOVs. The ranking filter uses an arbitrary filter kernel that should ideally match the kernel used to filter the associated \ldblquote beauty\rdblquote  renders. While iterating through the samples contributing to the pixel, those samples are weighted by the kernel. The weights of each unique ID are summed. Non-refractive transparency is taken into account here as well, to match the way the renderer computes opacity. The weights for each ID are normalized by dividing by the total weight of samples contributing to the pixel, and these normalized weights become "coverage" values. \par
+\cf0\f1\par
+\cf1\f0 Each unique ID found contributing to the pixel is ranked by its "coverage" values, and the highest ranked ID is ID 0, the next is ID 1, etc. These IDs and associated coverage values are encoded into the EXR channels as described above. \par
+\cf0\f1\par
+\cf1\b\f0 Alternative Ranking\par
+\cf0\b0\f1\par
+\cf1\f0 It is not a problem for the ranking filter to determine importance by other criteria than weight. For example, it could allow a user to specify objects that are always ranked first if they contribute to the pixel at all, regardless of how insignficant the coverage is. In this way it could allow users to specify objects that always have accurate mattes. \par
+\cf0\f1\par
 \par
-\b0 IDs are stored as AOVs. The pixel filter uses a filter kernel that ideally matches the kernel used to filter the associated \ldblquote beauty\rdblquote  renders. The samples are weighted by the kernel, and the weights of each unique ID that contributes to the pixel are summed. Non-refractive transparency is taken into account here as well, in whatever way matches the way the renderer computes opacity. The weights are normalized by dividing by the total weight of samples contributing to the pixel, and the weights become coverage values. \par
-\par
-Each unique ID found contributing to the pixel is ranked by its accumulated weight, and the highest ranked ID is ID 0, the next is ID 1, and these IDs and associated coverage values are encoded into the EXR channels described above. \par
+
+\pard\sa200\sl276\slmult1\par
 }
  
