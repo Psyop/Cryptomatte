@@ -43,9 +43,17 @@ def single_precision(float_in):
 # Cryptomatte file processing
 ############################################# 
 
+global g_cryptomatte_manf_from_names
+global g_cryptomatte_manf_from_IDs
+
+g_cryptomatte_manf_from_names = {}
+g_cryptomatte_manf_from_IDs = {}
+
 class CryptomatteInfo(object):
     def __init__(self, node_in):
-        """Reformat metadata into a dictionary"""
+        """Take a nuke node, such as a read node or a Cryptomatte gizmo,
+        and Reformat metadata into a dictionary, and collect channel
+        information."""
         self.cryptomattes = {}
         self.nuke_node = node_in
         self.selection = None
@@ -74,6 +82,7 @@ class CryptomatteInfo(object):
             self.cryptomattes[num]["channels"] = channels
 
     def is_valid(self):
+        """Checks that the selection is valid."""
         if self.selection is None:
             return False
         if self.selection not in self.cryptomattes:
@@ -131,19 +140,29 @@ class CryptomatteInfo(object):
         return sorted(pure_channels)
 
     def parse_manifest(self):
+        """ Loads json manifest and unpacks hex strings into floats,
+        and converts it to two dictionaries, which map IDs to names and vice versa.
+        Also caches the last manifest in a global variable so that a session of selecting
+        things does not constantly require reloading the manifest (' ~0.13 seconds for a 
+        32,000 name manifest.')
+        """
+        import json
+        import struct
+
         def unpack_hex_single_float(hex_string):
-            import struct
+            # left as an example of a more straightforward way to do this. 
             return struct.unpack('!f', hex_string.decode('hex'))[0]
 
-        import json
-
         num = self.selection
-        manifest = json.loads( self.cryptomattes[num].get("manifest", "{}") )
-
+        manifest = json.loads(self.cryptomattes[num].get("manifest", "{}"))
         from_names = {}
         from_ids = {}
+
+        unpacker = struct.Struct('!f')
+        packer = struct.Struct("!I")
+
         for name, value in manifest.iteritems():
-            id_float = unpack_hex_single_float(value)
+            id_float = unpacker.unpack(packer.pack(int(value,16)))[0]
             name_str = str(name)
             from_names[name_str] = id_float
             from_ids[id_float] = name_str
@@ -151,16 +170,35 @@ class CryptomatteInfo(object):
         self.cryptomattes[num]["names_to_IDs"] = from_names
         self.cryptomattes[num]["ids_to_names"] = from_ids
 
+        global g_cryptomatte_manf_from_names
+        global g_cryptomatte_manf_from_IDs
+        g_cryptomatte_manf_from_names = from_names
+        g_cryptomatte_manf_from_IDs = from_ids
+
         return from_ids
 
     def id_to_name(self, ID_value):
-        self.parse_manifest()
-        return self.cryptomattes[self.selection]["ids_to_names"].get(ID_value, None)
+        """Checks the manifest for the ID value. 
+        Checks the last used manifest first, before decoding
+        the existing one. 
+        """
+        global g_cryptomatte_manf_from_IDs
+        manf_cache = g_cryptomatte_manf_from_IDs
+        if (manf_cache is dict and ID_value in manf_cache):
+            return g_cryptomatte_manf_from_IDs[ID_value]
+        else:
+            self.parse_manifest()
+            return self.cryptomattes[self.selection]["ids_to_names"].get(ID_value, None)
 
     def name_to_ID(self, name):
         return mm3hash_float(name)
 
-    def test_manifest(self):
+    def test_manifest(self):        
+        """Testing function to check for implementation errors and hash collisions.
+        Checks all names and values in the manifest in the manifest by rehashing them,
+        to ensure that the entire process is sound. Also finds collisions. Returns a tuple
+        of errors and collisions. 
+        """
         self.parse_manifest()
 
         ids = {}
@@ -178,8 +216,6 @@ class CryptomatteInfo(object):
         print "Tested %s, %s names" % (self.nuke_node.name(), len(manifest))
         print "    ", len(errors), "non-matching IDs between python and c++."
         print "    ", len(collisions), "hash collisions in manifest."
-        for error in errors:
-            print error
 
         return errors, collisions
 
