@@ -1,7 +1,7 @@
-{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033\deflangfe2052{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset0 Calibri;}{\f2\fnil\fcharset0 Consolas;}{\f3\fnil\fcharset2 Symbol;}}
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset0 Calibri;}{\f2\fnil\fcharset0 Consolas;}{\f3\fnil\fcharset2 Symbol;}}
 {\colortbl ;\red0\green0\blue0;}
-{\*\generator Riched20 6.3.9600}{\*\mmathPr\mnaryLim0\mdispDef1\mwrapIndent1440 }\viewkind4\uc1 
-\pard\sl276\slmult1\cf1\b\fs36\lang9 Cryptomatte Specification version 0.3.0\par
+{\*\generator Riched20 6.3.9600}\viewkind4\uc1 
+\pard\sl276\slmult1\cf1\b\f0\fs36\lang9 Cryptomatte Specification version 0.3.0\par
 \cf0\b0\f1\fs22\par
 \cf1\b\f0 Version 0.1.0\par
 \cf0\b0\f1\par
@@ -21,8 +21,8 @@
 \pard\fi-1080\li1440\sl276\slmult1\tx1080\cf1\f0\fs24 1.\tab EXR File\par
 
 \pard\fi-1800\li2880\sl276\slmult1\tx2520 a.\tab Overview\par
-b.\tab Channel Naming\par
-c.\tab Channel Contents\par
+b.\tab Layer naming\par
+c.\tab Channel contents\par
 d.\tab Metadata\par
 e.\tab Manifest\par
 
@@ -36,6 +36,7 @@ d.\tab Example code\par
 \pard\fi-1080\li1440\sl276\slmult1\tx1080 3.\tab Ranking Pixel Filter\par
 
 \pard\fi-1800\li2880\sl276\slmult1\tx2520 a.\tab Overview\par
+b.\tab Alternative ranking\par
 
 \pard\sl276\slmult1\cf0\f1\fs22\par
 \par
@@ -45,9 +46,9 @@ d.\tab Example code\par
 \cf0\b0\f1\fs22\par
 \cf1\b\f0 Overview\par
 \cf0\b0\f1\par
-\cf1\f0 The format consists of RGBA images in a multichannel EXR, which use a naming convention to allow detection as a series of channels cryptomatte can use. EXR header metadata is used to store a manifest. \par
+\cf1\f0 The format consists of RGBA images in a multichannel EXR, which contains a number of RGBA layers and metadata. The channels are organized using a naming convention. EXR header metadata is used to store information about the hash, conversion, and can optionally include a manifest. \par
 \cf0\f1\par
-\cf1\b\f0 Channel naming\par
+\cf1\b\f0 Layer naming\par
 \cf0\b0\f1\par
 \cf1\f0 An example:\par
 \cf0\f1\par
@@ -121,11 +122,13 @@ CryptoObject01\par
 exr/cryptomatte/0/hash = MurmurHash3_32\par
 exr/cryptomatte/0/conversion = uint32_to_float32\par
 exr/cryptomatte/0/manifest = \{"bunny":"13851a76","default":"42c9679f"\}\par
-exr/cryptomatte/1/name = CryptoMaterial\par
+\cf0\f1\fs22\par
+\cf1\f2\fs20 exr/cryptomatte/1/name = CryptoMaterial\par
 exr/cryptomatte/1/hash = MurmurHash3_32\par
 exr/cryptomatte/1/conversion = uint32_to_float32\par
 exr/cryptomatte/1/manifest = \{"bunny_porcelain_mat":"b24b26d4"\}\par
-exr/cryptomatte/2/name = CryptoObject\par
+\cf0\f1\fs22\par
+\cf1\f2\fs20 exr/cryptomatte/2/name = CryptoObject\par
 exr/cryptomatte/2/hash = MurmurHash3_32\par
 exr/cryptomatte/2/conversion = uint32_to_float32\par
 exr/cryptomatte/2/manifest_file = ./manifest.json\par
@@ -143,11 +146,13 @@ exr/cryptomatte/2/manifest_file = ./manifest.json\par
 \cf0\f1\par
 \cf1\f0 In this C++ sample code for converting a floating point hash to hexadecimal, \f2\fs18 float_value \f0\fs22 is the value which will be used in the pixels of the image. Its bits are copied to unsigned integer, and the hex digits of this integer are written to a string:\par
 \cf0\f1\par
-\cf1\f2\fs18         uint32_t float_bits;\par
-        std::memcpy(&float_bits, &hash_value, 4);\par
-        char hex_chars[9];\par
-        sprintf(hex_chars, "%08x", float_bits);\par
-\cf0\f1\fs22\par
+
+\pard\fi-720\li1440\sl276\slmult1\cf1\f2\fs20 uint32_t float_bits;\par
+std::memcpy(&float_bits, &hash_value, 4);\par
+char hex_chars[9];\par
+sprintf(hex_chars, "%08x", float_bits);\par
+
+\pard\sl276\slmult1\cf0\f1\fs22\par
 \cf1\f0 These strings of hex characters are decoded back into floats in Python using the struct module. In this example, hex_string is a string containing 8 characters of hexadecimal:\par
 \cf0\f1\par
 
@@ -158,7 +163,6 @@ float_value = struct.unpack('!f', hex_string.decode('hex'))[0]\par
 \cf1\f0 Including the manifest is optional but very good for user experience when decoding. Decoders should not rely on it to accurately extract mattes.\par
 \cf0\f1\par
 \par
-\par
 \cf1\b\f0\fs36 ID Generation\par
 \cf0\b0\f1\fs22\par
 \cf1\b\f0 Overview\par
@@ -167,7 +171,7 @@ float_value = struct.unpack('!f', hex_string.decode('hex'))[0]\par
 \cf0\f1\par
 \cf1\b\f0 Names\par
 \cf0\b0\f1\par
-\cf1\f0 Any per-object string values may be used to compute IDs. Where these string values overlap, the IDs will be combined (an expected and desired behavior). \par
+\cf1\f0 Any string values may be used to compute IDs. Where these string values overlap, the IDs will be combined (an expected and desired behavior). \par
 \cf0\f1\par
 \cf1\f0 It\rquote s suggested that in most implementations, the most useful groupings will come from namespace, object name (sans namespace), and material name (also sans namespace), but arbitrary data can be used. \par
 \cf0\f1\par
@@ -191,7 +195,7 @@ float_value = struct.unpack('!f', hex_string.decode('hex'))[0]\par
 \cf0\f1\par
 \cf1\b\f0 Example code\par
 \cf0\b0\f1\par
-\cf1\f0 This example code shows conversion of hashes to float in Python and C++. The hash used is standard MurmurHash3 and is not shown here. The C++ example also shows a method for creating two additional channels of data for the normally filtered \ldblquote keyable\rdblquote  image. \par
+\cf1\f0 This example code shows conversion of hashes to float in Python and C++. The hashing function used is a standard MurmurHash3 and is not shown here. The C++ example also shows a method for creating two additional channels of data for the normally filtered \ldblquote keyable\rdblquote  image. \par
 \cf0\f1\par
 \cf1\f0 Python:\par
 
@@ -254,12 +258,10 @@ float_value = struct.unpack('!f', hex_string.decode('hex'))[0]\par
 \cf0\f1\par
 \cf1\f0 Each unique ID found contributing to the pixel is ranked by its "coverage" values, and the highest ranked ID is ID 0, the next is ID 1, etc. These IDs and associated coverage values are encoded into the EXR channels as described above. \par
 \cf0\f1\par
-\cf1\b\f0 Alternative Ranking\par
+\cf1\b\f0 Alternative ranking\par
 \cf0\b0\f1\par
-\cf1\f0 It is not a problem for the ranking filter to determine importance by other criteria than weight. For example, it could allow a user to specify objects that are always ranked first if they contribute to the pixel at all, regardless of how insignficant the coverage is. In this way it could allow users to specify objects that always have accurate mattes. \par
+\cf1\f0 It is not a problem for the ranking filter to determine importance by other criteria than weight. For example, it could allow a user to specify objects that are always ranked first if they contribute to the pixel at all, regardless of how insignificant the coverage is. In this way it could allow users to specify objects that always have accurate mattes. \par
 \cf0\f1\par
 \par
-
-\pard\sa200\sl276\slmult1\par
 }
  
