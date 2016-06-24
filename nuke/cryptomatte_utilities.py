@@ -29,6 +29,7 @@ def mm3hash_float(name):
     sign = (hash_32 >> 31)
     float_bits = exp | mantissa
     packed = struct.pack('@l', float_bits)
+    packed = '\0' * (4 - len(packed)) + packed     # packed must be exactly 4 long
     if sign == 1:
         return -struct.unpack('@f', packed)[0]
     elif sign == 0:
