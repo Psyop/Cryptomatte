@@ -150,10 +150,6 @@ class CryptomatteInfo(object):
         import json
         import struct
 
-        def unpack_hex_single_float(hex_string):
-            # left as an example of a more straightforward way to do this. 
-            return struct.unpack('!f', hex_string.decode('hex'))[0]
-
         num = self.selection
         manifest = json.loads(self.cryptomattes[num].get("manifest", "{}"))
         from_names = {}
@@ -163,7 +159,9 @@ class CryptomatteInfo(object):
         packer = struct.Struct("!I")
 
         for name, value in manifest.iteritems():
-            id_float = unpacker.unpack(packer.pack(int(value,16)))[0]
+            packed = packer.pack(int(value,16))
+            packed = packed = '\0' * (4 - len(packed)) + packed
+            id_float = unpacker.unpack( packed )[0]
             name_str = str(name)
             from_names[name_str] = id_float
             from_ids[id_float] = name_str
