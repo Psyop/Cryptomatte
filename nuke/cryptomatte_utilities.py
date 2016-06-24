@@ -157,7 +157,6 @@ class CryptomatteInfo(object):
 
         unpacker = struct.Struct('!f')
         packer = struct.Struct("!I")
-
         for name, value in manifest.iteritems():
             packed = packer.pack(int(value,16))
             packed = packed = '\0' * (4 - len(packed)) + packed
@@ -174,7 +173,6 @@ class CryptomatteInfo(object):
         g_cryptomatte_manf_from_names = from_names
         g_cryptomatte_manf_from_IDs = from_ids
 
-        return from_ids
 
     def id_to_name(self, ID_value):
         """Checks the manifest for the ID value. 
@@ -185,9 +183,11 @@ class CryptomatteInfo(object):
         manf_cache = g_cryptomatte_manf_from_IDs
         if (manf_cache is dict and ID_value in manf_cache):
             return g_cryptomatte_manf_from_IDs[ID_value]
-        else:
+        elif self.selection != None:
             self.parse_manifest()
             return self.cryptomattes[self.selection]["ids_to_names"].get(ID_value, None)
+        else:
+            return None
 
     def name_to_ID(self, name):
         return mm3hash_float(name)
