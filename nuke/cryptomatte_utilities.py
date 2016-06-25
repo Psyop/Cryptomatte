@@ -28,12 +28,12 @@ def mm3hash_float(name):
     exp =  exp << 23
     sign = (hash_32 >> 31)
     float_bits = exp | mantissa
-    packed = struct.pack('@l', float_bits)
+    packed = struct.pack('=I', float_bits)
     packed = '\0' * (4 - len(packed)) + packed     # packed must be exactly 4 long
     if sign == 1:
-        return -struct.unpack('@f', packed)[0]
+        return -struct.unpack('=f', packed)[0]
     elif sign == 0:
-        return struct.unpack('@f', packed)[0]
+        return struct.unpack('=f', packed)[0]
 
 def single_precision(float_in):
     import array
@@ -155,8 +155,8 @@ class CryptomatteInfo(object):
         from_names = {}
         from_ids = {}
 
-        unpacker = struct.Struct('!f')
-        packer = struct.Struct("!I")
+        unpacker = struct.Struct('=f')
+        packer = struct.Struct("=I")
         for name, value in manifest.iteritems():
             packed = packer.pack(int(value,16))
             packed = packed = '\0' * (4 - len(packed)) + packed
