@@ -1,7 +1,7 @@
 {\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset0 Calibri;}{\f2\fnil\fcharset0 Consolas;}{\f3\fnil\fcharset2 Symbol;}}
 {\colortbl ;\red0\green0\blue0;}
 {\*\generator Riched20 6.3.9600}\viewkind4\uc1 
-\pard\sl276\slmult1\cf1\b\f0\fs36\lang9 Cryptomatte Specification version 0.3.0\par
+\pard\sl276\slmult1\cf1\b\fs36\lang9 Cryptomatte Specification version 0.3.0\par
 \cf0\b0\f1\fs22\par
 \cf1\b\f0 Version 0.1.0\par
 \cf0\b0\f1\par
@@ -76,10 +76,10 @@ CryptoObject01\par
 \cf1\f0 The contents of these layers are:\par
 \cf0\f1\par
 
-\pard\fi-720\li1440\sl276\slmult1\cf1\f2\fs18\{typename\}.r   - Ordinarily filtered color generated from IDs\par
-\{typename\}.g   - Ordinarily filtered color generated from IDs\par
-\{typename\}.b   - Unused (black)\par
-\{typename\}.a   - Unused (black)\par
+\pard\fi-720\li1440\sl276\slmult1\cf1\f2\fs18\{typename\}.r   - Unused, or optionally, the ID value filtered normally. \par
+\{typename\}.g   - Normally filtered color generated from IDs\par
+\{typename\}.b   - NOrmally filtered color generated from IDs\par
+\{typename\}.a   - Unused. \par
 \cf0\f1\fs22\par
 \cf1\f2\fs18\{typename\}00.r - ID rank 0\par
 \{typename\}00.g - Coverage for ID rank 0\par
@@ -157,7 +157,7 @@ sprintf(hex_chars, "%08x", float_bits);\par
 \cf0\f1\par
 
 \pard\fi-720\li1440\sl276\slmult1\cf1\f2\fs20 import struct\par
-float_value = struct.unpack('!f', hex_string.decode('hex'))[0]\par
+float_value = struct.unpack('=f', hex_string.decode('hex'))[0]\par
 
 \pard\sl276\slmult1\cf0\f1\fs22\par
 \cf1\f0 Including the manifest is optional but very good for user experience when decoding. Decoders should not rely on it to accurately extract mattes.\par

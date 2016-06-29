@@ -7,6 +7,19 @@ import nuke
 import struct
 
 
+
+def setup_cryptomatte():
+    nuke.addKnobChanged(lambda: cryptomatte_multi_knob_changed_event(
+        nuke.thisNode(), nuke.thisKnob()), nodeClass='Cryptomatte')
+
+    if nuke.GUI:
+        toolbar = nuke.menu("Nodes")
+        automatte_menu = toolbar.addMenu("Cryptomatte", "cryptomatte_logo.png")
+        automatte_menu.addCommand("Cryptomatte", "import cryptomatte_utilities as cu; cu.cryptomatte_create_gizmo();")
+        automatte_menu.addCommand("Decryptomatte All", "import cryptomatte_utilities as cu; cu.decryptomatte_all();")
+        automatte_menu.addCommand("Decryptomatte Selection", "import cryptomatte_utilities as cu; cu.decryptomatte_selected();")
+
+
 #############################################
 # Hash to float
 #############################################
@@ -223,8 +236,8 @@ class CryptomatteInfo(object):
 # Public - Create Crypto Gizmos
 #############################################
 
-def cryptomatte_multi_create():
-    nuke.createNode("CryptomatteMulti") 
+def cryptomatte_create_gizmo():
+    return nuke.createNode("Cryptomatte") 
 
 #############################################
 # Public - cryptomatte_multi Events
@@ -313,7 +326,7 @@ def _force_update_all():
     with nuke.root():
         node_count = 0
         for node in nuke.allNodes():
-            if node.Class() == "CryptomatteMulti":
+            if node.Class() == "Cryptomatte":
                 node_count = node_count + 1
                 cinfo = CryptomatteInfo(node)
                 _update_gizmo_multi(node, cinfo, force=True)
@@ -577,12 +590,12 @@ def decryptomatte_nodes(nodes, stat_name="all"):
     multi_gizmos = []
 
     for node in nodes:
-        if node.Class() == "CryptomatteMulti":
+        if node.Class() == "Cryptomatte":
             multi_gizmos.append(node)
     if not multi_gizmos:
         return
 
-    if nuke.ask(('Replace %s Cryptomatte gizmos with expression nodes?'
+    if nuke.ask(('Replace %s Cryptomatte gizmos with expression nodes? '
         'Replaced Gizmos will be disabled and selected.') % (len(multi_gizmos))):
 
         for gizmo in multi_gizmos:
