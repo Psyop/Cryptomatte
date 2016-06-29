@@ -71,6 +71,7 @@ class CryptomatteInfo(object):
         self.cryptomattes = {}
         self.nuke_node = node_in
         self.selection = None
+
         if not node_in:
             return
 
@@ -186,6 +187,8 @@ class CryptomatteInfo(object):
         g_cryptomatte_manf_from_names = from_names
         g_cryptomatte_manf_from_IDs = from_ids
 
+        return from_names
+
 
     def id_to_name(self, ID_value):
         """Checks the manifest for the ID value. 
@@ -254,6 +257,8 @@ def cryptomatte_multi_knob_changed_event(node = None, knob = None):
         cinfo = CryptomatteInfo(node)
         keyed_object = _update_gizmo_keyed_object(node, cinfo, True, "pickerAdd")
         node.knob("pickerRemove").setValue([0,0,0])
+        if node.knob("singleSelection").getValue():
+            node.knob("matteList").setValue("")
         _matteList_modify(node, keyed_object, False)
         _update_gizmo_multi(node, cinfo)
 
@@ -431,6 +436,49 @@ def _format_expression(expression_in):
 
 
 #############################################
+# Utils - Unload Manifest
+#############################################
+
+def unload_manifest(node):
+    source_node = None
+    if node.Class() == "Cryptomatte":
+        source_node = node.input(0)
+        if not source_node:
+            nuke.message('Cryptomatte is not plugged into anything')
+            return
+    else:
+        source_node = node
+
+    cinfo = CryptomatteInfo(node)
+    names_to_IDs = cinfo.parse_manifest();
+
+    if not names_to_IDs:
+        nuke.message('No Cryptomatte manifest was found in the input. ')
+        return
+
+    new_keyers = []
+    if nuke.ask('There are %s named mattes in the manifest, are you sure you want to create keyer nodes for all of them?' % len(names_to_IDs)):
+        with nuke.root():
+            dot = nuke.nodes.Dot()
+            dot.setInput(0, source_node)
+
+            progress = 0
+            task = nuke.ProgressTask("Unloading Manifest")
+            for name, metadata_ID in names_to_IDs.iteritems():
+                if task.isCancelled():
+                    break
+                task.setMessage("Creating Cryptomatte Keyer for %s" % name)
+                task.setProgress( int(float(progress) / float(len(names_to_IDs)) * 100))
+                keyer = nuke.nodes.Cryptomatte(name="ck_%s" % name, matteList=name, matteOnly=True)
+                keyer.setInput(0, dot)
+                _update_gizmo_multi(keyer, cinfo)
+                new_keyers.append(keyer)
+                progress = progress + 1
+
+    return new_keyers
+
+
+#############################################
 # Utils - Build Expressions for multi
 #############################################
 
@@ -565,7 +613,7 @@ def _matteList_set_to_text(gizmo, matte_names):
     gizmo.knob("matteList").setValue(", ".join(matte_names_list))
 
 
-def _matteList_modify(gizmo, name, remove=False):
+def _matteList_modify(gizmo, name, single_selection, remove=False):
     if not name or gizmo.knob("stopAutoUpdate").getValue() == 1.0 :
         return
     matte_names_text = gizmo.knob("matteList").getValue()

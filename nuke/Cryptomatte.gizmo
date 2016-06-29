@@ -14,7 +14,8 @@ Gizmo {
  pickerRemove {0 0 0}
  addUserKnob {26 notUndoableWarning l "" +STARTLINE T "Warning: Changes made to the matte list using the pickers are not undoable. "}
  addUserKnob {26 ""}
- addUserKnob {6 matteOnly l "Matte Only" +STARTLINE}
+ addUserKnob {6 matteOnly l "Matte Only" t "Extracted matte is copied to RGB channels as well. This disables keying. " +STARTLINE}
+ addUserKnob {6 singleSelection l "Single Selection" t "Picker only selects matte at a time, rather than selecting a list. "}
  addUserKnob {6 RemoveChannels l "Remove Channels" t "Removes all non-RGBA channels for the output. This will leave the downstream cleaner. " -STARTLINE}
  RemoveChannels true
  addUserKnob {26 ""}
@@ -29,6 +30,7 @@ Gizmo {
  ColorKey {0 0 0 1}
  addUserKnob {1 keyedName l "Keyed Name" t "This field is for information only."}
  addUserKnob {26 ""}
+ addUserKnob {22 unloadManifest l "Unload Manifest (Extract all mattes)" t "Create Cryptomatte gizmos for all mattes available in this pass. " T "try: \n   import cryptomatte_utilities as cu\n   cu.unload_manifest(nuke.thisNode())\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run a Cryptomatte script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())" +STARTLINE}
  addUserKnob {41 previewChannel +HIDDEN T ShuffleCopy_in_keyable.in2}
  addUserKnob {41 in00 +HIDDEN T Shuffle0.in}
  addUserKnob {26 "" +HIDDEN}
