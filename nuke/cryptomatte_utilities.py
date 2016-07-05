@@ -1,6 +1,8 @@
 #
-#  Copyright (c) 2014, 2015, Psyop Media Company, LLC
-#  Shared with the Cryptomatte Committee- please do not redistribute. 
+#
+#  Copyright (c) 2014, 2015, 2016 Psyop Media Company, LLC
+#  See license.txt
+#
 #
 
 import nuke

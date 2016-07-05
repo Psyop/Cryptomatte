@@ -1,20 +1,8 @@
 {\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset0 Calibri;}{\f2\fnil\fcharset0 Consolas;}{\f3\fnil\fcharset2 Symbol;}}
 {\colortbl ;\red0\green0\blue0;}
 {\*\generator Riched20 6.3.9600}\viewkind4\uc1 
-\pard\sl276\slmult1\cf1\b\fs36\lang9 Cryptomatte Specification version 0.3.0\par
+\pard\sl276\slmult1\cf1\b\fs36\lang9 Cryptomatte Specification version 1.0.0\par
 \cf0\b0\f1\fs22\par
-\cf1\b\f0 Version 0.1.0\par
-\cf0\b0\f1\par
-\cf1\f0 This version of the specification is just a formal writeup of what the Psyop tool is doing currently. It is only meant as a starting point for the committee. \par
-\cf0\f1\par
-\cf1\b\f0 Version 0.2.0\par
-\cf0\b0\f1\par
-\cf1\f0 Changes the hash to MurmurHash3. \par
-\cf0\f1\par
-\cf1\b\f0 Version 0.3.0\par
-\cf0\b0\f1\par
-\cf1\f0 Changed the format of the metadata to allow multiple cryptomatte types per image and required the metadata to specify both the hash and conversion method for each of the cryptomatte types in the EXR file. \par
-\cf0\f1\par
 \cf1\b\f0 Table of Contents:\par
 \cf0\b0\f1\par
 
@@ -261,6 +249,25 @@ float_value = struct.unpack('=f', hex_string.decode('hex'))[0]\par
 \cf1\b\f0 Alternative ranking\par
 \cf0\b0\f1\par
 \cf1\f0 It is not a problem for the ranking filter to determine importance by other criteria than weight. For example, it could allow a user to specify objects that are always ranked first if they contribute to the pixel at all, regardless of how insignificant the coverage is. In this way it could allow users to specify objects that always have accurate mattes. \par
+\cf0\f1\par
+\par
+\cf1\b\f0\fs36 Change Log\cf0\b0\f1\fs22\par
+\par
+\cf1\b\f0 Version 0.1.0\par
+\cf0\b0\f1\par
+\cf1\f0 This version of the specification is just a formal writeup of what the Psyop tool is doing currently. It is only meant as a starting point for the committee. \par
+\cf0\f1\par
+\cf1\b\f0 Version 0.2.0\par
+\cf0\b0\f1\par
+\cf1\f0 Changes the hash to MurmurHash3. \par
+\cf0\f1\par
+\cf1\b\f0 Version 0.3.0\par
+\cf0\b0\f1\par
+\cf1\f0 Changed the format of the metadata to allow multiple cryptomatte types per image and required the metadata to specify both the hash and conversion method for each of the cryptomatte types in the EXR file. \par
+\b\par
+Version 1.0.0\par
+\b0\par
+Fixed some minor errors in code. \par
 \cf0\f1\par
 \par
 }

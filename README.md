@@ -9,6 +9,10 @@ Cryptomattes are packaged into EXR files for cryptomattes generated from one set
 
 The goal of releasing Cryptomatte is to turn it into an ecosystem around an open standard. Any developers who wish to make plugins are welcome and encouraged to create tools that inter-operate with the components we are providing. We hope to see a diverse ecosystem of renderers that can create Cryptomatte images and plugins for compositing applications to decode them. 
 
+## License
+
+Cryptomatte is licenced using the BSD 3-clause license. See [license.txt](license.txt). 
+
 ## Repo Contents
 
 The contents of this repository are:

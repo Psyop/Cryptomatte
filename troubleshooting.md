@@ -1,4 +1,3 @@
-
 ### Troubleshooting
 
 A couple of really simple things to watch out for:
