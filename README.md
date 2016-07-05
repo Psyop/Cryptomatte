@@ -3,7 +3,7 @@
 Cryptomatte is a tool created at Psyop by Jonah Friedman and Andy Jones. It creates ID mattes automatically with support for motion blur, transparency, and depth of field, using organizational information already available at render time. This organizational information is usually names, object namespaces, and material names. 
 
 * Demo video: https://vimeo.com/136954966
-* Poster: https://github.com/Psyop/cryptomatte-committee/raw/master/specification/IDmattes_poster.pdf
+* Poster: https://github.com/Psyop/Cryptomatte/raw/master/specification/IDmattes_poster.pdf
 
 Cryptomattes are packaged into EXR files for cryptomattes generated from one set of names. 
 
