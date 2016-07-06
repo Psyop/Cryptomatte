@@ -5,7 +5,7 @@ Cryptomatte is a tool created at Psyop by Jonah Friedman and Andy Jones. It crea
 * Demo video: https://vimeo.com/136954966
 * Poster: https://github.com/Psyop/Cryptomatte/raw/master/specification/IDmattes_poster.pdf
 
-Cryptomattes are packaged into EXR files for cryptomattes generated from one set of names. 
+Cryptomattes are packaged into EXR files for Cryptomattes generated from one set of names. 
 
 The goal of releasing Cryptomatte is to turn it into an ecosystem around an open standard. Any developers who wish to make plugins are welcome and encouraged to create tools that inter-operate with the components we are providing. We hope to see a diverse ecosystem of renderers that can create Cryptomatte images and plugins for compositing applications to decode them. 
 
@@ -23,6 +23,14 @@ The contents of this repository are:
 
 **Specification:** This is a technical document describing the Cryptomatte standard. It specifies how Cryptomattes are structured, encoded, and decoded. It also contains our SIGGRAPH 2015 poster on the subject.
 
+## Acknowledgements 
+
+* Anders Langlands
+* Alon Gibli
+* Jean-Francois Panisset
+* Psyop
+* Solid Angle
+* All the members of the Cryptomatte Committee
 
 ## Nuke Installation
 
