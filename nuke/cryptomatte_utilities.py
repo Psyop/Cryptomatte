@@ -169,7 +169,10 @@ class CryptomatteInfo(object):
         import struct
 
         num = self.selection
-        manifest = json.loads(self.cryptomattes[num].get("manifest", "{}"))
+        try:
+            manifest = json.loads(self.cryptomattes[num].get("manifest", "{}"))
+        except:
+            manifest = {}
         from_names = {}
         from_ids = {}
 
@@ -617,7 +620,6 @@ def _matteList_modify(gizmo, name, remove):
 
     def _matteList_set_remove(name, matte_names):
         if name in matte_names:
-            print "removing", name
             matte_names.remove(name)
 
     def _matteList_set_to_text(gizmo, matte_names):
