@@ -8,18 +8,17 @@
 import nuke
 import struct
 
-
+def setup_cryptomatte_ui():
+    if nuke.GUI:
+        toolbar = nuke.menu("Nodes")
+        automatte_menu = toolbar.addMenu("Cryptomatte", "cryptomatte_logo.png",index=-1)
+        automatte_menu.addCommand("Cryptomatte", "import cryptomatte_utilities as cu; cu.cryptomatte_create_gizmo();")
+        automatte_menu.addCommand("Decryptomatte All", "import cryptomatte_utilities as cu; cu.decryptomatte_all();")
+        automatte_menu.addCommand("Decryptomatte Selection", "import cryptomatte_utilities as cu; cu.decryptomatte_selected();")
 
 def setup_cryptomatte():
     nuke.addKnobChanged(lambda: cryptomatte_knob_changed_event(
         nuke.thisNode(), nuke.thisKnob()), nodeClass='Cryptomatte')
-
-    if nuke.GUI:
-        toolbar = nuke.menu("Nodes")
-        automatte_menu = toolbar.addMenu("Cryptomatte", "cryptomatte_logo.png")
-        automatte_menu.addCommand("Cryptomatte", "import cryptomatte_utilities as cu; cu.cryptomatte_create_gizmo();")
-        automatte_menu.addCommand("Decryptomatte All", "import cryptomatte_utilities as cu; cu.decryptomatte_all();")
-        automatte_menu.addCommand("Decryptomatte Selection", "import cryptomatte_utilities as cu; cu.decryptomatte_selected();")
 
 
 #############################################
@@ -170,10 +169,7 @@ class CryptomatteInfo(object):
         import struct
 
         num = self.selection
-        try:
-            manifest = json.loads(self.cryptomattes[num].get("manifest", "{}"))
-        except:
-            manifest = {}
+        manifest = json.loads(self.cryptomattes[num].get("manifest", "{}"))
         from_names = {}
         from_ids = {}
 
@@ -621,6 +617,7 @@ def _matteList_modify(gizmo, name, remove):
 
     def _matteList_set_remove(name, matte_names):
         if name in matte_names:
+            print "removing", name
             matte_names.remove(name)
 
     def _matteList_set_to_text(gizmo, matte_names):
