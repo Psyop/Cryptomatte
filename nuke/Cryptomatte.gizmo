@@ -41,18 +41,24 @@ Gizmo {
   xpos -780
   ypos -468
  }
+ Shuffle {
+  alpha black
+  name Shuffle1
+  xpos -780
+  ypos -424
+ }
  Dot {
   name Dot1
   xpos -746
   ypos -366
  }
-set N4a36a740 [stack 0]
+set N6b5e0000 [stack 0]
  Dot {
   name Dot7
   xpos -650
   ypos -290
  }
-set N4a36aab0 [stack 0]
+set N6b3f9c00 [stack 0]
  Expression {
   temp_name0 ID
   temp_expr0 parent.ColorKey.b
@@ -61,7 +67,7 @@ set N4a36aab0 [stack 0]
   xpos -684
   ypos -20
  }
-set N4a36ae20 [stack 0]
+set N6b3f9800 [stack 0]
  Shuffle {
   red alpha
   green alpha
@@ -75,8 +81,8 @@ set N4a36ae20 [stack 0]
   xpos -520
   ypos 183
  }
-push $N4a36ae20
-push $N4a36aab0
+push $N6b3f9800
+push $N6b3f9c00
  Shuffle {
   in uCryptoObject00
   green black
@@ -86,7 +92,7 @@ push $N4a36aab0
   xpos -554
   ypos -240
  }
-push $N4a36a740
+push $N6b5e0000
  ShuffleCopy {
   inputs 2
   in2 uCryptoObject
@@ -112,7 +118,7 @@ push $N4a36a740
   xpos -674
   ypos 142
  }
-set N4a36d3f0 [stack 0]
+set N6d8f7800 [stack 0]
  Shuffle {
   red alpha
   green alpha
@@ -122,7 +128,7 @@ set N4a36d3f0 [stack 0]
   xpos -666
   ypos 190
  }
-push $N4a36d3f0
+push $N6d8f7800
  Grade {
   channels {rgba.red rgba.green -rgba.blue none}
   white {0.25 0.25 0 1}
@@ -147,7 +153,7 @@ push $N4a36d3f0
   xpos -572
   ypos 276
  }
-set N4a268e50 [stack 0]
+set N6d8f6800 [stack 0]
  Remove {
   operation keep
   channels rgba
@@ -155,7 +161,7 @@ set N4a268e50 [stack 0]
   xpos -507
   ypos 341
  }
-push $N4a268e50
+push $N6d8f6800
  Switch {
   inputs 2
   which {{parent.RemoveChannels}}
