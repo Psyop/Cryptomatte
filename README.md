@@ -38,7 +38,7 @@ See also: https://www.thefoundry.co.uk/products/nuke/developers/63/pythondevguid
 
 The files in the "nuke" folder of the repo need to be in a directory that's in your Nuke plugin path. If you are a single user, the easiest way to do this is to use the .nuke directory in your home directory. This will be referred to as the your install directory. 
 
-Copy the files in the "nuke" directory of this repo into your install directory. These files include include an init.py file, a special file name Nuke looks for. If your install directory already contains one, open it in a text editor, and add the contents of the cryptomatte init.py to the end of the current init.py. The rest of the files, including python files, gizmos and an image should just be copied over.
+Copy the files in the "nuke" directory of this repo into your install directory. These files include include an init.py and a menu.py file, special file names Nuke looks for. If your install directory already contains a init.py, open it in a text editor, and add the contents of the cryptomatte init.py to the end of the current init.py. Similarly for the menu.py file. The rest of the files, including python files, gizmos and an image should just be copied over.
 
 After launching Nuke, if you've installed the plugin correctly you should be able to tab-create a Cryptomatte gizmo. 
 
