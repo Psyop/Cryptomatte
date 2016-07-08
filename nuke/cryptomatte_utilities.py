@@ -7,6 +7,7 @@
 
 import nuke
 import struct
+import fnmatch
 
 def setup_cryptomatte_ui():
     if nuke.GUI:
@@ -605,11 +606,24 @@ def _update_gizmo_keyed_object(gizmo, cinfo, force=False, color_knob_name="Color
 # Utils - Comma seperated list processing
 #############################################
 
-
+# Convert the comma-separated matte list string to a set of names, expanding
+# any wildcards ('*', '?') against the full manifest using glob matching rules
 def _matteList_text_to_set(matte_names_text):
+    global g_cryptomatte_manf_from_names
     if matte_names_text:
         matte_names_text = matte_names_text.replace(" ", "")
-        return set(matte_names_text.split(","))
+        unexpanded_list = matte_names_text.split(",")
+        expanded_list = []
+        for name in unexpanded_list:
+            # If the matte name has a wildcard in it, run a glob match against
+            # the global manifest and add any matches to the expanded list
+            if '*' in name or '?' in name:
+                for man in g_cryptomatte_manf_from_names.keys():
+                    if fnmatch.fnmatch(man, name):
+                        expanded_list.append(man)
+            else:
+                expanded_list.append(name)
+        return set(expanded_list)
     else:
         return set()
 
