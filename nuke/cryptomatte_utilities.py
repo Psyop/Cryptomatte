@@ -203,7 +203,7 @@ class CryptomatteInfo(object):
         """
         global g_cryptomatte_manf_from_IDs
         manf_cache = g_cryptomatte_manf_from_IDs
-        if (manf_cache is dict and ID_value in manf_cache):
+        if (type(manf_cache) is dict and ID_value in manf_cache):
             return g_cryptomatte_manf_from_IDs[ID_value]
         elif self.selection != None:
             self.parse_manifest()
