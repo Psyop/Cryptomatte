@@ -3,8 +3,6 @@
 #  See license.txt
 #
 version 7.0 v10
-add_layer {uCryptoObject uCryptoObject.red uCryptoObject.green uCryptoObject.blue uCryptoObject.alpha}
-add_layer {uCryptoObject00 uCryptoObject00.red uCryptoObject00.green uCryptoObject00.blue uCryptoObject00.alpha}
 Gizmo {
  addUserKnob {20 cryptomatte l "Psyop Cryptomatte"}
  addUserKnob {18 pickerAdd l "Picker Add" t "Key objects to add to the Matte List here. "}
