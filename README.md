@@ -31,6 +31,20 @@ The contents of this repository are:
 * Psyop
 * Solid Angle
 * All the members of the Cryptomatte Committee
+* Benoit Leveau
+
+## Release Notes
+
+1.0.1: 
+
+* Added layer selection to gizmo and utilities (backwards compatible)
+* Added menu.py
+* Added `__version__` to cryptomatte_utilities
+* Bug fix - invalid manifest broke keying
+
+1.0.0: 
+
+* Initial release of Nuke plugins, specification, and sample images.
 
 ## Nuke Installation
 
@@ -49,10 +63,11 @@ You can test the rest of the functionality by loading one of the sample images s
 ![](/docs/nukeScreenshot.jpg)
 
 To get started: 
+
 1. Load a Cryptomatte exr file, such as the sample images, using a Read node. 
 2. Select it, and tab create a Cryptomatte gizmo. 
-2. View the output of the gizmo. You should see a "keyable surface" (pictured). 
-3. Use the eyedropper with the 'Picker Add' knob to select objects. They should light up in RGB, and output the matte in Alpha. With the eyedropper, make sure you use control-click and not alt-control click. 
+3. View the output of the gizmo. You should see a "keyable surface" (pictured). 
+4. Use the eyedropper with the 'Picker Add' knob to select objects. They should light up in RGB, and output the matte in Alpha. With the eyedropper, make sure you use control-click and not alt-control click. 
 
 ### Cryptomatte Gizmo
 
@@ -68,6 +83,8 @@ Psyop Cryptomatte Tab:
 * Clear: Clears the matte list. 
 * Force Update: The python scripts keep Cryptomatte gizmos updated when inputs or relevant knobs are changed. If there's a case that it does not update, this button will manually update it. 
 * Stop Auto Update: Stops the automatic updating described above.
+* Layer Selection: If there are multiple cryptomattes, this is how you select the layer. This is filled in automatically, but may be changed manually. 
+* Lock Layer Selection: Stops the automatic updating of layer selection, which occurs if the specified selection is not available. 
 * Expression: Internally the gizmo generates an expression to extract the matte. The expression is saved here. 
 
 Advanced Tab: 
