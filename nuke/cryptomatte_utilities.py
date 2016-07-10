@@ -82,6 +82,7 @@ class CryptomatteInfo(object):
         exr_metadata_dict = node_in.metadata()
 
         prefix = "exr/cryptomatte/"
+        default_selection = None
         for key, value in exr_metadata_dict.iteritems():
             if not key.startswith(prefix): 
                 continue
@@ -92,13 +93,24 @@ class CryptomatteInfo(object):
                 self.cryptomattes[num] = {}
             self.cryptomattes[num][partial_key] = value
 
-            if self.selection == None:
-                self.selection = num
+            if default_selection is None:
+                default_selection = num
 
         for num, value in self.cryptomattes.iteritems():
-            name = value["name"]
+            name = value.get("name", "") 
             channels = self._identify_channels(name)
             self.cryptomattes[num]["channels"] = channels
+
+        self.selection = default_selection
+
+        if self.nuke_node.Class() == "Cryptomatte":
+            selection_name = node_in.knob("cryptoLayer").getValue()
+            if not selection_name:
+                return
+
+            valid_selection = self.set_selection(selection_name)
+            if not valid_selection and not self.nuke_node.knob("cryptoLayerLock").getValue():
+                self.selection = default_selection
 
     def is_valid(self):
         """Checks that the selection is valid."""
@@ -113,16 +125,15 @@ class CryptomatteInfo(object):
         return True
 
     def set_selection(self, selection):
-        """ sets the selection (eg. cryptoObject) based on either the name
-        or an integer.
+        """ sets the selection (eg. cryptoObject) based on the name. 
+        Returns true if successful. 
         """
-        if selection is int:
-            self.selection = selection
-        elif selection is str:
-            for num in self.cryptomattes:
-                if self.cryptomattes[num]["name"] == selection:
-                    self.selection = num
-                    return
+        for num in self.cryptomattes:
+            if self.cryptomattes[num]["name"] == selection:
+                self.selection = num
+                return True
+        self.selection = None
+        return False
 
     def get_cryptomatte_names(self):
         """ gets the names of the cryptomattes contained the file, which
@@ -139,8 +150,8 @@ class CryptomatteInfo(object):
         """
 
         channel_list = []
-        if "crypto" in self.nuke_node.Class().lower():
-            # nuke_node might a keyer gizmo
+        if self.nuke_node.Class() == "Cryptomatte":
+            # nuke_node is a keyer gizmo
             channel_list = self.nuke_node.node('Input1').channels()
         else:
             # nuke_node might a read node
@@ -256,7 +267,7 @@ def cryptomatte_create_gizmo():
 
 
 def cryptomatte_knob_changed_event(node = None, knob = None):
-    if knob.name() == "inputChange":
+    if knob.name() == "inputChange" or knob.name() == "cryptoLayer" or knob.name() == "cryptoLayerLock":
         cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo)
 
@@ -363,6 +374,7 @@ def _set_keyer_channels(gizmo, cryptomatte_channels):
 
 
 def _set_channels(gizmo, cryptomatte_channels):
+    gizmo.knob("cryptoLayer").setValue(cryptomatte_channels[0])
     gizmo.knob("previewChannel").setValue(cryptomatte_channels[0])
     gizmo.knob("in00").setValue(cryptomatte_channels[1])
 
@@ -370,7 +382,7 @@ def _set_channels(gizmo, cryptomatte_channels):
 def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     if _cancel_update(gizmo, force):
         return
-    if (not cinfo.is_valid()):
+    if not cinfo.is_valid():
         return
     cryptomatte_channels = cinfo.get_channels()
     if not cryptomatte_channels:
@@ -465,6 +477,10 @@ def unload_manifest(node):
         source_node = node
 
     cinfo = CryptomatteInfo(node)
+    if not cinfo.is_valid():
+        nuke.message("Gizmo's cryptomatte selection is not valid or no cryptomattes are available. ")
+        return
+
     names_to_IDs = cinfo.parse_manifest();
 
     if not names_to_IDs:
