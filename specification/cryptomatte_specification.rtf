@@ -1,7 +1,7 @@
 {\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset0 Calibri;}{\f2\fnil\fcharset0 Consolas;}{\f3\fnil\fcharset2 Symbol;}}
 {\colortbl ;\red0\green0\blue0;}
 {\*\generator Riched20 6.3.9600}\viewkind4\uc1 
-\pard\sl276\slmult1\cf1\b\fs36\lang9 Cryptomatte Specification version 1.0.0\par
+\pard\sl276\slmult1\cf1\b\fs36\lang9 Cryptomatte Specification version 1.0.2\par
 \cf0\b0\f1\fs22\par
 \cf1\b\f0 Table of Contents:\par
 \cf0\b0\f1\par
@@ -190,6 +190,8 @@ float_value = struct.unpack('=f', hex_string.decode('hex'))[0]\par
 \pard\fi-720\li1440\sl276\slmult1\f2\fs18 def mm3hash_float(name):\par
     import pymmh3\par
     hash_32 = pymmh3.hash(name)\par
+    if hash_32 < 0:\par
+        hash_32 = (-hash_32 - 1) ^ 0xFFFFFFFF\par
 \cf0\f1\fs22\par
 \cf1\f2\fs18     mantissa = hash_32 & ((1 << 23) - 1)\par
     exp = (hash_32 >> 23) & ((1 << 8) - 1)\par
@@ -268,6 +270,10 @@ float_value = struct.unpack('=f', hex_string.decode('hex'))[0]\par
 Version 1.0.0\par
 \b0\par
 Fixed some minor errors in code. \par
+\par
+\b Version 1.0.2\par
+\b0\par
+Fixed python code to work with signed ints coming from compiled mmh3 module and updated pymmh3 module.\par
 \cf0\f1\par
 \par
 }

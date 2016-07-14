@@ -5,7 +5,7 @@
 #
 #
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 import nuke
 import struct
@@ -37,6 +37,8 @@ except ImportError:
 
 def mm3hash_float(name):
     hash_32 = mmh3.hash(name)
+    if hash_32 < 0:
+        hash_32 = (-hash_32 - 1) ^ 0xFFFFFFFF
 
     mantissa = hash_32 & ((1 << 23) - 1)
     exp = (hash_32 >> 23) & ((1 << 8) - 1)

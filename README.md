@@ -35,6 +35,13 @@ The contents of this repository are:
 
 ## Release Notes
 
+1.0.2:
+
+* Updated pymmh3 to output signed ints, in compliance with mmh3
+* Updated cryptomatte_utilities.py to work with signed int output from mmh3 and updated pymmh3
+* Updated python code sample in specification
+
+
 1.0.1: 
 
 * Added layer selection to gizmo and utilities (backwards compatible)
