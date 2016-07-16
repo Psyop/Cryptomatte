@@ -5,8 +5,6 @@ Cryptomatte is a tool created at Psyop by Jonah Friedman and Andy Jones. It crea
 * Demo video: https://vimeo.com/136954966
 * Poster: https://github.com/Psyop/Cryptomatte/raw/master/specification/IDmattes_poster.pdf
 
-Cryptomattes are packaged into EXR files for Cryptomattes generated from one set of names. 
-
 The goal of releasing Cryptomatte is to turn it into an ecosystem around an open standard. Any developers who wish to make plugins are welcome and encouraged to create tools that inter-operate with the components we are providing. We hope to see a diverse ecosystem of renderers that can create Cryptomatte images and plugins for compositing applications to decode them. 
 
 ## License
@@ -38,8 +36,6 @@ The contents of this repository are:
 1.0.2:
 
 * Updated pymmh3 to output signed ints, in compliance with mmh3
-* Updated cryptomatte_utilities.py to work with signed int output from mmh3 and updated pymmh3
-* Updated python code sample in specification
 
 
 1.0.1: 
