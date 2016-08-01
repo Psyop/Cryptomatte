@@ -83,7 +83,7 @@ class CryptomatteInfo(object):
         if not node_in:
             return
 
-        exr_metadata_dict = node_in.metadata()
+        exr_metadata_dict = node_in.metadata() or {}
 
         prefix = "exr/cryptomatte/"
         default_selection = None
