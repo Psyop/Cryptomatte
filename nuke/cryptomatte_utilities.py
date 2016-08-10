@@ -271,6 +271,8 @@ def cryptomatte_create_gizmo():
 
 
 def cryptomatte_knob_changed_event(node = None, knob = None):
+    if not nuke.GUI:  # Prevent event when not in GUI mode
+        return
     if knob.name() == "inputChange" or knob.name() == "cryptoLayer" or knob.name() == "cryptoLayerLock":
         cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo)
