@@ -90,20 +90,20 @@ class CryptomatteInfo(object):
         for key, value in exr_metadata_dict.iteritems():
             if not key.startswith(prefix): 
                 continue
-            numbered_key = key[len(prefix):] # ex: "exr/cryptomatte/0/name" --> "0/name"
-            num = int(numbered_key.split("/")[0])  # ex: "0/name" --> 0
-            partial_key = numbered_key.split("/")[1]  # ex: "0/name" --> "name"
-            if num not in self.cryptomattes:
-                self.cryptomattes[num] = {}
-            self.cryptomattes[num][partial_key] = value
+            numbered_key = key[len(prefix):] # ex: "exr/cryptomatte/ae93ba3/name" --> "ae93ba3/name"
+            metadata_id = numbered_key.split("/")[0]  # ex: "ae93ba3/name" --> ae93ba3
+            partial_key = numbered_key.split("/")[1]  # ex: "ae93ba3/name" --> "name"
+            if metadata_id not in self.cryptomattes:
+                self.cryptomattes[metadata_id] = {}
+            self.cryptomattes[metadata_id][partial_key] = value
 
             if default_selection is None:
-                default_selection = num
+                default_selection = metadata_id
 
-        for num, value in self.cryptomattes.iteritems():
+        for metadata_id, value in self.cryptomattes.iteritems():
             name = value.get("name", "") 
             channels = self._identify_channels(name)
-            self.cryptomattes[num]["channels"] = channels
+            self.cryptomattes[metadata_id]["channels"] = channels
 
         self.selection = default_selection
 
