@@ -1,7 +1,7 @@
 {\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset0 Calibri;}{\f2\fnil\fcharset0 Consolas;}{\f3\fnil\fcharset2 Symbol;}}
 {\colortbl ;\red0\green0\blue0;}
 {\*\generator Riched20 6.3.9600}\viewkind4\uc1 
-\pard\sl276\slmult1\cf1\b\fs36\lang9 Cryptomatte Specification version 1.0.2\par
+\pard\sl276\slmult1\cf1\b\fs36\lang9 Cryptomatte Specification version 1.1.0\par
 \cf0\b0\f1\fs22\par
 \cf1\b\f0 Table of Contents:\par
 \cf0\b0\f1\par
@@ -87,12 +87,18 @@ CryptoObject01\par
 \pard\sl276\slmult1\cf0\f1\fs22\par
 \cf1\b\f0 Metadata\par
 \cf0\b0\f1\par
-\cf1\f0 The file is required to provide metadata about the cryptomatte layer(s) it contains. It is, however, not required to contain a manifest. Each "type" of Cryptomatte contained is assigned an integer, which will be used to index the metadata for each of them. \par
+\cf1\f0 The file is required to provide metadata about the cryptomatte layer(s) it contains. It is, however, not required to contain a manifest. \par
+\par
+
+\pard\fi-720\li1440\sl276\slmult1\f2\fs20 exr/cryptomatte/adb0a84/name = CryptoAsset\f0\fs22\par
+
+\pard\sl276\slmult1\par
+Each "type" of Cryptomatte contained is assigned a (maximum) 7-character key, which will be used to index the metadata for each of them. In this example, the key is "\f2\fs20 adb0a84".\f0\fs22  This key should be chosen to stay the same from frame to frame and shot to shot. A suggested method for generating this key is to use a hash of the "type name".  \par
 \cf0\f1\par
 \cf1\f0 The required metadata are:\par
 \cf0\f1\par
 
-\pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\li360\sl276\slmult1\cf1\b\f0 name\b0 : the name of the cryptomatte type, for example, CryptoAsset. \par
+\pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\li360\sl276\slmult1\cf1\b\f0 name\b0 : the name of the Cryptomatte type, for example, CryptoAsset. \par
 {\pntext\f3\'B7\tab}\b hash\b0 : the type of hash used. "MurmurHash3_32" is the only one currently supported. \par
 {\pntext\f3\'B7\tab}\b conversion\b0 : The conversion method used to convert the hash value into pixel color data. Only one conversion method, "uint32_to_float32", is supported.\par
 
@@ -101,25 +107,25 @@ CryptoObject01\par
 \cf0\f1\par
 
 \pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\li360\sl276\slmult1\cf1\b\f0 manifest: \b0 The manifest encoded as a JSON manifest. See: manifest\par
-{\pntext\f3\'B7\tab}\b manifest_file\b0 : A path to a text file which contains the manifest. This may be a relative path to the exr image, such as a "sidecar" file. See: manifest\par
+{\pntext\f3\'B7\tab}\b manif_file\b0 : A path to a text file which contains the manifest. This may be a relative path to the exr image, such as a "sidecar" file. See: manifest\par
 
 \pard\sl276\slmult1\cf0\f1\par
 \cf1\f0 For example, on a file containing three sets of Cryptomattes, the last of which has its manifest in a separate file:\line\par
 
-\pard\fi-720\li1440\sl276\slmult1\f2\fs20 exr/cryptomatte/0/name = CryptoAsset\par
-exr/cryptomatte/0/hash = MurmurHash3_32\par
-exr/cryptomatte/0/conversion = uint32_to_float32\par
-exr/cryptomatte/0/manifest = \{"bunny":"13851a76","default":"42c9679f"\}\par
+\pard\fi-720\li1440\sl276\slmult1\f2\fs20 exr/cryptomatte/adb0a84/name = CryptoAsset\par
+exr/cryptomatte/adb0a84/hash = MurmurHash3_32\par
+exr/cryptomatte/adb0a84/conversion = uint32_to_float32\par
+exr/cryptomatte/adb0a84/manifest = \{"bunny":"13851a76", "default":"42c9679f"\}\par
 \cf0\f1\fs22\par
-\cf1\f2\fs20 exr/cryptomatte/1/name = CryptoMaterial\par
-exr/cryptomatte/1/hash = MurmurHash3_32\par
-exr/cryptomatte/1/conversion = uint32_to_float32\par
-exr/cryptomatte/1/manifest = \{"bunny_porcelain_mat":"b24b26d4"\}\par
+\cf1\f2\fs20 exr/cryptomatte/be93ba3/name = CryptoMaterial\par
+exr/cryptomatte/be93ba3/hash = MurmurHash3_32\par
+exr/cryptomatte/be93ba3/conversion = uint32_to_float32\par
+exr/cryptomatte/be93ba3/manifest = \{"bunny_porcelain_mat":"b24b26d4"\}\par
 \cf0\f1\fs22\par
-\cf1\f2\fs20 exr/cryptomatte/2/name = CryptoObject\par
-exr/cryptomatte/2/hash = MurmurHash3_32\par
-exr/cryptomatte/2/conversion = uint32_to_float32\par
-exr/cryptomatte/2/manifest_file = ./manifest.json\par
+\cf1\f2\fs20 exr/cryptomatte/d593dd7/name = CryptoObject\par
+exr/cryptomatte/d593dd7/hash = MurmurHash3_32\par
+exr/cryptomatte/d593dd7/conversion = uint32_to_float32\par
+exr/cryptomatte/d593dd7/manif_file = ./manifest.json\par
 \cf0\f1\fs22\par
 
 \pard\sl276\slmult1\cf1\b\f0 Manifest\par
@@ -127,7 +133,7 @@ exr/cryptomatte/2/manifest_file = ./manifest.json\par
 \cf1\f0 The manifest contains encodes both the names and the IDs of all of the objects in the Cryptomatte type. It may be included in full in the header, or it may be a separate file. The format of the manifest is a JSON dictionary, where the names are the keys and the hashes are the values are the IDs. \par
 \cf0\f1\par
 
-\pard\fi-720\li1440\sl276\slmult1\cf1\f2\fs20 exr/cryptomatte/0/manifest = \{"bunny":"13851a76","default":"42c9679f"\}\par
+\pard\fi-720\li1440\sl276\slmult1\cf1\f2\fs20 exr/cryptomatte/d593dd7/manifest = \{"bunny":"13851a76", "default":"42c9679f"\}\par
 
 \pard\sl276\slmult1\cf0\f1\fs22\par
 \cf1\f0 In the case of \f2\fs20 uint32_to_float32 \f0\fs22 style conversion (the only style currently supported), the hashes are hexadecimal versions of bytes making up the 32-bit float hashes. These are always 8 digits of hexadecimal.\par
@@ -265,7 +271,7 @@ float_value = struct.unpack('=f', hex_string.decode('hex'))[0]\par
 \cf0\f1\par
 \cf1\b\f0 Version 0.3.0\par
 \cf0\b0\f1\par
-\cf1\f0 Changed the format of the metadata to allow multiple cryptomatte types per image and required the metadata to specify both the hash and conversion method for each of the cryptomatte types in the EXR file. \par
+\cf1\f0 Changed the format of the metadata to allow multiple Cryptomatte types per image and required the metadata to specify both the hash and conversion method for each of the Cryptomatte types in the EXR file. \par
 \b\par
 Version 1.0.0\par
 \b0\par
@@ -274,6 +280,10 @@ Fixed some minor errors in code. \par
 \b Version 1.0.2\par
 \b0\par
 Fixed python code to work with signed ints coming from compiled mmh3 module and updated pymmh3 module.\par
+\par
+\b Version 1.1.0\par
+\b0\par
+Changed metadata to use an arbitrary (max) 7-character string as the "metadata key", rather than just an integer. Also in metadata, changed "manifest_file" to "manif_file", in order to accomodate 7 character keys and the EXR metadata limit. \par
 \cf0\f1\par
 \par
 }

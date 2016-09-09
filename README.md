@@ -33,6 +33,15 @@ The contents of this repository are:
 
 ## Release Notes
 
+1.1.0:
+
+* Changes to specification regarding storage of metadata
+* Enabled Nuke code to read this metadata
+** (1.1.0 Nuke plugin is compatible with older Cryptomattes)
+* No longer raises errors if no metadata is available (would happen in batch mode)
+* No longer raises errors if picker in is in single value mode rather than RGB
+
+
 1.0.2:
 
 * Updated pymmh3 to output signed ints, in compliance with mmh3
