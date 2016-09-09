@@ -276,7 +276,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         _update_cryptomatte_gizmo(node, cinfo)
 
     elif knob.name() == "pickerAdd":
-        if node.knob("pickerAdd").getValue()[2] == 0.0:
+        if _get_knob_channel_value(node.knob("pickerAdd"), 2) == 0.0:
             return
         cinfo = CryptomatteInfo(node)
         keyed_object = _update_gizmo_keyed_object(node, cinfo, True, "pickerAdd")
@@ -288,7 +288,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
 
     elif knob.name() == "pickerRemove":
         cinfo = CryptomatteInfo(node)
-        if node.knob("pickerRemove").getValue()[2] == 0.0:
+        if _get_knob_channel_value(node.knob("pickerRemove"), 2) == 0.0:
             return
         keyed_object = _update_gizmo_keyed_object(node, cinfo, True, "pickerRemove")
         node.knob("pickerAdd").setValue([0,0,0])
@@ -590,22 +590,19 @@ def set_text_knob(gizmo, text_knob_name, text):
         gizmo.knob(text_knob_name).setValue(text)
 
 
-def _update_gizmo_keyed_object(gizmo, cinfo, force=False, color_knob_name="ColorKey", text_knob_name="keyedName"):
-    def _get_color_key_value(gizmo, color_knob_name):
-        color = gizmo.knob(color_knob_name).getValue()
-        if type(color) is list:
-            return single_precision(color[2])
-        if type(color) is float:
-            return single_precision(color)
-        else:
-            return 0.0
+def _get_knob_channel_value(knob, c_index):
+    try:
+        return knob.getValue()[c_index]
+    except:
+        return 0.0
 
+def _update_gizmo_keyed_object(gizmo, cinfo, force=False, color_knob_name="ColorKey", text_knob_name="keyedName"):
     if _cancel_update(gizmo, force):
         return None
     if not gizmo.knob(text_knob_name):
         return None
 
-    ID_value = _get_color_key_value(gizmo, color_knob_name)
+    ID_value = _get_knob_channel_value(gizmo.knob(color_knob_name), 2)
 
     if ID_value == 0.0:
         set_text_knob(gizmo, text_knob_name, "Background (Value is 0.0)")
