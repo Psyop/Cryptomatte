@@ -32,6 +32,20 @@ Gizmo {
  addUserKnob {22 unloadManifest l "Unload Manifest (Extract all mattes)" t "Create Cryptomatte gizmos for all mattes available in this pass. " T "try: \n   import cryptomatte_utilities as cu\n   cu.unload_manifest(nuke.thisNode())\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run a Cryptomatte script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())" +STARTLINE}
  addUserKnob {41 previewChannel +HIDDEN T ShuffleCopy_in_keyable.in2}
  addUserKnob {41 in00 +HIDDEN T Shuffle0.in}
+ addUserKnob {11 in01 +HIDDEN}
+ in01 none
+ addUserKnob {11 in02 +HIDDEN}
+ in02 none
+ addUserKnob {11 in03 +HIDDEN}
+ in03 none
+ addUserKnob {11 in04 +HIDDEN}
+ in04 none
+ addUserKnob {11 in05 +HIDDEN}
+ in05 none
+ addUserKnob {11 in06 +HIDDEN}
+ in06 none
+ addUserKnob {11 in07 +HIDDEN}
+ in07 none
  addUserKnob {26 "" +HIDDEN}
  addUserKnob {22 forceUpdateAll l "Force Update All Gizmos in script" t "Forces update on all Crytomatte gizmos in the Nuke script." T "try: \n   import cryptomatte_utilities as cu\n   cu.update_all_cryptomatte_gizmos()\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())" +STARTLINE}
 }

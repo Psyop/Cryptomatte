@@ -7,6 +7,8 @@
 
 __version__ = "1.1.0"
 
+GIZMO_CHANNEL_KNOBS = ["previewChannel", "in00", "in01", "in02", "in03", "in04", "in05", "in06", "in07"]
+
 import nuke
 import struct
 
@@ -362,11 +364,11 @@ def _force_update_all():
 # Utils - Update Gizmi 
 #############################################
 
-
-def _set_channels(gizmo, cryptomatte_channels):
-    gizmo.knob("cryptoLayer").setValue(cryptomatte_channels[0])
-    gizmo.knob("previewChannel").setValue(cryptomatte_channels[0])
-    gizmo.knob("in00").setValue(cryptomatte_channels[1])
+def _set_channels(gizmo, channels):
+    gizmo.knob("cryptoLayer").setValue(channels[0])
+    for i, knob_name in enumerate(GIZMO_CHANNEL_KNOBS):
+        channel = channels[i] if i < len(channels) else "none"
+        gizmo.knob(knob_name).setValue(channel)
 
 
 def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
@@ -706,9 +708,15 @@ def _decryptomatte(gizmo):
                     connect_to.append((node, iid))
 
     disabled = gizmo.knob("disable").getValue()
-    expr = nuke.nodes.Expression(inputs=[gizmo], channel0="alpha", 
+    expr_node = nuke.nodes.Expression(inputs=[gizmo], channel0="alpha", 
         expr0=expression_str, name="CryptExpr_%s"%matte_name, disable=disabled)
-    last_node = expr
+    for knob_name in GIZMO_CHANNEL_KNOBS:
+        expr_node.addKnob(nuke.nuke.Channel_Knob(knob_name, "none") )
+        expr_node.knob(knob_name).setValue(gizmo.knob(knob_name).value())
+        expr_node.knob(knob_name).setVisible(False)
+    expr_node.knob("expr0").setValue(expression_str)
+
+    last_node = expr_node
     if matte_only:
         shuffler = nuke.nodes.Shuffle(inputs=[last_node], red="alpha", 
             green="alpha", blue="alpha", name="CryptShuf_%s"%matte_name, disable=disabled)
