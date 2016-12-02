@@ -33,6 +33,14 @@ The contents of this repository are:
 
 ## Release Notes
 
+1.1.1:
+
+* Store channels on hidden knobs on Cryptomatte gizmo and decryptomatte expression nodes
+** Fixes expression node errors in batch mode
+* No longer prompts users on "decryptomatte selected"
+** Allow API users to use decryptomatte without prompt
+* Fixed error when loading gizmo in Nuke 7
+
 1.1.0:
 
 * Changes to specification regarding storage of metadata
