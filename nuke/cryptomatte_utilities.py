@@ -648,15 +648,15 @@ def _matteList_modify(gizmo, name, remove):
 #############################################
 
 
-def decryptomatte_all():
-    decryptomatte_nodes(nuke.allNodes())
+def decryptomatte_all(ask=True):
+    decryptomatte_nodes(nuke.allNodes(), ask)
 
 
-def decryptomatte_selected():
-    decryptomatte_nodes(nuke.selectedNodes())
+def decryptomatte_selected(ask=False):
+    decryptomatte_nodes(nuke.selectedNodes(), ask)
 
 
-def decryptomatte_nodes(nodes):
+def decryptomatte_nodes(nodes, ask):
     gizmos = []
 
     for node in nodes:
@@ -665,7 +665,7 @@ def decryptomatte_nodes(nodes):
     if not gizmos:
         return
 
-    if nuke.ask(('Replace %s Cryptomatte gizmos with expression nodes? '
+    if not ask or nuke.ask(('Replace %s Cryptomatte gizmos with expression nodes? '
         'Replaced Gizmos will be disabled and selected.') % (len(gizmos))):
 
         for gizmo in gizmos:
