@@ -345,16 +345,6 @@ def _cancel_update(gizmo, force):
         return False
 
 
-def _update_gizmo(gizmo, force=False):
-    if _cancel_update(gizmo, force):
-        return
-    cryptomatte_channels = _identify_cryptomattes_in_channels(gizmo)
-    if not cryptomatte_channels:
-        return
-    _set_keyer_channels(gizmo, cryptomatte_channels)
-    _set_keyer_expression(gizmo, cryptomatte_channels)
-
-
 def _force_update_all():
     with nuke.root():
         node_count = 0
@@ -366,10 +356,6 @@ def _force_update_all():
 
         nuke.message("Updated %s cryptomatte gizmos." % node_count)
 
-
-def _set_keyer_channels(gizmo, cryptomatte_channels):
-    gizmo.knob("previewChannel").setValue(cryptomatte_channels[0])
-    gizmo.knob("in00").setValue(cryptomatte_channels[1])
 
 
 #############################################
