@@ -84,7 +84,7 @@ set N6b3f9800 [stack 0]
 push $N6b3f9800
 push $N6b3f9c00
  Shuffle {
-  in uCryptoObject00
+  in none
   green black
   blue black
   alpha green
