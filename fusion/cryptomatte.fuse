@@ -514,7 +514,7 @@ function CryptomatteInfo.new()
     self.mattes_to_add = {}
     self.mattes_to_remove = {}
     self.active_mattes = {}
-    self.final_images = {}
+    self.matte_only_images = {}
     self.output_images = {}
     return self
 end
@@ -672,25 +672,21 @@ function Process(req)
     end
 
     -- current session variables
-    local final_image
-    local output_image
     local current_time = self.Comp.CurrentTime
 
     -- create output image
-    output_image = set_output_image(crypto_img_std, crypto_img_00)
+    local output_image = set_output_image(crypto_img_std, crypto_img_00)
 
-    -- create image
-    final_image = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
-    final_image:Clear()
+    -- create mono channel matte only image
+    local matte_only_image = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
 
-    -- rebuild final image from previous matte selection session
+    -- rebuild output image from previous matte selection session
     local matte_names = get_mattes_from_selection()
     if matte_names then
         for i, matte_name in ipairs(matte_names) do
             local id = cInfo.cryptomattes[cInfo.selection]["name_to_id"][matte_name]
             local matte = create_matte_image(crypto_images, output_image, id)
-            final_image = final_image:ChannelOpOf("Add", matte, { A = "fg.A" })
-            output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A" })
+            output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", A = "fg.A" })
             table.insert(cInfo.active_mattes, matte_name)
         end
     end
@@ -725,8 +721,6 @@ function Process(req)
         -- reset the callback
         InBtnRemoveCB:SetSource(Number(0), 0, 0)
     elseif clear_triggered == 1 then
-        -- clear the final image
-        final_image:Clear()
         -- clear the array holding all the active matte names
         cInfo.active_mattes = {}
         -- regenerate output image
@@ -742,10 +736,8 @@ function Process(req)
     -- add mattes
     for matte_name, matte in pairs(cInfo.mattes_to_add) do
         if not is_item_in_array(matte_name, cInfo.active_mattes) then
-            -- add matte to final image
-            final_image = final_image:ChannelOpOf("Add", matte, { A = "fg.A" })
             -- add matte A to output image R and G
-            output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A" })
+            output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", A = "fg.A" })
             -- keep track of add action
             table.insert(cInfo.active_mattes, matte_name)
             cInfo.mattes_to_add[matte_name] = nil
@@ -756,10 +748,8 @@ function Process(req)
     for matte_name, matte in pairs(cInfo.mattes_to_remove) do
         for i, name in ipairs(cInfo.active_mattes) do
             if name == matte_name then
-                -- add matte to final image
-                final_image = final_image:ChannelOpOf("Subtract", matte, { A = "fg.A" })
                 -- add matte A to output image R and G
-                output_image = output_image:ChannelOpOf("Subtract", matte, { R = "fg.A", G = "fg.A" })
+                output_image = output_image:ChannelOpOf("Subtract", matte, { R = "fg.A", G = "fg.A", A = "fg.A" })
                 -- keep track of remove action
                 cInfo.mattes_to_remove[matte_name] = nil
                 table.remove(cInfo.active_mattes, i)
@@ -768,14 +758,12 @@ function Process(req)
         end
     end
 
-    -- store the final and output image for current frame
-    cInfo.final_images[current_time] = final_image
-    cInfo.output_images[current_time] = output_image
-
     -- show final matte or standard visual feedback
     local matte_only = InMatteOnly:GetValue(req).Value
     if matte_only == 1 then
-        OutImage:Set(req, final_image)
+        -- copy over the resulting matte of the keyed image into the mono channel matte only result
+        matte_only_image = matte_only_image:ChannelOpOf("Copy", output_image, { A = "fg.A" })
+        OutImage:Set(req, matte_only_image)
     else
         OutImage:Set(req, output_image)
     end
