@@ -1,0 +1,787 @@
+--[[
+Requires   : Fusion 8
+UI         : Kristof Indeherberge  [xmnr0x23@gmail.com]
+Code       : Cedric Duriau         [duriau.cedric@live.be]
+Support By : Cedric Duriau         [duriau.cedric@live.be]
+Install    : run the bin executable based on operating system
+             - Unix:    cryptomatte_deploy.sh
+             - Windows: cryptomatte_deploy.cmd
+--]]
+-- ============================================================================
+-- constants
+-- ============================================================================
+REG_ID = "Fuse.Cryptomatte"
+DIVIDER = string.rep('_', 1920)
+LOG_TEMPLATE = "cryptomatte> %s"
+CJSON_LOADED = false
+METADATA_PREFIX = "cryptomatte/"
+METADATA_REGEX = "%a+/([a-z0-9]+)/(%a+)"
+MATTE_LIST_REGEX = "([^, ]+)"
+CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
+
+function log(msg)
+    print(string.format(LOG_TEMPLATE, msg))
+end
+
+-- ============================================================================
+-- third party modules
+-- ============================================================================
+function prefered_load_json(c_module, lua_module)
+    -- try to load cjson first, it's the fastest one (10x faster than simplejson)
+    -- if cjson cannot be loaded, load simplejson
+    -- if simplejson cannot be loaded, lua will raise an error
+    local status, mod = pcall(require, c_module)
+    -- status = false
+    if not status then
+        mod = require(lua_module)
+        -- log(string.format("loaded %s", lua_module))
+    else
+        CJSON_LOADED = true
+        -- log(string.format("loaded %s", c_module))
+    end
+    return mod
+end
+
+local json = prefered_load_json("cjson", "simplejson")
+local struct = require("struct")
+-- local mmh3 = require("lmurmurhash3")
+
+-- ============================================================================
+-- utils
+-- ============================================================================
+function string_starts_with(str, start)
+    return string.sub(str, 1, string.len(start)) == start
+end
+
+function is_key_in_table(key, table)
+    for k, v in pairs(table) do
+        if key == k then
+            return true
+        end
+    end
+    return false
+end
+
+function is_item_in_array(item, arr)
+    local item_present = false
+    for i, value in ipairs(arr) do
+        if value == item then
+            item_present = true
+            break
+        end
+    end
+    return item_present
+end
+
+function get_input_tool(tool)
+    -- get the tool connected as input to this fuse
+    local inp = tool:FindMainInput(1)
+    local outp = inp and inp:GetConnectedOutput() or nil
+    return outp and outp:GetTool() or nil
+end
+
+function get_input_loader(tool)
+    local loader = get_input_tool(tool)
+    -- make sure input is valid, type loader and EXR format
+    if loader and loader.ID == "Loader" and loader.FormatName == "OpenEXRFormat" then
+        return loader
+    end
+end
+
+function get_cryptomatte_tool()
+    local tool = self.Comp.ActiveTool
+    -- make sure tool is valid and type Fuse.Cryptomatte
+    if tool and tool.ID == REG_ID then
+        return tool
+    end
+end
+
+function set_output_image(cryptomatte, cryptomatte00)
+    -- shuffle_0
+    -- BG: Crypto00
+    -- FG: nil
+    local shuffle_0 = cryptomatte00:ChannelOpOf("Copy", cryptomatte00, { R = "bg.R", G = 0.0, B = 0.0, A = "bg.G" })
+
+    -- shuffle_1
+    -- BG: Crypto00
+    -- FG: nil
+    local shuffle_1 = cryptomatte00:ChannelOpOf("Copy", cryptomatte00, { R = "bg.R", G = "bg.G", B = "bg.B", A = 0.0 })
+
+    -- shuffle_in_keyable
+    -- BG: shuffle_0
+    -- FG: cryptomatte
+    local shuffle_in_keyable = shuffle_0:ChannelOpOf("Copy", cryptomatte, { R = "fg.B", G = "fg.G", B = "bg.R", A = "bg.A" })
+
+    -- shuffle_copy_2
+    -- BG: shuffle_1
+    -- FG: shuffle_in_keyable
+    local shuffle_copy_2 = shuffle_1:ChannelOpOf("Copy", shuffle_in_keyable, { R = "fg.R", G = "fg.G", B = "fg.B", A = "bg.A" })
+
+    -- visual_feedback_shuffle
+    -- BG: shuffle_copy_2
+    -- FG: nil
+    local visual_feedback_shuffle = shuffle_copy_2:ChannelOpOf("Copy", shuffle_copy_2, { R = "bg.A", G = "fg.A", B = 0.0, A = 0.0 })
+
+    -- gain_r_g
+    -- BG: shuffle_copy_2
+    -- FG: nil
+    local gain_r_g = shuffle_copy_2:ChannelOpOf("Multiply", nil, { R = 0.25, G = 0.25, B = 1.0, A = 0.0 })
+
+    -- visual_feedback_merge
+    -- BG: visual_feedback_shuffle
+    -- FG: gain_r_g
+    local visual_feedback_merge = visual_feedback_shuffle:ChannelOpOf("Add", gain_r_g, { R = "fg.R", G = "fg.G", B = "fg.B", A = "fg.A" })
+    return visual_feedback_merge
+end
+
+function set_keyed_name_checker(cInfo, id_float_value)
+    -- get the keyed name input
+    local keyed_name = InKeyedName:GetSource(0).Value
+
+    -- get the matte name matching the float id
+    local text_to_set = ""
+    if id_float_value == 0.0 then
+        text_to_set = "Background (Value is 0.0)"
+    else
+        text_to_set = cInfo:get_matte_name_from_id(id_float_value)
+    end
+
+    if text_to_set == "" then
+        return
+    end
+
+    -- set the keyed name if different then before
+    if text_to_set ~= keyed_name then
+        InKeyedName:SetSource(Text(text_to_set), 0, 0)
+    end
+end
+
+function get_mattes_from_selection()
+    -- get the current list of mattes in string format
+    local matte_input_str = InMatteList:GetSource(0).Value
+    local matte_names = {}
+    for matte in string.gmatch(matte_input_str, MATTE_LIST_REGEX) do
+        table.insert(matte_names, matte)
+    end
+    return matte_names
+end
+
+function update_matte_list(matte_name, remove)
+    local matte_array = get_mattes_from_selection()
+
+    if remove then
+        local update = false
+        for i, matte in ipairs(matte_array) do
+            if matte_name == matte then
+                table.remove(matte_array, i)
+                update = true
+                break
+            end
+        end
+        if not update then
+            return
+        end
+    else
+        if is_item_in_array(matte_name, matte_array) then
+            return
+        end
+        table.insert(matte_array, matte_name)
+    end
+
+    -- get string variant of updated table
+    local new_content_str = table.concat(matte_array, ', ')
+    InMatteList:SetSource(Text(new_content_str), 0, 0)
+end
+
+function get_pixel(img, x, y)
+    -- get the pixel at given location of given image
+    local p = Pixel()
+    local pixel_x = math.floor(img.Width / (1 / x))
+    local pixel_y = math.floor(img.Height / (1 / y))
+    img:GetPixel(pixel_x, pixel_y, p)
+    return p
+end
+
+function generate_matte_from_rank(y)
+    local global_p = Pixel()
+    for x = 0, In.Width - 1 do
+        In:GetPixel(x, y, global_p)
+        -- match one of the coverage ids with the id float value
+        if global_p.R == id_float_value or global_p.B == id_float_value then
+            local local_p = Pixel()
+            if global_p.R == id_float_value then
+                local_p.R = 0.0
+                local_p.G = global_p.G
+            end
+            if global_p.B == id_float_value then
+                local_p.B = 0.0
+                local_p.A = global_p.A
+            end
+            Out:SetPixel(x, y, local_p)
+        end
+    end
+end
+
+function create_matte_image(crypto_images, output_image, id_float_value)
+    local matte = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
+    matte:Clear()
+    for i, image in ipairs(crypto_images) do
+        -- create mono channel output to store matte in
+        local filtered_coverage = Image({ IMG_Like = image })
+        filtered_coverage:Clear()
+
+        -- process pixels to retrieve the pixels matching the id float value
+        self:DoMultiProcess(nil, { In = image, Out = filtered_coverage, id_float_value = id_float_value }, image.Height, generate_matte_from_rank)
+
+        -- create mono channel output to store iterative matte in
+        local i_matte = Image({ IMG_Like = image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
+        i_matte = i_matte:ChannelOpOf("Add", filtered_coverage, { A = "fg.G" })
+        i_matte = i_matte:ChannelOpOf("Add", filtered_coverage, { A = "fg.A" })
+
+        -- add mono result to main output
+        matte = matte:ChannelOpOf("Add", i_matte, { A = "fg.A" })
+    end
+    return matte
+end
+
+function add_matte(cInfo, crypto_images, output_image, id_float_value)
+    local matte_name = cInfo:get_matte_name_from_id(id_float_value)
+    if matte_name ~= "" then
+        -- generate matte for located id
+        local matte = create_matte_image(crypto_images, output_image, id_float_value)
+        -- keep track of mattes to add
+        cInfo:add_matte_image(matte_name, matte)
+        update_matte_list(matte_name, false)
+    end
+end
+
+function remove_matte(cInfo, crypto_images, output_image, id_float_value)
+    local matte_name = cInfo:get_matte_name_from_id(id_float_value)
+    if matte_name ~= "" then
+        -- generate matte for located id
+        local matte = create_matte_image(crypto_images, output_image, id_float_value)
+        -- keep track of mattes to remove
+        cInfo:remove_matte_image(matte_name, matte)
+        update_matte_list(matte_name, true)
+    end
+end
+
+-- ============================================================================
+-- cryptomatte fuse
+-- ============================================================================
+FuRegisterClass("Cryptomatte", CT_Tool, {
+    REGS_Name = "Cryptomatte",
+    REGS_Category = "Cryptomatte",
+    REGS_OpIconString = "Cryptomatte",
+    REGS_OpDescription = "Cryptomatte",
+    REG_NoMotionBlurCtrls = true,
+    REG_NoBlendCtrls = true,
+    REG_OpNoMask = true
+})
+
+function Create()
+    -- ========================================================================
+    -- inputs
+    -- ========================================================================
+    InImageStd = self:AddInput("InputStd", "InputStd", {
+        LINKID_DataType = "Image",
+        LINK_Main = 1,
+        INP_DoNotifyChanged = true
+    })
+    InImage00 = self:AddInput("Input00", "Input00", {
+        LINKID_DataType = "Image",
+        LINK_Main = 2
+    })
+    InImage01 = self:AddInput("Input01", "Input01", {
+        LINKID_DataType = "Image",
+        LINK_Main = 3
+    })
+    InImage02 = self:AddInput("Input02", "Input02", {
+        LINKID_DataType = "Image",
+        LINK_Main = 4
+    })
+
+    -- ========================================================================
+    -- output
+    -- ========================================================================
+    OutImage = self:AddOutput("Output", "Output", {
+        LINKID_DataType = "Image",
+        LINK_Main = 1
+    })
+
+    -- ========================================================================
+    -- locator
+    -- ========================================================================
+    InLocator = self:AddInput("Picker Locator", "PickerLocator", {
+        LINKID_DataType = "Point",
+        INPID_InputControl = "OffsetControl",
+        INPID_PreviewControl = "CrosshairControl",
+        ICS_Name = "Matte Locator",
+        INP_DoNotifyChanged = true
+    })
+    InBtnAdd = self:AddInput("Add", "Add", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "ButtonControl",
+        INP_External = false,
+        INP_DoNotifyChanged = true,
+        ICD_Width = 0.5
+    })
+    InBtnRemove = self:AddInput("Remove", "Remove", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "ButtonControl",
+        INP_External = false,
+        INP_DoNotifyChanged = true,
+        ICD_Width = 0.5
+    })
+    -- add callback
+    InBtnAddCB = self:AddInput("Add Callback", "AddCallback", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Integer = true,
+        INP_Default = 0.0,
+        ICD_Width = 1 / 2,
+        IC_Visible = false
+    })
+    -- remove callback
+    InBtnRemoveCB = self:AddInput("Remove Callback", "RemoveCallback", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Integer = true,
+        INP_Default = 0.0,
+        ICD_Width = 1 / 2,
+        IC_Visible = false
+    })
+
+    -- ========================================================================
+    -- matte parameters
+    -- ========================================================================
+    InMatteOnly = self:AddInput("Matte Only", "MatteOnly", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Integer = true,
+        INP_Default = 0.0,
+        ICD_Width = 1 / 3
+    })
+    --[[
+    InSingleSelection = self:AddInput("Single Selection", "SingleSelection", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Integer = true,
+        INP_Default = 0.0,
+        ICD_Width = 1 / 3
+    })
+    InRemoveChannels = self:AddInput("Remove Channels", "RemoveChannels", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Integer = true,
+        INP_Default = 1.0,
+        ICD_Width = 1 / 3
+    })
+    --]]
+
+    -- ========================================================================
+    -- matte list
+    -- ========================================================================
+    InMatteList = self:AddInput("Matte List", "MatteList", {
+        LINKS_Name = "Matte List",
+        LINKID_DataType = "Text",
+        INPID_InputControl = "TextEditControl",
+        TEC_Lines = 1,
+        TEC_Wrap = false,
+        INP_DoNotifyChanged = false
+    })
+    InBtnClear = self:AddInput("Clear", "Clear", {
+        LINKS_Name = "Clear",
+        LINKID_DataType = "Number",
+        INPID_InputControl = "ButtonControl",
+        INP_Integer = false,
+        ICD_Width = 0.5,
+        INP_DoNotifyChanged = true
+    })
+    -- clear callback
+    InBtnClearCB = self:AddInput("Clear Callback", "ClearCallback", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Integer = true,
+        INP_Default = 0.0,
+        IC_Visible = false
+    })
+    --[[
+    InForceUpdate = self:AddInput("Force Update", "ForceUpdate", {
+        LINKS_Name = "Force Update",
+        LINKID_DataType = "Number",
+        INPID_InputControl = "ButtonControl",
+        INP_Integer = false,
+        ICD_Width = 1 / 3
+    })
+    InStopAutoUpdate = self:AddInput("Stop Auto Update", "StopAutoUpdate", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Integer = true,
+        INP_Default = 0.0,
+        ICD_Width = 1 / 3
+    })
+    --]]
+
+    -- ========================================================================
+    -- cryptomatte layer
+    -- ========================================================================
+    InCryptoLayer = self:AddInput("Crypto Layer", "CryptoLayer", {
+        LINKS_Name = "Layer Selection",
+        LINKID_DataType = "Text",
+        INPID_InputControl = "TextEditControl",
+        TEC_Lines = 1,
+        TEC_ReadOnly = true,
+        INP_DoNotifyChanged = false
+    })
+    --[[
+    InCryptoLayerLock = self:AddInput("Lock Layer Selection", "CryptoLayerLock", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Integer = true,
+        INP_Default = 0.0
+    })
+    --]]
+
+    -- ========================================================================
+    -- advanced tab
+    -- ========================================================================
+    InLocatorNameChecker = self:AddInput("Locator Name Checker", "LocatorNameChecker", {
+        LINKID_DataType = "Point",
+        INPID_InputControl = "OffsetControl",
+        INPID_PreviewControl = "CrosshairControl",
+        ICS_Name = "Name Checker Locator",
+        INP_DoNotifyChanged = true,
+        ICS_ControlPage = "Advanced",
+        PC_Visible = false
+    })
+    InBtnShow = self:AddInput("Show", "Show", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "ButtonControl",
+        INP_External = false,
+        INP_DoNotifyChanged = true,
+        ICD_Width = 0.5
+    })
+    InBtnHide = self:AddInput("Hide", "Hide", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "ButtonControl",
+        INP_External = false,
+        INP_DoNotifyChanged = true,
+        ICD_Width = 0.5
+    })
+    InKeyedName = self:AddInput("Keyed Name", "KeyedName", {
+        LINKS_Name = "Keyed Name",
+        LINKID_DataType = "Text",
+        INPID_InputControl = "TextEditControl",
+        TEC_Lines = 1,
+        TEC_Wrap = false,
+        TEC_ReadOnly = true,
+        INP_DoNotifyChanged = false
+    })
+    --[[
+    InUnloadManifest = self:AddInput("Unload Manifest", "UnloadManifest", {
+        LINKS_Name = "Unload Manifest (Extract all mattes)",
+        LINKID_DataType = "Number",
+        INPID_InputControl = "ButtonControl",
+        INP_Integer = false
+    })
+    InForceUpdateAll = self:AddInput("Force Update All", "ForceUpdateAll", {
+        LINKS_Name = "Force Update All Crypto Nodes",
+        LINKID_DataType = "Number",
+        INPID_InputControl = "ButtonControl",
+        INP_Integer = false
+    })
+    --]]
+end
+
+-- ============================================================================
+-- CryptomatteInfo object
+-- ============================================================================
+local CryptomatteInfo = {}
+CryptomatteInfo.__index = CryptomatteInfo
+-- call new function at object creation
+setmetatable(CryptomatteInfo, {
+    __call = function(cls, ...)
+        return cls.new(...)
+    end
+})
+-- new function constructs object and declares variables
+function CryptomatteInfo.new()
+    local self = setmetatable({}, CryptomatteInfo)
+    -- members
+    self.cryptomattes = {}
+    self.selection = nil
+    self.mattes_to_add = {}
+    self.mattes_to_remove = {}
+    self.active_mattes = {}
+    self.matte_only_images = {}
+    self.output_images = {}
+    return self
+end
+
+-- functions
+function CryptomatteInfo:add_matte_image(matte_name, matte_image)
+    local present = false
+    for name, img in pairs(self.mattes_to_add) do
+        if name == matte_name then
+            present = true
+            break
+        end
+    end
+    if not present then
+        self.mattes_to_add[matte_name] = matte_image
+    end
+end
+
+function CryptomatteInfo:remove_matte_image(matte_name, matte_image)
+    local present = false
+    for name, img in pairs(self.mattes_to_remove) do
+        if name == matte_name then
+            present = true
+            break
+        end
+    end
+    if not present then
+        self.mattes_to_remove[matte_name] = matte_image
+    end
+end
+
+function CryptomatteInfo:extract_cryptomatte_metadata(exr_image)
+    local t_start = os.clock()
+    for k, v in pairs(exr_image.Metadata) do
+        if string_starts_with(k, METADATA_PREFIX) then
+            -- e.g. cryptomatte/0/name/uCryptoObject
+            local metadata_id, partial_key = string.match(k, METADATA_REGEX)
+            if not is_key_in_table(metadata_id, self.cryptomattes) then
+                self.cryptomattes[metadata_id] = {}
+                self.selection = metadata_id
+            end
+            self.cryptomattes[metadata_id][partial_key] = v
+
+            -- get all channels from input
+            -- local channels = self:extract_channels()
+            -- self.cryptomattes[metadata_id]["channels"] = channels
+        end
+    end
+
+    -- manifest content placeholders
+    self.cryptomattes[self.selection]["name_to_id"] = nil
+    self.cryptomattes[self.selection]["id_to_name"] = nil
+
+    -- log(string.format("extract_cryptomatte_metadata: %.6f", os.clock() - t_start))
+end
+
+function CryptomatteInfo:extract_channels()
+    local tool = get_cryptomatte_tool()
+    if not tool then
+        return
+    end
+    local loader = get_input_loader(tool)
+    if not loader then
+        return
+    end
+    local valid_channels = {}
+    local loader_channel = loader.Clip1.OpenEXRFormat.RedName:GetAttrs().INPIDT_ComboControl_ID
+    for i, channel in pairs(loader_channel) do
+        if not (channel == CHANNEL_KEY_NO_MATCH or channel == "R" or channel == "G" or channel == "B" or channel == "A") then
+            table.insert(valid_channels, channel)
+        end
+    end
+    return valid_channels
+end
+
+function CryptomatteInfo:set_layer_selection()
+    -- currently only one cryptomatte data stream "cryptomatte/0" is expected
+    -- investigate possibility of multi cryptomatte data streams
+    local name = self.cryptomattes[self.selection]["name"]
+    if name == "" then
+        return
+    end
+
+    local selection = InCryptoLayer:GetSource(0).Value
+    if selection ~= name then
+        InCryptoLayer:SetSource(Text(name), 0, 0)
+    end
+end
+
+function CryptomatteInfo:parse_manifest()
+    -- load the manifest and translate ids and names out of it
+    local from_names = {}
+    local from_ids = {}
+    local manifest = {}
+    local manifest_str = self.cryptomattes[self.selection]["manifest"]
+
+    if CJSON_LOADED then
+        manifest = json.decode(manifest_str)
+    else
+        manifest = json:decode(manifest_str)
+    end
+
+    for name, hex in pairs(manifest) do
+        local packed = struct.pack('I', tonumber(hex, 16))
+
+        -- if the length of the packed value is not 4 chars long
+        -- append with empty "/0" char until value is 4 chars long
+        local packed = string.format("%s%s", string.rep('\0', (4 - string.len(packed))), packed)
+
+        local id_float = struct.unpack('f', packed)
+        local name_str = tostring(name)
+
+        from_names[name_str] = id_float
+        from_ids[id_float] = name_str
+    end
+
+    -- create name to id from hexadecimal value of names
+    self.cryptomattes[self.selection]["name_to_id"] = from_names
+    self.cryptomattes[self.selection]["id_to_name"] = from_ids
+end
+
+function CryptomatteInfo:get_matte_name_from_id(id_float_value)
+    -- get the name of the id matching the blue channel out the manifest
+    local id_to_name = self.cryptomattes[self.selection]["id_to_name"]
+    local matte_name = ''
+    for k, v in pairs(id_to_name) do
+        if k == id_float_value then
+            matte_name = v
+            break
+        end
+    end
+    return matte_name
+end
+
+-- ============================================================================
+-- main
+-- ============================================================================
+local cInfo = CryptomatteInfo()
+
+function Process(req)
+    -- get the input images
+    local crypto_img_std = InImageStd:GetValue(req)
+    local crypto_img_00 = InImage00:GetValue(req)
+    local crypto_img_01 = InImage01:GetValue(req)
+    local crypto_img_02 = InImage02:GetValue(req)
+    local crypto_images = { crypto_img_std, crypto_img_00, crypto_img_01, crypto_img_02 }
+
+    -- extract all cryptomatte metadata
+    if cInfo.selection == nil or not is_key_in_table(cInfo.selection, cInfo.cryptomattes) then
+        -- log('reading metadata')
+        cInfo:extract_cryptomatte_metadata(crypto_img_std)
+        -- decode and translate manifest
+        -- log('reading manifest')
+        cInfo:parse_manifest()
+    end
+
+    -- current session variables
+    local current_time = self.Comp.CurrentTime
+
+    -- create output image
+    local output_image = set_output_image(crypto_img_std, crypto_img_00)
+
+    -- create mono channel matte only image
+    local matte_only_image = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
+
+    -- rebuild output image from previous matte selection session
+    local matte_names = get_mattes_from_selection()
+    if matte_names then
+        for i, matte_name in ipairs(matte_names) do
+            local id = cInfo.cryptomattes[cInfo.selection]["name_to_id"][matte_name]
+            local matte = create_matte_image(crypto_images, output_image, id)
+            output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", A = "fg.A" })
+            table.insert(cInfo.active_mattes, matte_name)
+        end
+    end
+
+    -- get the id float value (blue channel of the pixel on matte locator position)
+    local position = InLocator:GetSource(0)
+    local pixel = get_pixel(output_image, position.X, position.Y)
+    local id_float_value = pixel.B
+
+    -- set layer selection
+    cInfo:set_layer_selection()
+
+    -- get the id float value (blue channel of the pixel on name checker locator position)
+    local name_checker_position = InLocatorNameChecker:GetSource(0)
+    local name_checker_pixel = get_pixel(output_image, name_checker_position.X, name_checker_position.Y)
+    set_keyed_name_checker(cInfo, name_checker_pixel.B)
+
+    -- callbacks
+    -- + add mattes from matte selection
+    -- + remove mattes from matte selection
+    -- + clear matte selection
+    local add_triggered = InBtnAddCB:GetValue(req).Value
+    local remove_triggered = InBtnRemoveCB:GetValue(req).Value
+    local clear_triggered = InBtnClearCB:GetValue(req).Value
+
+    if add_triggered == 1 then
+        add_matte(cInfo, crypto_images, output_image, id_float_value)
+        -- reset the callback
+        InBtnAddCB:SetSource(Number(0), 0, 0)
+    elseif remove_triggered == 1 then
+        remove_matte(cInfo, crypto_images, output_image, id_float_value)
+        -- reset the callback
+        InBtnRemoveCB:SetSource(Number(0), 0, 0)
+    elseif clear_triggered == 1 then
+        -- clear the array holding all the active matte names
+        cInfo.active_mattes = {}
+        -- regenerate output image
+        output_image = set_output_image(crypto_img_std, crypto_img_00)
+        -- clear the other ui elements
+        InMatteList:SetSource(Text(""), 0, 0)
+        InKeyedName:SetSource(Text(""), 0, 0)
+        InMatteOnly:SetSource(Number(0), 0, 0)
+        -- reset the callback
+        InBtnClearCB:SetSource(Number(0), 0, 0)
+    end
+
+    -- add mattes
+    for matte_name, matte in pairs(cInfo.mattes_to_add) do
+        if not is_item_in_array(matte_name, cInfo.active_mattes) then
+            -- add matte A to output image R and G
+            output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", A = "fg.A" })
+            -- keep track of add action
+            table.insert(cInfo.active_mattes, matte_name)
+            cInfo.mattes_to_add[matte_name] = nil
+        end
+    end
+
+    -- remove mattes
+    for matte_name, matte in pairs(cInfo.mattes_to_remove) do
+        for i, name in ipairs(cInfo.active_mattes) do
+            if name == matte_name then
+                -- add matte A to output image R and G
+                output_image = output_image:ChannelOpOf("Subtract", matte, { R = "fg.A", G = "fg.A", A = "fg.A" })
+                -- keep track of remove action
+                cInfo.mattes_to_remove[matte_name] = nil
+                table.remove(cInfo.active_mattes, i)
+                break
+            end
+        end
+    end
+
+    -- show final matte or standard visual feedback
+    local matte_only = InMatteOnly:GetValue(req).Value
+    if matte_only == 1 then
+        -- copy over the resulting matte of the keyed image into the mono channel matte only result
+        matte_only_image = matte_only_image:ChannelOpOf("Copy", output_image, { A = "fg.A" })
+        OutImage:Set(req, matte_only_image)
+    else
+        OutImage:Set(req, output_image)
+    end
+end
+
+function NotifyChanged(inp, param, time)
+    -- trigger custom callbacks
+    if param and param.Value == 1 then
+        if inp == InBtnAdd then
+            InBtnAddCB:SetSource(Number(1), 0, 0)
+        elseif inp == InBtnRemove then
+            InBtnRemoveCB:SetSource(Number(1), 0, 0)
+        elseif inp == InBtnClear then
+            InBtnClearCB:SetSource(Number(1), 0, 0)
+        elseif inp == InBtnShow then
+            InLocatorNameChecker:SetAttrs({ PC_Visible = true })
+        elseif inp == InBtnHide then
+            InLocatorNameChecker:SetAttrs({ PC_Visible = false })
+        end
+    end
+end
