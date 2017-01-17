@@ -39,7 +39,7 @@ The contents of this repository are:
 
 1.1.2:
 
-* Adds alpha version of Fusion support, created by Credric Duriau and Kristof Indeherberge at Grid. 
+* Adds alpha version of Fusion support, created by Cedric Duriau and Kristof Indeherberge at Grid. 
 
 1.1.1:
 
