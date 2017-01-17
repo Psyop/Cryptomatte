@@ -17,6 +17,8 @@ The contents of this repository are:
 
 **Nuke:** This contains Python files, an image, and a gizmo. Together these are our implementation for The Foundry's Nuke.
 
+**Fusion:** Alpha version of Fusion integration, including a Fuse and Lua scripts
+
 **Sample Images:** These example Cryptomatte images can be used for testing your Nuke installation, or for testing other implimentations. 
 
 **Specification:** This is a technical document describing the Cryptomatte standard. It specifies how Cryptomattes are structured, encoded, and decoded. It also contains our SIGGRAPH 2015 poster on the subject.
@@ -30,8 +32,14 @@ The contents of this repository are:
 * Solid Angle
 * All the members of the Cryptomatte Committee
 * Benoit Leveau
+* Cedric Duriau
+* Kristof Indeherberge
 
 ## Release Notes
+
+1.1.2:
+
+* Adds alpha version of Fusion support, created by Credric Duriau and Kristof Indeherberge at Grid. 
 
 1.1.1:
 
