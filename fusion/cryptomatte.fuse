@@ -2,22 +2,18 @@
 Requires   : Fusion 8
 UI         : Kristof Indeherberge  [xmnr0x23@gmail.com]
 Code       : Cedric Duriau         [duriau.cedric@live.be]
-Support By : Cedric Duriau         [duriau.cedric@live.be]
-Install    : run the bin executable based on operating system
-             - Unix:    cryptomatte_deploy.sh
-             - Windows: cryptomatte_deploy.cmd
 --]]
+
 -- ============================================================================
 -- constants
 -- ============================================================================
-REG_ID = "Fuse.Cryptomatte"
-DIVIDER = string.rep('_', 1920)
 LOG_TEMPLATE = "cryptomatte> %s"
 CJSON_LOADED = false
 METADATA_PREFIX = "cryptomatte/"
 METADATA_REGEX = "%a+/([a-z0-9]+)/(%a+)"
 MATTE_LIST_REGEX = "([^, ]+)"
 CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
+CHANNEL_REGEX = "([a-zA-Z0-9]+)[.]([A-Z])"
 
 function log(msg)
     print(string.format(LOG_TEMPLATE, msg))
@@ -73,39 +69,16 @@ function is_item_in_array(item, arr)
     return item_present
 end
 
-function get_input_tool(tool)
-    -- get the tool connected as input to this fuse
-    local inp = tool:FindMainInput(1)
-    local outp = inp and inp:GetConnectedOutput() or nil
-    return outp and outp:GetTool() or nil
-end
-
-function get_input_loader(tool)
-    local loader = get_input_tool(tool)
-    -- make sure input is valid, type loader and EXR format
-    if loader and loader.ID == "Loader" and loader.FormatName == "OpenEXRFormat" then
-        return loader
-    end
-end
-
-function get_cryptomatte_tool()
-    local tool = self.Comp.ActiveTool
-    -- make sure tool is valid and type Fuse.Cryptomatte
-    if tool and tool.ID == REG_ID then
-        return tool
-    end
-end
-
 function set_output_image(cryptomatte, cryptomatte00)
     -- shuffle_0
     -- BG: Crypto00
     -- FG: nil
-    local shuffle_0 = cryptomatte00:ChannelOpOf("Copy", cryptomatte00, { R = "bg.R", G = 0.0, B = 0.0, A = "bg.G" })
+    local shuffle_0 = cryptomatte00:ChannelOpOf("Copy", nil, { R = "bg.R", G = 0.0, B = 0.0, A = "bg.G" })
 
     -- shuffle_1
     -- BG: Crypto00
     -- FG: nil
-    local shuffle_1 = cryptomatte00:ChannelOpOf("Copy", cryptomatte00, { R = "bg.R", G = "bg.G", B = "bg.B", A = 0.0 })
+    local shuffle_1 = cryptomatte00:ChannelOpOf("Copy", nil, { R = "bg.R", G = "bg.G", B = "bg.B", A = 0.0 })
 
     -- shuffle_in_keyable
     -- BG: shuffle_0
@@ -120,7 +93,7 @@ function set_output_image(cryptomatte, cryptomatte00)
     -- visual_feedback_shuffle
     -- BG: shuffle_copy_2
     -- FG: nil
-    local visual_feedback_shuffle = shuffle_copy_2:ChannelOpOf("Copy", shuffle_copy_2, { R = "bg.A", G = "fg.A", B = 0.0, A = 0.0 })
+    local visual_feedback_shuffle = shuffle_copy_2:ChannelOpOf("Copy", nil, { R = "bg.A", G = "bg.A", B = 0.0, A = 0.0 })
 
     -- gain_r_g
     -- BG: shuffle_copy_2
@@ -189,7 +162,7 @@ function update_matte_list(matte_name, remove)
     end
 
     -- get string variant of updated table
-    local new_content_str = table.concat(matte_array, ', ')
+    local new_content_str = table.concat(matte_array, ", ")
     InMatteList:SetSource(Text(new_content_str), 0, 0)
 end
 
@@ -266,6 +239,131 @@ function remove_matte(cInfo, crypto_images, output_image, id_float_value)
     end
 end
 
+function get_input_loader(tool)
+    -- check if given tool is a loader
+    if tool.ID == "Loader" then
+        return tool
+    end
+    -- if tool was no loader, get first main input to check for loader
+    local input = tool:FindMainInput(1)
+    if input == nil then
+        input = tool.Input
+    end
+    local input_tool = input:GetConnectedOutput():GetTool()
+    if input_tool.ID == "Loader" then
+        -- if connected tool is a loader, return the connected tool
+        return input_tool
+    else
+        -- call function recursively on the connected tool to parse it's input
+        -- for a loader
+        return get_input_loader(input_tool)
+    end
+end
+
+function get_all_channels_from_loader(loader)
+    local valid_channels = {}
+    local loader_channel = loader.Clip1.OpenEXRFormat.RedName:GetAttrs().INPIDT_ComboControl_ID
+    for i, channel in ipairs(loader_channel) do
+        if not (channel == CHANNEL_KEY_NO_MATCH or channel == "R" or channel == "G" or channel == "B" or channel == "A") then
+            table.insert(valid_channels, channel)
+        end
+    end
+    return valid_channels
+end
+
+function get_all_ranks_from_channels(channels)
+    -- extract all channel data from connected loader
+    local ranks = {}
+    for i, channel_slot_v in ipairs(channels) do
+        local rank_name, channel = string.match(channel_slot_v, CHANNEL_REGEX)
+        if not is_item_in_array(rank_name, ranks) then
+            table.insert(ranks, rank_name)
+        end
+    end
+    return ranks
+end
+
+function set_channel_slots(loader, ranks)
+    for i, rank in ipairs(ranks) do
+        if string.find(rank, "00") then
+            loader.Clip1.OpenEXRFormat.ZName[0] = string.format("%s.%s", rank, "R")
+            loader.Clip1.OpenEXRFormat.CovName[0] = string.format("%s.%s", rank, "G")
+            loader.Clip1.OpenEXRFormat.ObjIDName[0] = CHANNEL_KEY_NO_MATCH
+            loader.Clip1.OpenEXRFormat.MatIDName[0] = CHANNEL_KEY_NO_MATCH
+            loader.Clip1.OpenEXRFormat.UName[0] = string.format("%s.%s", rank, "B")
+            loader.Clip1.OpenEXRFormat.VName[0] = string.format("%s.%s", rank, "A")
+        elseif string.find(rank, "01") then
+            loader.Clip1.OpenEXRFormat.XNormName[0] = string.format("%s.%s", rank, "R")
+            loader.Clip1.OpenEXRFormat.YNormName[0] = string.format("%s.%s", rank, "G")
+            loader.Clip1.OpenEXRFormat.ZNormName[0] = string.format("%s.%s", rank, "B")
+            loader.Clip1.OpenEXRFormat.XVelName[0] = string.format("%s.%s", rank, "A")
+        elseif string.find(rank, "02") then
+            loader.Clip1.OpenEXRFormat.YVelName[0] = string.format("%s.%s", rank, "R")
+            loader.Clip1.OpenEXRFormat.XRevVelName[0] = string.format("%s.%s", rank, "G")
+            loader.Clip1.OpenEXRFormat.YRevVelName[0] = string.format("%s.%s", rank, "B")
+            loader.Clip1.OpenEXRFormat.XPosName[0] = string.format("%s.%s", rank, "A")
+        elseif string.find(rank, "03") then
+            loader.Clip1.OpenEXRFormat.YPosName[0] = string.format("%s.%s", rank, "R")
+            loader.Clip1.OpenEXRFormat.ZPosName[0] = string.format("%s.%s", rank, "G")
+            loader.Clip1.OpenEXRFormat.XDispName[0] = string.format("%s.%s", rank, "B")
+            loader.Clip1.OpenEXRFormat.YDispName[0] = string.format("%s.%s", rank, "A")
+        elseif string.find(rank, "04") then
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "R")
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "G")
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "B")
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "A")
+        else
+            loader.Clip1.OpenEXRFormat.RedName[0] = string.format("%s.%s", rank, "R")
+            loader.Clip1.OpenEXRFormat.GreenName[0] = string.format("%s.%s", rank, "G")
+            loader.Clip1.OpenEXRFormat.BlueName[0] = string.format("%s.%s", rank, "B")
+            loader.Clip1.OpenEXRFormat.AlphaName[0] = CHANNEL_KEY_NO_MATCH
+        end
+    end
+end
+
+function get_all_rank_images(input_image)
+    --[[
+    http://www.steakunderwater.com/VFXPedia/96.0.243.189/index0d66.html?title=Eyeon:Script/Reference/Applications/Fuse/Classes/Image/ChannelOpOf
+    case doesn't matter
+
+    --R, G, B, A
+        Red, Green, Blue and Alpha channels
+    Z
+        Z Buffer Channel
+    Coverage
+        Z buffer coverage channel
+    U, V
+        U and V co-ordinates channels
+    NX, NY, NZ
+        XYZ normals channels
+    BgR, BgG, BgB, BgA
+        The Background Red, Green and Blue channels
+    ObjectID, MaterialID
+        The ObjectID and MaterialID channels
+    VectX, VectY
+        The X and Y motion vector channels
+    BackVectX, BackVectY
+        Background X and Y motion vectors
+    HLS.H, HLS.L, HLS.S
+        Hue, Lightness and Saturation channels
+    YUV.Y, YUV.U, YUV.V
+        YUV colorspace channels
+    PositionX, PositionY, PositionZ
+        world position channels
+    DisparityX, DisparityY
+    --]]
+    local crypto_image_std = input_image:ChannelOpOf("Copy", nil, { R = "bg.R", G = "bg.G", B = "bg.B", A = "bg.A" })
+    local crypto_image_00 = input_image:ChannelOpOf("Copy", nil, { R = "bg.Z", G = "bg.Coverage", B = "bg.U", A = "bg.V" })
+    local crypto_image_01 = input_image:ChannelOpOf("Copy", nil, { R = "bg.NX", G = "bg.NY", B = "bg.NZ", A = "bg.VectX" })
+    local crypto_image_02 = input_image:ChannelOpOf("Copy", nil, { R = "bg.VectY", G = "bg.BackVectX", B = "bg.BackVectY", A = "bg.PositionX" })
+    return {
+        crypto_image_std,
+        crypto_image_00,
+        crypto_image_01,
+        crypto_image_02
+    }
+end
+
 -- ============================================================================
 -- cryptomatte fuse
 -- ============================================================================
@@ -283,22 +381,18 @@ function Create()
     -- ========================================================================
     -- inputs
     -- ========================================================================
-    InImageStd = self:AddInput("InputStd", "InputStd", {
+    InImage = self:AddInput("Input", "Input", {
         LINKID_DataType = "Image",
-        LINK_Main = 1,
-        INP_DoNotifyChanged = true
+        LINK_Main = 1
     })
-    InImage00 = self:AddInput("Input00", "Input00", {
-        LINKID_DataType = "Image",
-        LINK_Main = 2
-    })
-    InImage01 = self:AddInput("Input01", "Input01", {
-        LINKID_DataType = "Image",
-        LINK_Main = 3
-    })
-    InImage02 = self:AddInput("Input02", "Input02", {
-        LINKID_DataType = "Image",
-        LINK_Main = 4
+    -- connect callback
+    InImageConnectCB = self:AddInput("Connect Input Callback", "ConnectInputCallback", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Integer = true,
+        INP_Default = 0.0,
+        ICD_Width = 1 / 2,
+        IC_Visible = false
     })
 
     -- ========================================================================
@@ -308,6 +402,7 @@ function Create()
         LINKID_DataType = "Image",
         LINK_Main = 1
     })
+
 
     -- ========================================================================
     -- locator
@@ -444,6 +539,18 @@ function Create()
     --]]
 
     -- ========================================================================
+    -- force update loader
+    -- ========================================================================
+    InBtnUpdateLoader = self:AddInput("Update Loader", "UpdateLoader", {
+        LINKS_Name = "Update Loader",
+        LINKID_DataType = "Number",
+        INPID_InputControl = "ButtonControl",
+        INP_Integer = false,
+        ICD_Width = 0.5,
+        INP_DoNotifyChanged = true
+    })
+
+    -- ========================================================================
     -- advanced tab
     -- ========================================================================
     InLocatorNameChecker = self:AddInput("Locator Name Checker", "LocatorNameChecker", {
@@ -514,8 +621,6 @@ function CryptomatteInfo.new()
     self.mattes_to_add = {}
     self.mattes_to_remove = {}
     self.active_mattes = {}
-    self.matte_only_images = {}
-    self.output_images = {}
     return self
 end
 
@@ -557,37 +662,11 @@ function CryptomatteInfo:extract_cryptomatte_metadata(exr_image)
                 self.selection = metadata_id
             end
             self.cryptomattes[metadata_id][partial_key] = v
-
-            -- get all channels from input
-            -- local channels = self:extract_channels()
-            -- self.cryptomattes[metadata_id]["channels"] = channels
         end
     end
-
     -- manifest content placeholders
     self.cryptomattes[self.selection]["name_to_id"] = nil
     self.cryptomattes[self.selection]["id_to_name"] = nil
-
-    -- log(string.format("extract_cryptomatte_metadata: %.6f", os.clock() - t_start))
-end
-
-function CryptomatteInfo:extract_channels()
-    local tool = get_cryptomatte_tool()
-    if not tool then
-        return
-    end
-    local loader = get_input_loader(tool)
-    if not loader then
-        return
-    end
-    local valid_channels = {}
-    local loader_channel = loader.Clip1.OpenEXRFormat.RedName:GetAttrs().INPIDT_ComboControl_ID
-    for i, channel in pairs(loader_channel) do
-        if not (channel == CHANNEL_KEY_NO_MATCH or channel == "R" or channel == "G" or channel == "B" or channel == "A") then
-            table.insert(valid_channels, channel)
-        end
-    end
-    return valid_channels
 end
 
 function CryptomatteInfo:set_layer_selection()
@@ -597,7 +676,6 @@ function CryptomatteInfo:set_layer_selection()
     if name == "" then
         return
     end
-
     local selection = InCryptoLayer:GetSource(0).Value
     if selection ~= name then
         InCryptoLayer:SetSource(Text(name), 0, 0)
@@ -611,20 +689,22 @@ function CryptomatteInfo:parse_manifest()
     local manifest = {}
     local manifest_str = self.cryptomattes[self.selection]["manifest"]
 
+    -- call module dependant decode function
     if CJSON_LOADED then
         manifest = json.decode(manifest_str)
     else
         manifest = json:decode(manifest_str)
     end
 
+    -- decrypt the hashes by name and store data
     for name, hex in pairs(manifest) do
-        local packed = struct.pack('I', tonumber(hex, 16))
-
+        local packed = struct.pack("I", tonumber(hex, 16))
         -- if the length of the packed value is not 4 chars long
         -- append with empty "/0" char until value is 4 chars long
-        local packed = string.format("%s%s", string.rep('\0', (4 - string.len(packed))), packed)
-
-        local id_float = struct.unpack('f', packed)
+        while string.len(packed) < 4 do
+            packed = "/0" .. packed
+        end
+        local id_float = struct.unpack("f", packed)
         local name_str = tostring(name)
 
         from_names[name_str] = id_float
@@ -639,7 +719,7 @@ end
 function CryptomatteInfo:get_matte_name_from_id(id_float_value)
     -- get the name of the id matching the blue channel out the manifest
     local id_to_name = self.cryptomattes[self.selection]["id_to_name"]
-    local matte_name = ''
+    local matte_name = ""
     for k, v in pairs(id_to_name) do
         if k == id_float_value then
             matte_name = v
@@ -654,28 +734,49 @@ end
 -- ============================================================================
 local cInfo = CryptomatteInfo()
 
+function OnConnected(inp, old, new)
+    if inp == InImage and new ~= nil then
+        InImageConnectCB:SetSource(Number(1), 0, 0)
+    end
+end
+
 function Process(req)
-    -- get the input images
-    local crypto_img_std = InImageStd:GetValue(req)
-    local crypto_img_00 = InImage00:GetValue(req)
-    local crypto_img_01 = InImage01:GetValue(req)
-    local crypto_img_02 = InImage02:GetValue(req)
-    local crypto_images = { crypto_img_std, crypto_img_00, crypto_img_01, crypto_img_02 }
+    -- get input image
+    local input_image = InImage:GetValue(req)
+    local test = Image({ IMG_Like = input_image, IMG_CopyChannels = true, { IMG_Channel = "Z" } })
+
+    -- connect input callback
+    -- code is here instead of directly in OnConnect callback due to Fusion crashing when placed there
+    local connect_triggered = InImageConnectCB:GetValue(req).Value
+    if connect_triggered == 1 then
+        -- get loader connected to fuse
+        local fusion = Fusion()
+        local comp = fusion.CurrentComp
+        local tool = comp:FindTool(self.Name)
+        local loader = get_input_loader(tool)
+        -- get all channels listed in the loader's first channel slot
+        local all_channels = get_all_channels_from_loader(loader)
+        -- get all unique ranks from the channel list
+        local ranks = get_all_ranks_from_channels(all_channels)
+        -- fill in all the remaining slots correctly
+        set_channel_slots(loader, ranks)
+        -- reset callback
+        InImageConnectCB:SetSource(Number(0), 0, 0)
+    end
 
     -- extract all cryptomatte metadata
     if cInfo.selection == nil or not is_key_in_table(cInfo.selection, cInfo.cryptomattes) then
-        -- log('reading metadata')
-        cInfo:extract_cryptomatte_metadata(crypto_img_std)
+        -- log("reading metadata")
+        cInfo:extract_cryptomatte_metadata(input_image)
         -- decode and translate manifest
-        -- log('reading manifest')
         cInfo:parse_manifest()
     end
 
-    -- current session variables
-    local current_time = self.Comp.CurrentTime
+    -- get all rank images from slots
+    local crypto_images = get_all_rank_images(input_image)
 
     -- create output image
-    local output_image = set_output_image(crypto_img_std, crypto_img_00)
+    local output_image = set_output_image(crypto_images[1], crypto_images[2])
 
     -- create mono channel matte only image
     local matte_only_image = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
@@ -691,11 +792,6 @@ function Process(req)
         end
     end
 
-    -- get the id float value (blue channel of the pixel on matte locator position)
-    local position = InLocator:GetSource(0)
-    local pixel = get_pixel(output_image, position.X, position.Y)
-    local id_float_value = pixel.B
-
     -- set layer selection
     cInfo:set_layer_selection()
 
@@ -703,6 +799,11 @@ function Process(req)
     local name_checker_position = InLocatorNameChecker:GetSource(0)
     local name_checker_pixel = get_pixel(output_image, name_checker_position.X, name_checker_position.Y)
     set_keyed_name_checker(cInfo, name_checker_pixel.B)
+
+    -- get the id float value (blue channel of the pixel on matte locator position)
+    local position = InLocator:GetSource(0)
+    local pixel = get_pixel(output_image, position.X, position.Y)
+    local id_float_value = pixel.B
 
     -- callbacks
     -- + add mattes from matte selection
@@ -724,7 +825,7 @@ function Process(req)
         -- clear the array holding all the active matte names
         cInfo.active_mattes = {}
         -- regenerate output image
-        output_image = set_output_image(crypto_img_std, crypto_img_00)
+        output_image = set_output_image(crypto_images[1], crypto_images[2])
         -- clear the other ui elements
         InMatteList:SetSource(Text(""), 0, 0)
         InKeyedName:SetSource(Text(""), 0, 0)
@@ -782,6 +883,8 @@ function NotifyChanged(inp, param, time)
             InLocatorNameChecker:SetAttrs({ PC_Visible = true })
         elseif inp == InBtnHide then
             InLocatorNameChecker:SetAttrs({ PC_Visible = false })
+        elseif inp == InBtnUpdateLoader then
+            InImageConnectCB:SetSource(Number(1), 0, 0)
         end
     end
 end
