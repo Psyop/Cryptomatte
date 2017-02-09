@@ -13,7 +13,7 @@ METADATA_PREFIX = "cryptomatte/"
 METADATA_REGEX = "%a+/([a-z0-9]+)/(%a+)"
 MATTE_LIST_REGEX = "([^, ]+)"
 CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
-CHANNEL_REGEX = "([a-zA-Z0-9]+)[.]([A-Z])"
+CHANNEL_REGEX = "(.*)[.]([A-Z])"
 
 function log(msg)
     print(string.format(LOG_TEMPLATE, msg))
