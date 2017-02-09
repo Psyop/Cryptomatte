@@ -743,7 +743,6 @@ end
 function Process(req)
     -- get input image
     local input_image = InImage:GetValue(req)
-    local test = Image({ IMG_Like = input_image, IMG_CopyChannels = true, { IMG_Channel = "Z" } })
 
     -- connect input callback
     -- code is here instead of directly in OnConnect callback due to Fusion crashing when placed there
