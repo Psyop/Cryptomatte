@@ -37,6 +37,11 @@ The contents of this repository are:
 
 ## Release Notes
 
+1.1.3:
+
+* Adds beta version of Fusion support, also by Cedric Duriau and Kristof Indeherberge at Grid. 
+ * Major tool connection workflow improvement. No longer requires multiple loaders to work, instead populates single loader channel slots when viewed. 
+
 1.1.2:
 
 * Adds alpha version of Fusion support, created by Cedric Duriau and Kristof Indeherberge at Grid. 
