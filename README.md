@@ -37,6 +37,10 @@ The contents of this repository are:
 
 ## Release Notes
 
+1.1.4: 
+
+* Fixes Fusion crash when rendering with FusionRenderConsole
+
 1.1.3:
 
 * Adds beta version of Fusion support, also by Cedric Duriau and Kristof Indeherberge at Grid. 
