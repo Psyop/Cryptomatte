@@ -356,22 +356,17 @@ function get_all_rank_images(input_image)
     local crypto_image_00 = input_image:ChannelOpOf("Copy", nil, { R = "bg.Z", G = "bg.Coverage", B = "bg.U", A = "bg.V" })
     local crypto_image_01 = input_image:ChannelOpOf("Copy", nil, { R = "bg.NX", G = "bg.NY", B = "bg.NZ", A = "bg.VectX" })
     local crypto_image_02 = input_image:ChannelOpOf("Copy", nil, { R = "bg.VectY", G = "bg.BackVectX", B = "bg.BackVectY", A = "bg.PositionX" })
-    return {
-        crypto_image_std,
-        crypto_image_00,
-        crypto_image_01,
-        crypto_image_02
-    }
+    return { crypto_image_std, crypto_image_00, crypto_image_01, crypto_image_02 }
 end
 
 -- ============================================================================
 -- cryptomatte fuse
 -- ============================================================================
-FuRegisterClass("Cryptomatte2", CT_Tool, {
-    REGS_Name = "Cryptomatte2",
-    REGS_Category = "Cryptomatte2",
-    REGS_OpIconString = "Cryptomatte2",
-    REGS_OpDescription = "Cryptomatte2",
+FuRegisterClass("Cryptomatte", CT_Tool, {
+    REGS_Name = "Cryptomatte",
+    REGS_Category = "Cryptomatte",
+    REGS_OpIconString = "Cryptomatte",
+    REGS_OpDescription = "Cryptomatte",
     REG_NoMotionBlurCtrls = true,
     REG_NoBlendCtrls = true,
     REG_OpNoMask = true
@@ -402,7 +397,6 @@ function Create()
         LINKID_DataType = "Image",
         LINK_Main = 1
     })
-
 
     -- ========================================================================
     -- locator
