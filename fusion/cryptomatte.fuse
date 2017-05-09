@@ -356,12 +356,7 @@ function get_all_rank_images(input_image)
     local crypto_image_00 = input_image:ChannelOpOf("Copy", nil, { R = "bg.Z", G = "bg.Coverage", B = "bg.U", A = "bg.V" })
     local crypto_image_01 = input_image:ChannelOpOf("Copy", nil, { R = "bg.NX", G = "bg.NY", B = "bg.NZ", A = "bg.VectX" })
     local crypto_image_02 = input_image:ChannelOpOf("Copy", nil, { R = "bg.VectY", G = "bg.BackVectX", B = "bg.BackVectY", A = "bg.PositionX" })
-    return {
-        crypto_image_std,
-        crypto_image_00,
-        crypto_image_01,
-        crypto_image_02
-    }
+    return { crypto_image_std, crypto_image_00, crypto_image_01, crypto_image_02 }
 end
 
 -- ============================================================================
@@ -402,7 +397,6 @@ function Create()
         LINKID_DataType = "Image",
         LINK_Main = 1
     })
-
 
     -- ========================================================================
     -- locator
@@ -751,16 +745,20 @@ function Process(req)
         -- get loader connected to fuse
         local fusion = Fusion()
         local comp = fusion.CurrentComp
-        local tool = comp:FindTool(self.Name)
-        local loader = get_input_loader(tool)
-        -- get all channels listed in the loader's first channel slot
-        local all_channels = get_all_channels_from_loader(loader)
-        -- get all unique ranks from the channel list
-        local ranks = get_all_ranks_from_channels(all_channels)
-        -- fill in all the remaining slots correctly
-        set_channel_slots(loader, ranks)
-        -- reset callback
-        InImageConnectCB:SetSource(Number(0), 0, 0)
+        -- check if comp can be retrieved from fusion object, when rendering a comp with fusion render or console node
+        -- the comp will be nil, so skip this force update loader channel slots
+        if comp then
+            local tool = comp:FindTool(self.Name)
+            local loader = get_input_loader(tool)
+            -- get all channels listed in the loader's first channel slot
+            local all_channels = get_all_channels_from_loader(loader)
+            -- get all unique ranks from the channel list
+            local ranks = get_all_ranks_from_channels(all_channels)
+            -- fill in all the remaining slots correctly
+            set_channel_slots(loader, ranks)
+            -- reset callback
+            InImageConnectCB:SetSource(Number(0), 0, 0)
+        end
     end
 
     -- extract all cryptomatte metadata
