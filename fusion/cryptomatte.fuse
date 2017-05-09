@@ -367,11 +367,11 @@ end
 -- ============================================================================
 -- cryptomatte fuse
 -- ============================================================================
-FuRegisterClass("Cryptomatte", CT_Tool, {
-    REGS_Name = "Cryptomatte",
-    REGS_Category = "Cryptomatte",
-    REGS_OpIconString = "Cryptomatte",
-    REGS_OpDescription = "Cryptomatte",
+FuRegisterClass("Cryptomatte2", CT_Tool, {
+    REGS_Name = "Cryptomatte2",
+    REGS_Category = "Cryptomatte2",
+    REGS_OpIconString = "Cryptomatte2",
+    REGS_OpDescription = "Cryptomatte2",
     REG_NoMotionBlurCtrls = true,
     REG_NoBlendCtrls = true,
     REG_OpNoMask = true
@@ -751,16 +751,20 @@ function Process(req)
         -- get loader connected to fuse
         local fusion = Fusion()
         local comp = fusion.CurrentComp
-        local tool = comp:FindTool(self.Name)
-        local loader = get_input_loader(tool)
-        -- get all channels listed in the loader's first channel slot
-        local all_channels = get_all_channels_from_loader(loader)
-        -- get all unique ranks from the channel list
-        local ranks = get_all_ranks_from_channels(all_channels)
-        -- fill in all the remaining slots correctly
-        set_channel_slots(loader, ranks)
-        -- reset callback
-        InImageConnectCB:SetSource(Number(0), 0, 0)
+        -- check if comp can be retrieved from fusion object, when rendering a comp with fusion render or console node
+        -- the comp will be nil, so skip this force update loader channel slots
+        if comp then
+            local tool = comp:FindTool(self.Name)
+            local loader = get_input_loader(tool)
+            -- get all channels listed in the loader's first channel slot
+            local all_channels = get_all_channels_from_loader(loader)
+            -- get all unique ranks from the channel list
+            local ranks = get_all_ranks_from_channels(all_channels)
+            -- fill in all the remaining slots correctly
+            set_channel_slots(loader, ranks)
+            -- reset callback
+            InImageConnectCB:SetSource(Number(0), 0, 0)
+        end
     end
 
     -- extract all cryptomatte metadata
