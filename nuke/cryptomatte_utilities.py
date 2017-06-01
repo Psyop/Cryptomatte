@@ -5,7 +5,7 @@
 #
 #
 
-__version__ = "1.1.4"
+__version__ = "1.1.5"
 
 GIZMO_CHANNEL_KNOBS = ["previewChannel", "in00", "in01", "in02", "in03", "in04", "in05", "in06", "in07"]
 
@@ -81,6 +81,7 @@ class CryptomatteInfo(object):
         self.cryptomattes = {}
         self.nuke_node = node_in
         self.selection = None
+        self.filename = None
 
         if not node_in:
             return
@@ -90,6 +91,8 @@ class CryptomatteInfo(object):
         prefix = "exr/cryptomatte/"
         default_selection = None
         for key, value in exr_metadata_dict.iteritems():
+            if key == "input/filename":
+                self.filename = value
             if not key.startswith(prefix): 
                 continue
             numbered_key = key[len(prefix):] # ex: "exr/cryptomatte/ae93ba3/name" --> "ae93ba3/name"
@@ -184,12 +187,31 @@ class CryptomatteInfo(object):
         """
         import json
         import struct
+        import os
 
         num = self.selection
-        try:
-            manifest = json.loads(self.cryptomattes[num].get("manifest", "{}"))
-        except:
-            manifest = {}
+        manifest = {}
+
+        manif_file = self.cryptomattes[num].get("manif_file", "")
+        if manif_file:
+            manif_file = os.path.normpath(os.path.join(self.filename or "", manif_file))
+
+
+        if manif_file:
+            if os.path.exists(manif_file):
+                try:
+                    with open(manif_file) as json_data:
+                        manifest = json.load(json_data)
+                except:
+                    print "Cryptomatte: Unable to parse manifest, ", manif_file
+            else:
+                print "Cryptomatte: Unable to find manifest file: ", manif_file
+        else:
+            try:
+                manifest = json.loads(self.cryptomattes[num].get("manifest", "{}"))
+            except:
+                pass
+
         from_names = {}
         from_ids = {}
 
