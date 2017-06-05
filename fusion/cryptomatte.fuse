@@ -14,6 +14,7 @@ METADATA_REGEX = "%a+/([a-z0-9]+)/(%a+)"
 MATTE_LIST_REGEX = "([^, ]+)"
 CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
 CHANNEL_REGEX = "(.*)[.]([A-Z])"
+FUSE_NAME = "Cryptomatte"
 
 function log(msg)
     print(string.format(LOG_TEMPLATE, msg))
@@ -395,11 +396,11 @@ end
 -- ============================================================================
 -- cryptomatte fuse
 -- ============================================================================
-FuRegisterClass("Cryptomatte", CT_Tool, {
-    REGS_Name = "Cryptomatte",
-    REGS_Category = "Cryptomatte",
-    REGS_OpIconString = "Cryptomatte",
-    REGS_OpDescription = "Cryptomatte",
+FuRegisterClass(FUSE_NAME, CT_Tool, {
+    REGS_Name = FUSE_NAME,
+    REGS_Category = FUSE_NAME,
+    REGS_OpIconString = FUSE_NAME,
+    REGS_OpDescription = FUSE_NAME,
     REG_NoMotionBlurCtrls = true,
     REG_NoBlendCtrls = true,
     REG_OpNoMask = true
