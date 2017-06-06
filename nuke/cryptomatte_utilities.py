@@ -565,8 +565,7 @@ def _update_gizmo_keyed_object(gizmo, cinfo, force=False, color_knob_name="Color
 
 def _matteList_text_to_set(matte_names_text):
     if matte_names_text:
-        matte_names_text = matte_names_text.replace(" ", "")
-        return set(matte_names_text.split(","))
+        return set(x.strip() for x in matte_names_text.split(","))
     else:
         return set()
 
