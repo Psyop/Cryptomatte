@@ -658,9 +658,9 @@ function CryptomatteInfo:extract_cryptomatte_metadata(exr_image)
             local metadata_id, partial_key = string.match(k, METADATA_REGEX)
             if not is_key_in_table(metadata_id, self.cryptomattes) then
                 self.cryptomattes[metadata_id] = {}
-                self.selection = metadata_id
             end
             self.cryptomattes[metadata_id][partial_key] = v
+            self.selection = metadata_id
         end
     end
 end
