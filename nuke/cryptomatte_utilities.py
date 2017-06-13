@@ -178,6 +178,14 @@ class CryptomatteInfo(object):
 
         return sorted(pure_channels)
 
+    def resolve_manifest_paths(self, exr_path, sidecar_path):
+        import os
+        if "\\" in sidecar_path:
+            print "Cryptomatte: Invalid sidecar path (Back-slashes not allowed): ", sidecar_path
+            return "" # to enforce the specification. 
+        joined = os.path.join(os.path.dirname(exr_path), sidecar_path)
+        return os.path.normpath(joined)
+
     def parse_manifest(self):
         """ Loads json manifest and unpacks hex strings into floats,
         and converts it to two dictionaries, which map IDs to names and vice versa.
@@ -194,8 +202,7 @@ class CryptomatteInfo(object):
 
         manif_file = self.cryptomattes[num].get("manif_file", "")
         if manif_file:
-            manif_file = os.path.normpath(os.path.join(self.filename or "", manif_file))
-
+            manif_file = self.resolve_manifest_paths(self.filename, manif_file)
 
         if manif_file:
             if os.path.exists(manif_file):
