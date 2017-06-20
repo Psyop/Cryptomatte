@@ -18,7 +18,11 @@ Gizmo {
  addUserKnob {6 stopAutoUpdate t "Stops the automatic update of this copy of the Gizmo." -STARTLINE}
  addUserKnob {41 alphaExpression l INVISIBLE +INVISIBLE T Expression_alpha.expr3}
  addUserKnob {1 manifestKey l INVISIBLE +INVISIBLE}
- addUserKnob {3 cryptoLayers l INVISIBLE +INVISIBLE}
+ addUserKnob {3 cryptoLayers l Layers t "Number of cryptomatte layers to use."}
+ cryptoLayers 3
+ addUserKnob {3 inputCryptoLayers l INVISIBLE +INVISIBLE}
+ addUserKnob {6 setupLayers l "Setup Layers" t "Set up the Cryptomatte layers if they do not already exist, and remove any extras." -STARTLINE}
+ addUserKnob {6 newLayer l INVISIBLE +INVISIBLE +STARTLINE}
  addUserKnob {41 previewChannel l INVISIBLE +INVISIBLE T Shuffle_previewChannel.in}
  addUserKnob {41 in00 l INVISIBLE +INVISIBLE T Shuffle_00.in}
  addUserKnob {41 in01 l INVISIBLE +INVISIBLE T Shuffle_01.in}
@@ -28,25 +32,125 @@ Gizmo {
  addUserKnob {41 in05 l INVISIBLE +INVISIBLE T Shuffle_05.in}
  addUserKnob {41 in06 l INVISIBLE +INVISIBLE T Shuffle_06.in}
  addUserKnob {41 in07 l INVISIBLE +INVISIBLE T Shuffle_07.in}
+ addUserKnob {41 removePreviewChannel l INVISIBLE +INVISIBLE T Remove_previewChannel.channels}
+ addUserKnob {41 remove00 l INVISIBLE +INVISIBLE T Remove_00_03.channels}
+ addUserKnob {41 remove01 l INVISIBLE +INVISIBLE T Remove_00_03.channels2}
+ addUserKnob {41 remove02 l INVISIBLE +INVISIBLE T Remove_00_03.channels3}
+ addUserKnob {41 remove03 l INVISIBLE +INVISIBLE T Remove_00_03.channels4}
+ addUserKnob {41 remove04 l INVISIBLE +INVISIBLE T Remove_04_07.channels}
+ addUserKnob {41 remove05 l INVISIBLE +INVISIBLE T Remove_04_07.channels2}
+ addUserKnob {41 remove06 l INVISIBLE +INVISIBLE T Remove_04_07.channels3}
+ addUserKnob {41 remove07 l INVISIBLE +INVISIBLE T Remove_04_07.channels4}
+ addUserKnob {41 addPreviewChannel l INVISIBLE +INVISIBLE T AddChannels_previewChannel.channels}
+ addUserKnob {41 add00 l INVISIBLE +INVISIBLE T AddChannels_00_03.channels}
+ addUserKnob {41 add01 l INVISIBLE +INVISIBLE T AddChannels_00_03.channels2}
+ addUserKnob {41 add02 l INVISIBLE +INVISIBLE T AddChannels_00_03.channels3}
+ addUserKnob {41 add03 l INVISIBLE +INVISIBLE T AddChannels_00_03.channels4}
+ addUserKnob {41 add04 l INVISIBLE +INVISIBLE T AddChannels_04_07.channels}
+ addUserKnob {41 add05 l INVISIBLE +INVISIBLE T AddChannels_04_07.channels2}
+ addUserKnob {41 add06 l INVISIBLE +INVISIBLE T AddChannels_04_07.channels3}
+ addUserKnob {41 add07 l INVISIBLE +INVISIBLE T AddChannels_04_07.channels4}
 }
  Input {
   inputs 0
   name Input1
   xpos -1305
-  ypos -644
+  ypos -952
+ }
+ Dot {
+  name Dot47
+  xpos -1271
+  ypos -902
+ }
+set N40b9800 [stack 0]
+ Dot {
+  name Dot48
+  xpos -1491
+  ypos -902
+ }
+ Remove {
+  channels none
+  name Remove_previewChannel
+  xpos -1525
+  ypos -872
+ }
+ Remove {
+  channels none
+  name Remove_00_03
+  xpos -1525
+  ypos -834
+ }
+ Remove {
+  channels none
+  name Remove_04_07
+  xpos -1525
+  ypos -796
+ }
+ AddChannels {
+  name AddChannels_previewChannel
+  xpos -1525
+  ypos -735
+ }
+ AddChannels {
+  name AddChannels_00_03
+  xpos -1525
+  ypos -697
+ }
+ AddChannels {
+  name AddChannels_04_07
+  xpos -1525
+  ypos -659
+ }
+set N5bb02400 [stack 0]
+ ModifyMetaData {
+  metadata {
+   {set "\[value parent.manifestKey]manifest" "\{\}"}
+   {set "\[value parent.manifestKey]conversion" uint32_to_float32}
+   {set "\[value parent.manifestKey]hash" MurmurHash3_32}
+   {set "\[value parent.manifestKey]name" "\[value parent.cryptoLayer]"}
+  }
+  name ModifyMetaData1
+  xpos -1413
+  ypos -653
+ }
+push $N5bb02400
+ Dot {
+  name Dot50
+  xpos -1491
+  ypos -589
+ }
+ Switch {
+  inputs 2
+  which {{parent.newLayer}}
+  name Switch_ResetMetadata
+  xpos -1413
+  ypos -593
+ }
+ Dot {
+  name Dot49
+  xpos -1379
+  ypos -537
+ }
+push $N40b9800
+ Switch {
+  inputs 2
+  which {{parent.setupLayers}}
+  name Switch_SetupLayers
+  xpos -1305
+  ypos -541
  }
  Dot {
   name Dot15
   xpos -1271
   ypos -490
  }
-set Naaab8000 [stack 0]
+set N5bb35800 [stack 0]
  Dot {
   name Dot14
   xpos -1271
   ypos 1856
  }
-set Naaab8400 [stack 0]
+set N5bb35400 [stack 0]
  Dot {
   name Dot46
   xpos -1271
@@ -72,25 +176,25 @@ set Naaab8400 [stack 0]
   xpos 455
   ypos -345
  }
-push $Naaab8000
+push $N5bb35800
  Dot {
   name Dot1
   xpos -1074
   ypos -490
  }
-set N5f624400 [stack 0]
+set N5bb34000 [stack 0]
  Dot {
   name Dot11
   xpos -897
   ypos -490
  }
-set N5f624000 [stack 0]
+set N5bb59c00 [stack 0]
  Dot {
   name Dot16
   xpos 119
   ypos -497
  }
-set N5f687c00 [stack 0]
+set N5bb59800 [stack 0]
  Dot {
   name Dot41
   xpos 261
@@ -116,7 +220,7 @@ set N5f687c00 [stack 0]
   xpos 261
   ypos -394
  }
-set N5f686800 [stack 0]
+set N5bb58400 [stack 0]
  Shuffle {
   red white
   green black
@@ -139,8 +243,8 @@ set N5f686800 [stack 0]
   addUserKnob {20 User}
   addUserKnob {22 createExpression l "Create Expression" T "nuke.thisNode().knob('operation').setExpression(\"\[python nuke.thisKnob().values().index(nuke.thisParent().knob('foregroundOperation').value())]\")" +STARTLINE}
  }
- set C5f6adc00 [stack 0]
-push $N5f687c00
+ set C5f2cd800 [stack 0]
+push $N5bb59800
  Dot {
   name Dot42
   xpos 119
@@ -166,8 +270,8 @@ push $N5f687c00
   xpos 455
   ypos -189
  }
- set C5f6acc00 [stack 0]
-set N5f6acc00 [stack 0]
+ set C5f2cc800 [stack 0]
+set N5f2cc800 [stack 0]
  Shuffle {
   red black
   green black
@@ -189,26 +293,27 @@ set N5f6acc00 [stack 0]
   xpos 455
   ypos 1509
  }
-push $N5f686800
+push $N5bb58400
  Dot {
   name Dot6
   xpos 261
   ypos 1236
  }
-set N5f6e1c00 [stack 0]
+set N5f309800 [stack 0]
  Dot {
   name Dot44
   xpos 360
   ypos 1236
  }
  Shuffle {
+  in none
   in2 rgba
   alpha alpha2
   name Shuffle_previewChannel
   xpos 326
   ypos 1347
  }
-push $N5f6e1c00
+push $N5f309800
  Shuffle {
   red black
   green black
@@ -218,80 +323,80 @@ push $N5f6e1c00
   xpos 227
   ypos 1345
  }
-clone $C5f6acc00 {
+clone $C5f2cc800 {
   inputs 2
   xpos 227
   ypos 1430
   selected false
  }
-clone $C5f6adc00 {
+clone $C5f2cd800 {
   inputs 2
   xpos 227
   ypos 1509
   selected false
  }
-push $N5f6acc00
+push $N5f2cc800
  Dot {
   name Dot19
   xpos -3
   ypos -185
  }
-set N5f6e0400 [stack 0]
+set N5f308000 [stack 0]
  Dot {
   name Dot29
   xpos -73
   ypos -185
  }
-set N5f6e0000 [stack 0]
+set N5f735c00 [stack 0]
  Dot {
   name Dot28
   xpos -183
   ypos -185
  }
-set N5f713c00 [stack 0]
-push $N5f624000
+set N5f735800 [stack 0]
+push $N5bb59c00
  Dot {
   name Dot10
   xpos -897
   ypos -293
  }
-set N5f713800 [stack 0]
+set N5f735400 [stack 0]
  Dot {
   name Dot12
   xpos -787
   ypos -293
  }
-set N5f713400 [stack 0]
+set N5f735000 [stack 0]
  Dot {
   name Dot13
   xpos -677
   ypos -293
  }
-set N5f713000 [stack 0]
+set N5f734c00 [stack 0]
  Dot {
   name Dot17
   xpos -567
   ypos -293
  }
-set N5f712c00 [stack 0]
+set N5f734800 [stack 0]
  Dot {
   name Dot18
   xpos -457
   ypos -293
  }
-set N5f712800 [stack 0]
+set N5f734400 [stack 0]
  Dot {
   name Dot22
   xpos -347
   ypos -293
  }
-set N5f712400 [stack 0]
+set N5f734000 [stack 0]
  Dot {
   name Dot23
   xpos -237
   ypos -293
  }
-set N5f712000 [stack 0]
+set N5f74fc00 [stack 0]
  Shuffle {
   in none
   name Shuffle_06
@@ -308,15 +413,15 @@ set N5f712000 [stack 0]
   xpos -271
   ypos -127
  }
- set C5f72f800 [stack 0]
+ set C5f74f400 [stack 0]
  Dot {
   name Dot34
   xpos -237
   ypos 6
  }
-set N5f72f400 [stack 0]
-push $N5f6e0000
-push $N5f712000
+set N5f74f000 [stack 0]
+push $N5f735c00
+push $N5f74fc00
  Dot {
   name Dot24
   xpos -127
@@ -328,13 +433,13 @@ push $N5f712000
   xpos -161
   ypos -264
  }
-clone $C5f72f800 {
+clone $C5f74f400 {
   inputs 1+1
   xpos -161
   ypos -126
   selected false
  }
-push $N5f6e0400
+push $N5f308000
  Shuffle {
   red black
   blue black
@@ -350,7 +455,7 @@ push $N5f6e0400
   xpos -37
   ypos -78
  }
-set N5f72e000 [stack 0]
+set N5f785c00 [stack 0]
  MergeExpression {
   inputs 2
   temp_name0 orderAr
@@ -370,8 +475,8 @@ set N5f72e000 [stack 0]
   xpos -161
   ypos 4
  }
- set C5f75fc00 [stack 0]
-push $N5f72e000
+ set C5f785800 [stack 0]
+push $N5f785c00
  Dot {
   name Dot35
   xpos -3
@@ -385,8 +490,8 @@ push $N5f72e000
   ypos 73
   disable true
  }
- set C5b2be880 [stack 0]
-set N5b2be880 [stack 0]
+ set C5bae1200 [stack 0]
+set N5bae1200 [stack 0]
  MergeExpression {
   inputs 2
   temp_name0 orderAr
@@ -406,27 +511,27 @@ set N5b2be880 [stack 0]
   xpos -161
   ypos 154
  }
- set C5f75f000 [stack 0]
+ set C5f784c00 [stack 0]
  Dot {
   name Dot40
   xpos -130
   ypos 1257
  }
-push $N5f713c00
+push $N5f735800
  Dot {
   name Dot27
   xpos -293
   ypos -185
  }
-set N5f75e400 [stack 0]
-push $N5f712400
+set N5f784000 [stack 0]
+push $N5f734000
  Shuffle {
   in none
   name Shuffle_05
   xpos -381
   ypos -264
  }
-clone $C5f72f800 {
+clone $C5f74f400 {
   inputs 1+1
   xpos -381
   ypos -127
@@ -437,16 +542,16 @@ clone $C5f72f800 {
   xpos -347
   ypos 75
  }
-set N5f789800 [stack 0]
-push $N5f72f400
-push $N5b2be880
-clone $C5f75fc00 {
+set N5f7b3400 [stack 0]
+push $N5f74f000
+push $N5bae1200
+clone $C5f785800 {
   inputs 2
   xpos -271
   ypos 71
   selected false
  }
-push $N5b2be880
+push $N5bae1200
  Switch {
   inputs 2
   which {{"parent.cryptoLayers > 6"}}
@@ -455,9 +560,9 @@ push $N5b2be880
   ypos 137
   disable true
  }
- set C5b2be400 [stack 0]
-set N5b2be400 [stack 0]
-clone $C5f75f000 {
+ set C5bae0d80 [stack 0]
+set N5bae0d80 [stack 0]
+clone $C5f784c00 {
   inputs 2
   xpos -271
   ypos 221
@@ -468,21 +573,21 @@ clone $C5f75f000 {
   xpos -240
   ypos 1184
  }
-push $N5f75e400
+push $N5f784000
  Dot {
   name Dot26
   xpos -398
   ypos -185
  }
-set N5f788000 [stack 0]
-push $N5f712800
+set N5f7dfc00 [stack 0]
+push $N5f734400
  Shuffle {
   in none
   name Shuffle_04
   xpos -491
   ypos -264
  }
-clone $C5f72f800 {
+clone $C5f74f400 {
   inputs 1+1
   xpos -491
   ypos -128
@@ -493,16 +598,16 @@ clone $C5f72f800 {
   xpos -457
   ypos 141
  }
-set N5f7b5400 [stack 0]
-push $N5f789800
-push $N5b2be400
-clone $C5f75fc00 {
+set N5f7df000 [stack 0]
+push $N5f7b3400
+push $N5bae0d80
+clone $C5f785800 {
   inputs 2
   xpos -381
   ypos 137
   selected false
  }
-push $N5b2be400
+push $N5bae0d80
  Switch {
   inputs 2
   which {{"parent.cryptoLayers > 5"}}
@@ -511,9 +616,9 @@ push $N5b2be400
   ypos 203
   disable true
  }
- set C5b2bdf80 [stack 0]
-set N5b2bdf80 [stack 0]
-clone $C5f75f000 {
+ set C5bae2880 [stack 0]
+set N5bae2880 [stack 0]
+clone $C5f784c00 {
   inputs 2
   xpos -381
   ypos 288
@@ -524,21 +629,21 @@ clone $C5f75f000 {
   xpos -347
   ypos 1120
  }
-push $N5f788000
+push $N5f7dfc00
  Dot {
   name Dot25
   xpos -508
   ypos -185
  }
-set N5f7e3c00 [stack 0]
-push $N5f712c00
+set N5f80d800 [stack 0]
+push $N5f734800
  Shuffle {
   in none
   name Shuffle_03
   xpos -601
   ypos -264
  }
-clone $C5f72f800 {
+clone $C5f74f400 {
   inputs 1+1
   xpos -601
   ypos -128
@@ -549,16 +654,16 @@ clone $C5f72f800 {
   xpos -567
   ypos 207
  }
-set N5f7e3000 [stack 0]
-push $N5f7b5400
-push $N5b2bdf80
-clone $C5f75fc00 {
+set N5f80cc00 [stack 0]
+push $N5f7df000
+push $N5bae2880
+clone $C5f785800 {
   inputs 2
   xpos -491
   ypos 203
   selected false
  }
-push $N5b2bdf80
+push $N5bae2880
  Switch {
   inputs 2
   which {{"parent.cryptoLayers > 4"}}
@@ -567,9 +672,9 @@ push $N5b2bdf80
   ypos 269
   disable true
  }
- set C5b2bdb00 [stack 0]
-set N5b2bdb00 [stack 0]
-clone $C5f75f000 {
+ set C5bae2400 [stack 0]
+set N5bae2400 [stack 0]
+clone $C5f784c00 {
   inputs 2
   xpos -491
   ypos 353
@@ -580,20 +685,21 @@ clone $C5f75f000 {
   xpos -457
   ypos 1054
  }
-push $N5f7e3c00
+push $N5f80d800
  Dot {
   name Dot3
   xpos -618
   ypos -185
  }
-set N5f811800 [stack 0]
-push $N5f713000
+set N5f837400 [stack 0]
+push $N5f734c00
  Shuffle {
+  in none
   name Shuffle_02
   xpos -711
   ypos -264
  }
-clone $C5f72f800 {
+clone $C5f74f400 {
   inputs 1+1
   xpos -711
   ypos -128
@@ -604,16 +710,16 @@ clone $C5f72f800 {
   xpos -677
   ypos 273
  }
-set N5f810c00 [stack 0]
-push $N5f7e3000
-push $N5b2bdb00
-clone $C5f75fc00 {
+set N5f836800 [stack 0]
+push $N5f80cc00
+push $N5bae2400
+clone $C5f785800 {
   inputs 2
   xpos -601
   ypos 269
   selected false
  }
-push $N5b2bdb00
+push $N5bae2400
  Switch {
   inputs 2
   which {{"parent.cryptoLayers > 3"}}
@@ -622,9 +728,9 @@ push $N5b2bdb00
   ypos 337
   disable true
  }
- set C5b2bfa80 [stack 0]
-set N5b2bfa80 [stack 0]
-clone $C5f75f000 {
+ set C5bae1f80 [stack 0]
+set N5bae1f80 [stack 0]
+clone $C5f784c00 {
   inputs 2
   xpos -601
   ypos 420
@@ -635,20 +741,21 @@ clone $C5f75f000 {
   xpos -567
   ypos 978
  }
-push $N5f811800
+push $N5f837400
  Dot {
   name Dot5
   xpos -728
   ypos -185
  }
-set N5f841400 [stack 0]
-push $N5f713400
+set N5f869000 [stack 0]
+push $N5f735000
  Shuffle {
+  in none
   name Shuffle_01
   xpos -821
   ypos -263
  }
-clone $C5f72f800 {
+clone $C5f74f400 {
   inputs 1+1
   xpos -821
   ypos -129
@@ -659,16 +766,16 @@ clone $C5f72f800 {
   xpos -787
   ypos 339
  }
-set N5f840800 [stack 0]
-push $N5f810c00
-push $N5b2bfa80
-clone $C5f75fc00 {
+set N5f868400 [stack 0]
+push $N5f836800
+push $N5bae1f80
+clone $C5f785800 {
   inputs 2
   xpos -711
   ypos 337
   selected false
  }
-push $N5b2bfa80
+push $N5bae1f80
  Switch {
   inputs 2
   which {{"parent.cryptoLayers > 2"}}
@@ -676,9 +783,9 @@ push $N5b2bfa80
   xpos -711
   ypos 411
  }
- set C5f86e400 [stack 0]
-set N5f86e400 [stack 0]
-clone $C5f75f000 {
+ set C5bae1b00 [stack 0]
+set N5bae1b00 [stack 0]
+clone $C5f784c00 {
   inputs 2
   xpos -711
   ypos 489
@@ -689,14 +796,15 @@ clone $C5f75f000 {
   xpos -677
   ypos 913
  }
-push $N5f841400
+push $N5f869000
  Dot {
   name Dot7
   xpos -838
   ypos -185
  }
-push $N5f713800
+push $N5f735400
  Shuffle {
+  in none
   black red
   white green
   red2 blue
@@ -705,7 +813,7 @@ push $N5f713800
   xpos -931
   ypos -262
  }
-clone $C5f72f800 {
+clone $C5f74f400 {
   inputs 1+1
   xpos -931
   ypos -129
@@ -716,16 +824,16 @@ clone $C5f72f800 {
   xpos -897
   ypos 409
  }
-set N5f874400 [stack 0]
-push $N5f840800
-push $N5f86e400
-clone $C5f75fc00 {
+set N5f888000 [stack 0]
+push $N5f868400
+push $N5bae1b00
+clone $C5f785800 {
   inputs 2
   xpos -821
   ypos 406
   selected false
  }
-push $N5f86e400
+push $N5bae1b00
  Switch {
   inputs 2
   which {{"parent.cryptoLayers > 1"}}
@@ -733,9 +841,9 @@ push $N5f86e400
   xpos -821
   ypos 475
  }
- set C5f86df80 [stack 0]
-set N5f86df80 [stack 0]
-clone $C5f75f000 {
+ set C5bae3a80 [stack 0]
+set N5bae3a80 [stack 0]
+clone $C5f784c00 {
   inputs 2
   xpos -821
   ypos 561
@@ -746,15 +854,15 @@ clone $C5f75f000 {
   xpos -787
   ypos 828
  }
-push $N5f874400
-push $N5f86df80
-clone $C5f75fc00 {
+push $N5f888000
+push $N5bae3a80
+clone $C5f785800 {
   inputs 2
   xpos -931
   ypos 475
   selected false
  }
-push $N5f86df80
+push $N5bae3a80
  Switch {
   inputs 2
   which {{"parent.cryptoLayers > 0"}}
@@ -762,14 +870,14 @@ push $N5f86df80
   xpos -931
   ypos 536
  }
- set C5f86db00 [stack 0]
-push $N5f624400
+ set C5bae3600 [stack 0]
+push $N5bb34000
  Dot {
   name Dot2
   xpos -1074
   ypos 802
  }
-set N5f898400 [stack 0]
+set N5f8bc000 [stack 0]
  ShuffleCopy {
   inputs 2
   alpha alpha2
@@ -784,14 +892,14 @@ set N5f898400 [stack 0]
   addUserKnob {20 User}
   addUserKnob {22 setExpression l "Set Expression" T "nuke.thisNode().knob('out2').setExpression('\[value parent.in00]')" +STARTLINE}
  }
-push $N5f898400
-clone $C5f86db00 {
+push $N5f8bc000
+clone $C5bae3600 {
   inputs 2
   xpos -1108
   ypos 857
   selected false
  }
-set N5f86d680 [stack 0]
+set N5bae3180 [stack 0]
  ShuffleCopy {
   inputs 2
   alpha alpha2
@@ -804,14 +912,14 @@ set N5f86d680 [stack 0]
   xpos -931
   ypos 857
  }
-push $N5f86d680
-clone $C5f86df80 {
+push $N5bae3180
+clone $C5bae3a80 {
   inputs 2
   xpos -1108
   ypos 910
   selected false
  }
-set N5f86d200 [stack 0]
+set N5bae2d00 [stack 0]
  ShuffleCopy {
   inputs 2
   alpha alpha2
@@ -824,14 +932,14 @@ set N5f86d200 [stack 0]
   xpos -931
   ypos 909
  }
-push $N5f86d200
-clone $C5f86e400 {
+push $N5bae2d00
+clone $C5bae1b00 {
   inputs 2
   xpos -1108
   ypos 974
   selected false
  }
-set N5f86cd80 [stack 0]
+set N5f90f680 [stack 0]
  ShuffleCopy {
   inputs 2
   alpha alpha2
@@ -843,16 +951,15 @@ set N5f86cd80 [stack 0]
   name ShuffleCopy_03
   xpos -931
   ypos 974
-  disable true
  }
-push $N5f86cd80
-clone $C5b2bfa80 {
+push $N5f90f680
+clone $C5bae1f80 {
   inputs 2
   xpos -1108
   ypos 1053
   selected false
  }
-set N5f86c900 [stack 0]
+set N5f90f200 [stack 0]
  ShuffleCopy {
   inputs 2
   alpha alpha2
@@ -864,16 +971,15 @@ set N5f86c900 [stack 0]
   name ShuffleCopy_04
   xpos -931
   ypos 1050
-  disable true
  }
-push $N5f86c900
-clone $C5b2bdb00 {
+push $N5f90f200
+clone $C5bae2400 {
   inputs 2
   xpos -1108
   ypos 1120
   selected false
  }
-set N5f86c480 [stack 0]
+set N5f90ed80 [stack 0]
  ShuffleCopy {
   inputs 2
   alpha alpha2
@@ -885,16 +991,15 @@ set N5f86c480 [stack 0]
   name ShuffleCopy_05
   xpos -931
   ypos 1116
-  disable true
  }
-push $N5f86c480
-clone $C5b2bdf80 {
+push $N5f90ed80
+clone $C5bae2880 {
   inputs 2
   xpos -1108
   ypos 1185
   selected false
  }
-set N5f86c000 [stack 0]
+set N5f90e900 [stack 0]
  ShuffleCopy {
   inputs 2
   alpha alpha2
@@ -906,16 +1011,15 @@ set N5f86c000 [stack 0]
   name ShuffleCopy_06
   xpos -931
   ypos 1180
-  disable true
  }
-push $N5f86c000
-clone $C5b2be400 {
+push $N5f90e900
+clone $C5bae0d80 {
   inputs 2
   xpos -1108
   ypos 1256
   selected false
  }
-set N5f86fa80 [stack 0]
+set N5f90e480 [stack 0]
  ShuffleCopy {
   inputs 2
   alpha alpha2
@@ -927,10 +1031,9 @@ set N5f86fa80 [stack 0]
   name ShuffleCopy_07
   xpos -931
   ypos 1253
-  disable true
  }
-push $N5f86fa80
-clone $C5b2be880 {
+push $N5f90e480
+clone $C5bae1200 {
   inputs 2
   xpos -1108
   ypos 1328
@@ -955,13 +1058,13 @@ clone $C5b2be880 {
  }
  ModifyMetaData {
   metadata {
-   {set "\[value parent.manifestKey]" "\[python -execlocal import cryptomatte_utilities\\nret=cryptomatte_utilities.encryptomatte_add_manifest_id()]"}
+   {set "\[value parent.manifestKey]manifest" "\[python -execlocal import cryptomatte_utilities\\nret=cryptomatte_utilities.encryptomatte_add_manifest_id()]"}
   }
   name ModifyMetaData2
   xpos 227
   ypos 1694
  }
-push $Naaab8400
+push $N5bb35400
  Switch {
   inputs 2
   which {{parent.id!=0.0}}
