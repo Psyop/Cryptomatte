@@ -228,7 +228,7 @@ class CryptomatteInfo(object):
             packed = packer.pack(int(value,16))
             packed = packed = '\0' * (4 - len(packed)) + packed
             id_float = unpacker.unpack( packed )[0]
-            name_str = str(name)
+            name_str = name.encode("utf8")
             from_names[name_str] = id_float
             from_ids[id_float] = name_str
 
