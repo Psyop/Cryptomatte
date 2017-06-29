@@ -2,7 +2,7 @@
 #  Copyright (c) 2014, 2015, 2016 Psyop Media Company, LLC
 #  See license.txt
 #
-version 7.0 v10
+version 7.0 v1
 Gizmo {
  addUserKnob {20 cryptomatte l "Psyop Cryptomatte"}
  addUserKnob {18 pickerAdd l "Picker Add" t "Key objects to add to the Matte List here. "}
@@ -109,7 +109,6 @@ push $N6b3f9c00
 push $N6b5e0000
  ShuffleCopy {
   inputs 2
-  in2 uCryptoObject
   red blue2
   blue red
   name ShuffleCopy_in_keyable

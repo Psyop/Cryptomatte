@@ -2,7 +2,7 @@
 #  Copyright (c) 2014, 2015, 2016 Psyop Media Company, LLC
 #  See license.txt
 #
-version 7.0 v10
+version 7.0 v1
 Gizmo {
  inputs 2
  help "Composites new mattes to be added to a set of Cryptomatte-encoded mattes."
