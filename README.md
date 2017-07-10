@@ -23,6 +23,24 @@ The contents of this repository are:
 
 **Specification:** This is a technical document describing the Cryptomatte standard. It specifies how Cryptomattes are structured, encoded, and decoded. It also contains our SIGGRAPH 2015 poster on the subject.
 
+## Implementations
+
+A list of released implementations and links:
+
+Encoders:
+
+* [Isotropix Clarisse 3.5 (By Isotropix)](http://www.isotropix.com/products/clarisse-3.5)
+* [Chaos Group V-Ray 3.6 (By Chaos Group)](https://docs.chaosgroup.com/display/VRAY3MAX/Cryptomatte+%7C+VRayCryptomatte)
+* [Arnold 4 (AlShaders), by Jonah Friedman, Andy Jones, Anders Langlands.]( http://www.anderslanglands.com/alshaders/index.html )
+* [Arnold 5 (AlShaders 2), by Jonah Friedman, Andy Jones, Anders Langlands.]( https://github.com/anderslanglands/alShaders2 )
+* Nuke 10 "Encryptomatte", by Andy Jones. In this repo. 
+
+Decoders:
+
+* Nuke 7+, by Jonah Friedman, Andy Jones. In this repo.
+* Fusion: by Cedric Duriau and Kristof Indeherberge at Grid. In this repo.
+
+
 ## Acknowledgements 
 
 * Anders Langlands
@@ -34,8 +52,19 @@ The contents of this repository are:
 * Benoit Leveau
 * Cedric Duriau
 * Kristof Indeherberge
+* Vladimir Koylazov
 
 ## Release Notes
+
+1.2.0 (Beta!):
+
+* Changed specification regarding sidecar manifests, such that they are always sidecars with relative paths. 
+* Supported sidecar files in Nuke plugin
+* Support for UTF-8 Characters in Nuke plugin and specification
+* Encryptomatte for modifying or creating Cryptomattes in Nuke
+* Support names containing spaces, commas, and angle brackets. 
+ * Switched matte lists to be yaml-style. This mainly effects names containing spaces, commas, or quotes. 
+ * Names with special character (or names that look like numbers) will be enclosed in quotes. 
 
 1.1.4: 
 
