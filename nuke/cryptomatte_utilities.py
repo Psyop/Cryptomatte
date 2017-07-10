@@ -464,9 +464,6 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
         return
     _set_channels(gizmo, cryptomatte_channels)
     _set_expression(gizmo, cryptomatte_channels)
-    if force:
-        _matteList_modify(gizmo, "", True) # will also update matte list to new style
-
 
 
 def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
@@ -663,10 +660,10 @@ def _set_expression(gizmo, cryptomatte_channels):
     matte_list = get_mattelist_as_set(gizmo)
 
     for item in matte_list:
-        if type(item) is float or type(item) is int: 
-            ID_list.append(single_precision(float(item)))
+        if type(item) is float: 
+            ID_list.append(single_precision(item))
         else:
-            ID_list.append( mm3hash_float(item) )
+            ID_list.append(mm3hash_float(item))
 
     expression = _build_extraction_expression(cryptomatte_channels, ID_list)
 
@@ -756,7 +753,7 @@ def _update_gizmo_keyed_object(gizmo, cinfo, force=False, color_knob_name="Color
         return name
 
     set_text_knob(gizmo, text_knob_name, "ID value not in manifest.")
-    return ID_value
+    return "<%s>" % ID_value
 
 
 #############################################
@@ -765,32 +762,37 @@ def _update_gizmo_keyed_object(gizmo, cinfo, force=False, color_knob_name="Color
 
 
 def get_mattelist_as_set(gizmo):
+    def is_number(s):
+        try:
+            float(s)
+            return True
+        except ValueError:
+            return False
+
     import yaml
-    matte_names_str = gizmo.knob("matteList").getValue()
+    matte_list = gizmo.knob("matteList").getValue()
+    loader = yaml.loader.BaseLoader # baseloader doesn't parse numbers
+    raw_list = yaml.load("[%s]" % matte_list, Loader=loader) 
     result = set()
-    if not matte_names_str:
-        return result
-    names_format = gizmo.knob("matteListFormat").getValue()
-    if names_format == "" or names_format == "legacy":
-        for item in (x.strip() for x in matte_names_str.split(",")):
-            if item.startswith("<") and item.endswith(">"):
-                result.add(single_precision( float(item[1:-1]) ))
-            else:
-                result.add(item)
-    elif names_format == "yaml":
-        raw_list = yaml.load("[%s]" % matte_names_str)
-        for item in raw_list: 
-            result.add(item if type(item) is not unicode else item.encode("utf-8"))
+    for item in raw_list:
+        item = item.encode("utf-8") if type(item) is unicode else str(item)
+        if item.startswith("<") and item.endswith(">"):
+            numstr = item[1:-1]
+            if is_number(numstr): 
+                result.add(single_precision(float(numstr)))
+        else:
+            result.add(item) 
     return result
 
 def set_mattelist_from_set(gizmo, matte_items):
-    """We internally use the yaml module to deal with lists containing numbers and strings, some of 
-    which contain spaces. Users are not shown yaml, we strip the [] from the front and end. """
+    """We internally use the yaml module to deal with strings containing commas or 
+    spaces. Users are not shown yaml, we strip the [] from the front and end. """
     import yaml
-    matte_names_list = list(matte_items)
+    matte_names_list = list()
+    for item in matte_items:
+        matte_names_list.append(item if type(item) is str else "<%s>" % item)
     matte_names_list.sort(key=lambda x: x.lower() if type(x) is str else 0)
     yml_list = yaml.safe_dump(matte_names_list, encoding='utf-8', allow_unicode=True)
-    gizmo.knob("matteListFormat").setValue("yaml")
     gizmo.knob("matteList").setValue(yml_list.strip().strip("[]"))
 
 def _matteList_modify(gizmo, name, remove):
@@ -801,12 +803,11 @@ def _matteList_modify(gizmo, name, remove):
         if name in matte_names:
             matte_names.remove(name)
 
-    if gizmo.knob("stopAutoUpdate").getValue() == 1.0:
+    if not name or gizmo.knob("stopAutoUpdate").getValue() == 1.0:
         return
+    
     matte_names = get_mattelist_as_set(gizmo)
-    if not name:
-        pass
-    elif remove:
+    if remove:
         _matteList_set_remove(name, matte_names)
     else:
         _matteList_set_add(name, matte_names)
