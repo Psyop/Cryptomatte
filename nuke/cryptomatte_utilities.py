@@ -322,8 +322,10 @@ class CryptomatteInfo(object):
 def cryptomatte_create_gizmo():
     return nuke.createNode("Cryptomatte") 
 
+
 def encryptomatte_create_gizmo():
     return nuke.createNode("Encryptomatte")
+
 
 #############################################
 # Public - cryptomatte Events
@@ -366,10 +368,8 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         cinfo = CryptomatteInfo(node)
         _update_gizmo_keyed_object(node, cinfo)
 
-def encryptomatte_knob_changed_event(node = None, knob = None):
 
-    
-    #if knob.name() in ["inputChange", "cryptoLayer", "matteName", "cryptoLayerLock"]:
+def encryptomatte_knob_changed_event(node = None, knob = None):
     if knob.name() in ["matteName", "cryptoLayerLock"]:
         cinfo = CryptomatteInfo(node)
         _update_encryptomatte_gizmo(node, cinfo)
@@ -378,6 +378,7 @@ def encryptomatte_knob_changed_event(node = None, knob = None):
         _update_encyptomatte_setup_layers(node)
         cinfo = CryptomatteInfo(node)
         _update_encryptomatte_gizmo(node, cinfo)
+
 
 def encryptomatte_on_create_event(node = None, knob = None):
     node.knob('cryptoLayers').setEnabled(node.knob('setupLayers').value())

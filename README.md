@@ -159,11 +159,34 @@ Advanced Tab:
 * Unload Manifest: Generates a keyer for every name in the manifest. 
 * Force Update All Gizmos in Script: Same as "Force Update", but runs the force update functionality on all Gizmos in the script. 
 
+### Encryptomatte Gizmo
+
+![](/docs/encryptomatteProperties.png)
+
+Encryptomatte is a gizmo that can modify existing Cryptomattes, or start new ones. One Encryptomatte node adds one matte to a Cryptomatte. 
+
+To get started:
+
+1. Load a Cryptomatte with a read node. 
+2. Select it, and tab-create an Encryptomatte. 
+3. Feed in a matte that you would like to add to that Cryptomatte. You can put it over or under all other mattes. 
+4. Write it out as a 32 bit EXR with all metadata, or attach a Cryptomatte node to it to test the mattes. 
+
+Encryptomatte tab:
+* Matte Name: The name your new matte will have in the Cryptomatte
+* Foreground Operation: Where in the stack of mattes your matte will be added, over or under the rest
+* Layer selection: Same as Cryptomatte, see above. 
+* Clear: Resets the name of the matte to whatever the source is, and updates. (Same as Cryptomatte, see above).
+* Force Update: Same as Cryptomatte, see above. 
+* Layers: If starting a fresh Cryptomatte, sets how many Cryptomatte layers are to be created. If starting from scratch, fill in Layer Selection manually. 
+* Setup Layers: If on, starts a fresh Cryptomatte. Otherwise, modifies one from the input. 
+
 ### Menu options
 
 * Cryptomatte: Creates a Cryptomatte gizmo
 * Decryptomatte All: Replaces all Cryptomatte gizmos with other nodes which are functionally equivalent. This is useful for sending nuke scripts to other users who do not have the Cryptomatte plugins installed. 
 * Decryptomatte Selected: Same as "decryptomatte all", except only applies to selected nodes. 
+* Encryptomatte: Creates an Encryptomatte gizmo
 
 ### Troubleshooting
 
