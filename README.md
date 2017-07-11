@@ -174,9 +174,8 @@ To get started:
 
 Encryptomatte tab:
 * Matte Name: The name your new matte will have in the Cryptomatte
-* Foreground Operation: Where in the stack of mattes your matte will be added, over or under the rest
-* Layer selection: Same as Cryptomatte, see above. 
-* Clear: Resets the name of the matte to whatever the source is, and updates. (Same as Cryptomatte, see above).
+* Merge Operation: Where in the stack of mattes your matte will be added, over or under the rest
+* Layer selection: Same as Cryptomatte, see above.
 * Force Update: Same as Cryptomatte, see above. 
 * Layers: If starting a fresh Cryptomatte, sets how many Cryptomatte layers are to be created. If starting from scratch, fill in Layer Selection manually. 
 * Setup Layers: If on, starts a fresh Cryptomatte. Otherwise, modifies one from the input. 
