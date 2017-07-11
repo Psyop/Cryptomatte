@@ -5,9 +5,13 @@
 #
 #
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 
 GIZMO_CHANNEL_KNOBS = ["previewChannel", "in00", "in01", "in02", "in03", "in04", "in05", "in06", "in07"]
+GIZMO_REMOVE_CHANNEL_KNOBS = ["removePreviewChannel", "remove00", "remove01", "remove02", "remove03", "remove04", "remove05", "remove06", "remove07"]
+GIZMO_ADD_CHANNEL_KNOBS = ["addPreviewChannel", "add00", "add01", "add02", "add03", "add04", "add05", "add06", "add07"]
+
+CRYPTOMATTE_METADATA_PREFIX = "exr/cryptomatte/"
 
 import nuke
 import struct
@@ -19,10 +23,15 @@ def setup_cryptomatte_ui():
         automatte_menu.addCommand("Cryptomatte", "import cryptomatte_utilities as cu; cu.cryptomatte_create_gizmo();")
         automatte_menu.addCommand("Decryptomatte All", "import cryptomatte_utilities as cu; cu.decryptomatte_all();")
         automatte_menu.addCommand("Decryptomatte Selection", "import cryptomatte_utilities as cu; cu.decryptomatte_selected();")
+        automatte_menu.addCommand("Encryptomatte", "import cryptomatte_utilities as cu; cu.encryptomatte_create_gizmo();")
 
 def setup_cryptomatte():
     nuke.addKnobChanged(lambda: cryptomatte_knob_changed_event(
         nuke.thisNode(), nuke.thisKnob()), nodeClass='Cryptomatte')
+    nuke.addKnobChanged(lambda: encryptomatte_knob_changed_event(
+        nuke.thisNode(), nuke.thisKnob()), nodeClass='Encryptomatte')
+    nuke.addOnCreate(lambda: encryptomatte_on_create_event(
+        nuke.thisNode(), nuke.thisKnob()), nodeClass='Encryptomatte')
 
 
 #############################################
@@ -62,6 +71,21 @@ def single_precision(float_in):
     return array.array("f", [float_in])[0]
 
 
+def id_to_rgb(id):
+    # This takes the hashed id and converts it to a preview color
+
+    import ctypes
+    bits = ctypes.cast(ctypes.pointer(ctypes.c_float(id)), ctypes.POINTER(ctypes.c_uint32)).contents.value
+
+    mask = 2 ** 32 - 1
+    return [0.0, float((bits << 8) & mask) / float(mask), float((bits << 16) & mask) / float(mask)]
+
+def id_to_hex(id):
+    return "{0:08x}".format(struct.unpack('<I', struct.pack('<f', id))[0])
+
+def layer_hash(layer_name):
+    return id_to_hex(mm3hash_float(layer_name))[:-1]
+
 #############################################
 # Cryptomatte file processing
 ############################################# 
@@ -81,18 +105,21 @@ class CryptomatteInfo(object):
         self.cryptomattes = {}
         self.nuke_node = node_in
         self.selection = None
+        self.filename = None
 
         if not node_in:
             return
 
         exr_metadata_dict = node_in.metadata() or {}
 
-        prefix = "exr/cryptomatte/"
+        #prefix = "exr/cryptomatte/"
         default_selection = None
         for key, value in exr_metadata_dict.iteritems():
-            if not key.startswith(prefix): 
+            if key == "input/filename":
+                self.filename = value
+            if not key.startswith(CRYPTOMATTE_METADATA_PREFIX): 
                 continue
-            numbered_key = key[len(prefix):] # ex: "exr/cryptomatte/ae93ba3/name" --> "ae93ba3/name"
+            numbered_key = key[len(CRYPTOMATTE_METADATA_PREFIX):] # ex: "exr/cryptomatte/ae93ba3/name" --> "ae93ba3/name"
             metadata_id = numbered_key.split("/")[0]  # ex: "ae93ba3/name" --> ae93ba3
             partial_key = numbered_key.split("/")[1]  # ex: "ae93ba3/name" --> "name"
             if metadata_id not in self.cryptomattes:
@@ -141,6 +168,9 @@ class CryptomatteInfo(object):
         self.selection = None
         return False
 
+    def get_selection_metadata_key(self, key):
+        return CRYPTOMATTE_METADATA_PREFIX + self.selection + "/" + key
+
     def get_cryptomatte_names(self):
         """ gets the names of the cryptomattes contained the file, which
         are the possible selections or cryptomatte channels.
@@ -156,8 +186,8 @@ class CryptomatteInfo(object):
         """
 
         channel_list = []
-        if self.nuke_node.Class() == "Cryptomatte":
-            # nuke_node is a keyer gizmo
+        if self.nuke_node.Class() in ["Cryptomatte", "Encryptomatte"]:
+            # nuke_node is a keyer gizmo or encryptomatte gizmo
             channel_list = self.nuke_node.node('Input1').channels()
         else:
             # nuke_node might a read node
@@ -175,6 +205,14 @@ class CryptomatteInfo(object):
 
         return sorted(pure_channels)
 
+    def resolve_manifest_paths(self, exr_path, sidecar_path):
+        import os
+        if "\\" in sidecar_path:
+            print "Cryptomatte: Invalid sidecar path (Back-slashes not allowed): ", sidecar_path
+            return "" # to enforce the specification. 
+        joined = os.path.join(os.path.dirname(exr_path), sidecar_path)
+        return os.path.normpath(joined)
+
     def parse_manifest(self):
         """ Loads json manifest and unpacks hex strings into floats,
         and converts it to two dictionaries, which map IDs to names and vice versa.
@@ -184,12 +222,30 @@ class CryptomatteInfo(object):
         """
         import json
         import struct
+        import os
 
         num = self.selection
-        try:
-            manifest = json.loads(self.cryptomattes[num].get("manifest", "{}"))
-        except:
-            manifest = {}
+        manifest = {}
+
+        manif_file = self.cryptomattes[num].get("manif_file", "")
+        if manif_file:
+            manif_file = self.resolve_manifest_paths(self.filename, manif_file)
+
+        if manif_file:
+            if os.path.exists(manif_file):
+                try:
+                    with open(manif_file) as json_data:
+                        manifest = json.load(json_data)
+                except:
+                    print "Cryptomatte: Unable to parse manifest, ", manif_file
+            else:
+                print "Cryptomatte: Unable to find manifest file: ", manif_file
+        else:
+            try:
+                manifest = json.loads(self.cryptomattes[num].get("manifest", "{}"))
+            except:
+                pass
+
         from_names = {}
         from_ids = {}
 
@@ -199,7 +255,7 @@ class CryptomatteInfo(object):
             packed = packer.pack(int(value,16))
             packed = packed = '\0' * (4 - len(packed)) + packed
             id_float = unpacker.unpack( packed )[0]
-            name_str = str(name)
+            name_str = name.encode("utf8")
             from_names[name_str] = id_float
             from_ids[id_float] = name_str
 
@@ -267,6 +323,10 @@ def cryptomatte_create_gizmo():
     return nuke.createNode("Cryptomatte") 
 
 
+def encryptomatte_create_gizmo():
+    return nuke.createNode("Encryptomatte")
+
+
 #############################################
 # Public - cryptomatte Events
 #############################################
@@ -309,6 +369,21 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         _update_gizmo_keyed_object(node, cinfo)
 
 
+def encryptomatte_knob_changed_event(node = None, knob = None):
+    if knob.name() in ["matteName", "cryptoLayerLock"]:
+        cinfo = CryptomatteInfo(node)
+        _update_encryptomatte_gizmo(node, cinfo)
+
+    if knob.name() in ["setupLayers", "cryptoLayer", "inputChange", "cryptoLayers"]:
+        _update_encyptomatte_setup_layers(node)
+        cinfo = CryptomatteInfo(node)
+        _update_encryptomatte_gizmo(node, cinfo)
+
+
+def encryptomatte_on_create_event(node = None, knob = None):
+    node.knob('cryptoLayers').setEnabled(node.knob('setupLayers').value())
+
+
 #############################################
 # Public - cryptomatte functions
 #############################################
@@ -321,12 +396,21 @@ def update_cryptomatte_gizmo(node, force=False):
 
 def clear_cryptomatte_gizmo(node):
     node.knob("matteList").setValue("")
-    cinfo = CryptomatteInfo(node)
-    _update_cryptomatte_gizmo(node, cinfo, True)
+    _update_cryptomatte_gizmo(node, CryptomatteInfo(node), True)
 
 
 def update_all_cryptomatte_gizmos():
     return _force_update_all()
+
+
+def update_encryptomatte_gizmo(node, force=False):
+    cinfo = CryptomatteInfo(node)
+    _update_encryptomatte_gizmo(node, CryptomatteInfo(node), force)
+
+
+def clear_encryptomatte_gizmo(node):
+    node.knob("matteName").setValue("")
+    _update_encryptomatte_gizmo(node, CryptomatteInfo(node), True)
 
 
 #############################################
@@ -364,10 +448,10 @@ def _force_update_all():
 # Utils - Update Gizmi 
 #############################################
 
-def _set_channels(gizmo, channels):
+def _set_channels(gizmo, channels, default="none"):
     gizmo.knob("cryptoLayer").setValue(channels[0])
     for i, knob_name in enumerate(GIZMO_CHANNEL_KNOBS):
-        channel = channels[i] if i < len(channels) else "none"
+        channel = channels[i] if i < len(channels) else default
         gizmo.knob(knob_name).setValue(channel)
 
 
@@ -383,74 +467,138 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     _set_expression(gizmo, cryptomatte_channels)
 
 
-#############################################
-# Utils - Build expressions
-#############################################
-
-
-def _set_keyer_expression(gizmo, cryptomatte_channels):
-    expression = _build_keyer_expression(cryptomatte_channels)
-    gizmo.knob("expression").setValue(expression)
-
-
-def _build_keyer_expression(channel_list):
-    # Build something like this. 
-    #
-    # the purpose of the first line is an early out 
-    # if it's an ID miss and fully opaque (for another ID).
-    # It's not stricly necessary but makes it a bit faster. 
-    '''
-    (uCryptoAsset00.green == 1.0 && uCryptoAsset00.red != ID) ? 0 : (
-        uCryptoAsset00.red == ID ? uCryptoAsset00.green : (
-            uCryptoAsset00.blue == ID ? uCryptoAsset00.alpha : (
-                uCryptoAsset01.red == ID ? uCryptoAsset01.green : (
-                    uCryptoAsset01.blue == ID ? uCryptoAsset01.alpha : (
-                        uCryptoAsset02.red == ID ? uCryptoAsset02.green : (
-                            uCryptoAsset02.blue == ID ? uCryptoAsset02.alpha : 0
-                        )
-                    )
-                )
-            )
-        )
-    )
-    '''
-
-    starting_expression = "(key_channel.green == 1.0 && key_channel.red != ID) ? 0 : more_work_needed"
-    iterated_expression = "(sub_channel.red == ID ? sub_channel.green : (sub_channel.blue == ID ? sub_channel.alpha : more_work_needed))"
+def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
+    if _cancel_update(gizmo, force):
+        return
     
-    start_channel = channel_list[0]
-    sub_channels = list(channel_list)
-    sub_channels.remove(start_channel)
+    matte_name = gizmo.knob('matteName').value()
+    matte_input = gizmo.input(1)
 
-    expression = ""
-    for channel in sub_channels:
-        channel_expression = iterated_expression.replace("sub_channel", channel)
-        if not expression:
-            expression = channel_expression
+    if matte_name == "" and not matte_input is None:
+        matte_name = matte_input.name()
+        gizmo.knob('matteName').setValue(matte_name)
+
+    if matte_name == "":
+        gizmo.knob('id').setValue(0.0)
+        gizmo.knob('idHex').setValue('')
+        gizmo.knob('previewColor').setValue([0.0, 0.0, 0.0])
+
+    else:
+        id_value = mm3hash_float(matte_name)
+        gizmo.knob('id').setValue(id_value)
+        gizmo.knob('idHex').setValue(id_to_hex(id_value))
+        gizmo.knob('previewColor').setValue(id_to_rgb(id_value))
+
+    if gizmo.knob('setupLayers').value():
+        gizmo.knob('cryptoLayers').setEnabled(True)
+        if cinfo.is_valid():
+            cryptomatte_channels = cinfo.get_channels()
+            if not cryptomatte_channels:
+                cryptomatte_channels = []
         else:
-            expression = expression.replace("more_work_needed", channel_expression)
-    expression = expression.replace("more_work_needed", "0")
+            cryptomatte_channels = []
+
+        crypto_layer = gizmo.knob('cryptoLayer').value()
+        if crypto_layer in cryptomatte_channels:
+            gizmo.knob('inputCryptoLayers').setValue(len(cryptomatte_channels) - 1)
+            manifest_key = cinfo.get_selection_metadata_key("")
+            gizmo.knob('manifestKey').setValue(manifest_key)
+            gizmo.knob('newLayer').setValue(False)
+        else:
+            gizmo.knob('inputCryptoLayers').setValue(0)
+            gizmo.knob('manifestKey').setValue(CRYPTOMATTE_METADATA_PREFIX + layer_hash(crypto_layer) + '/')
+            gizmo.knob('newLayer').setValue(True)
+
+        cryptomatte_channels = [crypto_layer] + [crypto_layer + "{0:02d}".format(i) for i in range(int(gizmo.knob('cryptoLayers').value()))]
+        _set_channels(gizmo, cryptomatte_channels, default="none")
+
+    else:
+        gizmo.knob('cryptoLayers').setEnabled(False)
+        if not cinfo.is_valid():
+            return
+
+        cryptomatte_channels = cinfo.get_channels()
+        if not cryptomatte_channels:
+            return
+
+        gizmo.knob('newLayer').setValue(False)
+        _set_channels(gizmo, cryptomatte_channels, default="none")
+        gizmo.knob('inputCryptoLayers').setValue(len(cryptomatte_channels) - 1)
+        gizmo.knob('cryptoLayers').setValue(len(cryptomatte_channels) - 1)
+        manifest_key = cinfo.get_selection_metadata_key("")
+        gizmo.knob('manifestKey').setValue(manifest_key)
+
+    gizmo.knob("alphaExpression").setValue(_build_extraction_expression(cryptomatte_channels, [0.0]))    
+
+def _update_encyptomatte_setup_layers(gizmo):
+    setup_layers = gizmo.knob('setupLayers').value()
+    num_layers = gizmo.knob('cryptoLayers').value()
+    input_layers = gizmo.knob('inputCryptoLayers').value()
+    crypto_layer = gizmo.knob('cryptoLayer').value()
+
+    if not setup_layers:
+        for i in range(len(GIZMO_ADD_CHANNEL_KNOBS)):
+            gizmo.knob(GIZMO_ADD_CHANNEL_KNOBS[i]).setValue("none")
+            gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue("none")
+        #gizmo.knob('manifestKey').setValue("")
+        return
+
+
+    all_layers = nuke.layers()
+
+    for i in range(len(GIZMO_ADD_CHANNEL_KNOBS)):
+        
+        if i > 0:
+            this_layer = "{0}{1:02d}".format(crypto_layer, i - 1)
+        else:
+            this_layer = crypto_layer
+
+        # Add
+        if i <= num_layers:
+            if not this_layer in all_layers:
+                if i == 0:
+                    nuke.Layer(this_layer, [this_layer + '.' + c for c in ['red', 'green', 'blue']])
+                else:
+                    nuke.Layer(this_layer, [this_layer + '.' + c for c in ['red', 'green', 'blue', 'alpha']])
+
+            gizmo.knob(GIZMO_ADD_CHANNEL_KNOBS[i]).setValue(this_layer)
+            gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue("none")
+        else:
+            gizmo.knob(GIZMO_ADD_CHANNEL_KNOBS[i]).setValue("none")
+            if i <= input_layers:
+                gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue(this_layer)
+            else:
+                gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue("none")
+
+    #gizmo.knob('manifestKey').setValue(CRYPTOMATTE_METADATA_PREFIX + layer_hash(crypto_layer) + '/')
+
+
+def encryptomatte_add_manifest_id(deserialize = False):
     
-    formatted_expression = _format_expression(expression)
+    node = nuke.thisNode()
+    parent = nuke.thisParent()
+    name = parent.knob('matteName').value()
+    id_hex = parent.knob('idHex').value()
+    manifest_key = parent.knob('manifestKey').value()
+    metadata = node.metadata()
+    manifest = metadata.get(manifest_key + 'manifest', "{}")
     
-    starting_expression = starting_expression.replace("key_channel", sub_channels[0])
-    full_expression = starting_expression.replace("more_work_needed", formatted_expression)
-    return full_expression
-
-
-def _convert_keyer_expression(expression, value):
-    ''' Converts a keyer style expression to a generic expression for use elsewhere '''
-    expression = expression.replace("== ID", "== %s" % value)
-    expression = expression.replace("!= ID", "!= %s" % value)
-    return expression
-
-
-def _format_expression(expression_in):
-    expression = expression_in
-    expression = expression.replace("(", "(\n")
-    expression = expression.replace(")", ")\n")
-    return expression
-
+    if deserialize:
+        import json
+        d = json.loads(manifest)
+        d[name] = hex_id
+        new_manifest = json.dumps(d)
+        return new_manifest
+    else:
+        last_item = '"{name}":"{id_hex}"'.format(name=name, id_hex=id_hex)
+        last_item += '}'
+        
+        last_bracket_pos = manifest.rfind('}')
+        existing_items = manifest[:last_bracket_pos].rstrip()
+        if not existing_items.endswith(',') and not existing_items.endswith('{'):
+            return existing_items + ',' + last_item
+        else:
+            return existing_items + last_item
 
 
 #############################################
@@ -507,17 +655,16 @@ def unload_manifest(node):
 
 
 def _set_expression(gizmo, cryptomatte_channels):
-    matte_names_text = gizmo.knob("matteList").getValue()
+    matte_list_str = gizmo.knob("matteList").getValue()
     ID_list = []
 
-    matte_names = _matteList_text_to_set(matte_names_text)
+    matte_list = get_mattelist_as_set(gizmo)
 
-    for name in matte_names:
-        if name.startswith("<") and name.endswith(">"):
-            ID_value = single_precision( float(name[1:-1]) )
-            ID_list.append(ID_value)
+    for item in matte_list:
+        if type(item) is float: 
+            ID_list.append(single_precision(item))
         else:
-            ID_list.append( mm3hash_float(name) )
+            ID_list.append(mm3hash_float(item))
 
     expression = _build_extraction_expression(cryptomatte_channels, ID_list)
 
@@ -564,6 +711,10 @@ def _build_extraction_expression(channel_list, IDs):
     return expression
 
 
+#def _set_encryptomatte_expression(gizmo, cryptomatte_channels):
+#    expression = "1.0 - " + _build_extraction_expression(cryptomatte_channels, [0.0])
+#    gizmo.knob("alphaExpression").setValue(expression)
+    
 
 #############################################
 # Utils - Manifest Processing Helpers
@@ -611,13 +762,39 @@ def _update_gizmo_keyed_object(gizmo, cinfo, force=False, color_knob_name="Color
 #############################################
 
 
-def _matteList_text_to_set(matte_names_text):
-    if matte_names_text:
-        matte_names_text = matte_names_text.replace(" ", "")
-        return set(matte_names_text.split(","))
-    else:
-        return set()
+def get_mattelist_as_set(gizmo):
+    def is_number(s):
+        try:
+            float(s)
+            return True
+        except ValueError:
+            return False
 
+    import yaml
+    matte_list = gizmo.knob("matteList").getValue()
+    loader = yaml.loader.BaseLoader # baseloader doesn't parse numbers
+    raw_list = yaml.load("[%s]" % matte_list, Loader=loader) 
+    result = set()
+    for item in raw_list:
+        item = item.encode("utf-8") if type(item) is unicode else str(item)
+        if item.startswith("<") and item.endswith(">"):
+            numstr = item[1:-1]
+            if is_number(numstr): 
+                result.add(single_precision(float(numstr)))
+        else:
+            result.add(item) 
+    return result
+
+def set_mattelist_from_set(gizmo, matte_items):
+    """We internally use the yaml module to deal with strings containing commas or 
+    spaces. Users are not shown yaml, we strip the [] from the front and end. """
+    import yaml
+    matte_names_list = list()
+    for item in matte_items:
+        matte_names_list.append(item if type(item) is str else "<%s>" % item)
+    matte_names_list.sort(key=lambda x: x.lower() if type(x) is str else 0)
+    yml_list = yaml.safe_dump(matte_names_list, encoding='utf-8', allow_unicode=True, width=10000)
+    gizmo.knob("matteList").setValue(yml_list.strip().strip("[]"))
 
 def _matteList_modify(gizmo, name, remove):
     def _matteList_set_add(name, matte_names):
@@ -627,20 +804,15 @@ def _matteList_modify(gizmo, name, remove):
         if name in matte_names:
             matte_names.remove(name)
 
-    def _matteList_set_to_text(gizmo, matte_names):
-        matte_names_list = list(matte_names)
-        matte_names_list.sort(key=lambda x: x.lower())
-        gizmo.knob("matteList").setValue(", ".join(matte_names_list))
-
-    if not name or gizmo.knob("stopAutoUpdate").getValue() == 1.0 :
+    if not name or gizmo.knob("stopAutoUpdate").getValue() == 1.0:
         return
-    matte_names_text = gizmo.knob("matteList").getValue()
-    matte_names = _matteList_text_to_set(matte_names_text)
+    
+    matte_names = get_mattelist_as_set(gizmo)
     if remove:
         _matteList_set_remove(name, matte_names)
     else:
         _matteList_set_add(name, matte_names)
-    _matteList_set_to_text(gizmo, matte_names)
+    set_mattelist_from_set(gizmo, matte_names)
 
 
 #############################################

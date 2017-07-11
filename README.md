@@ -17,9 +17,29 @@ The contents of this repository are:
 
 **Nuke:** This contains Python files, an image, and a gizmo. Together these are our implementation for The Foundry's Nuke.
 
+**Fusion:** Alpha version of Fusion integration, including a Fuse and Lua scripts
+
 **Sample Images:** These example Cryptomatte images can be used for testing your Nuke installation, or for testing other implimentations. 
 
 **Specification:** This is a technical document describing the Cryptomatte standard. It specifies how Cryptomattes are structured, encoded, and decoded. It also contains our SIGGRAPH 2015 poster on the subject.
+
+## Implementations
+
+A list of released implementations and links:
+
+Encoders:
+
+* [Isotropix Clarisse 3.5 (By Isotropix)](http://www.isotropix.com/products/clarisse-3.5)
+* [Chaos Group V-Ray 3.6 (By Chaos Group)](https://docs.chaosgroup.com/display/VRAY3MAX/Cryptomatte+%7C+VRayCryptomatte)
+* [Arnold 4 (AlShaders), by Jonah Friedman, Andy Jones, Anders Langlands.]( http://www.anderslanglands.com/alshaders/index.html )
+* [Arnold 5 (AlShaders 2), by Jonah Friedman, Andy Jones, Anders Langlands.]( https://github.com/anderslanglands/alShaders2 )
+* Nuke 10 "Encryptomatte", by Andy Jones. In this repo. 
+
+Decoders:
+
+* Nuke 7+, by Jonah Friedman, Andy Jones. In this repo.
+* Fusion: by Cedric Duriau and Kristof Indeherberge at Grid. In this repo.
+
 
 ## Acknowledgements 
 
@@ -30,8 +50,34 @@ The contents of this repository are:
 * Solid Angle
 * All the members of the Cryptomatte Committee
 * Benoit Leveau
+* Cedric Duriau
+* Kristof Indeherberge
+* Vladimir Koylazov
 
 ## Release Notes
+
+1.2.0 (Beta!):
+
+* Changed specification regarding sidecar manifests, such that they are always sidecars with relative paths. 
+* Supported sidecar files in Nuke plugin
+* Support for UTF-8 Characters in Nuke plugin and specification
+* Encryptomatte for modifying or creating Cryptomattes in Nuke
+* Support names containing spaces, commas, and angle brackets. 
+ * Switched matte lists to be yaml-style. This mainly effects names containing spaces, commas, or quotes. 
+ * Names with special character (or names that look like numbers) will be enclosed in quotes. 
+
+1.1.4: 
+
+* Fixes Fusion crash when rendering with FusionRenderConsole
+
+1.1.3:
+
+* Adds beta version of Fusion support, also by Cedric Duriau and Kristof Indeherberge at Grid. 
+ * Major tool connection workflow improvement. No longer requires multiple loaders to work, instead populates single loader channel slots when viewed. 
+
+1.1.2:
+
+* Adds alpha version of Fusion support, created by Cedric Duriau and Kristof Indeherberge at Grid. 
 
 1.1.1:
 
@@ -113,11 +159,33 @@ Advanced Tab:
 * Unload Manifest: Generates a keyer for every name in the manifest. 
 * Force Update All Gizmos in Script: Same as "Force Update", but runs the force update functionality on all Gizmos in the script. 
 
+### Encryptomatte Gizmo
+
+![](/docs/encryptomatteProperties.png)
+
+Encryptomatte is a gizmo that can modify existing Cryptomattes, or start new ones. One Encryptomatte node adds one matte to a Cryptomatte. 
+
+To get started:
+
+1. Load a Cryptomatte with a read node. 
+2. Select it, and tab-create an Encryptomatte. 
+3. Feed in a matte that you would like to add to that Cryptomatte. You can put it over or under all other mattes. 
+4. Write it out as a 32 bit EXR with all metadata, or attach a Cryptomatte node to it to test the mattes. 
+
+Encryptomatte tab:
+* Matte Name: The name your new matte will have in the Cryptomatte
+* Merge Operation: Where in the stack of mattes your matte will be added, over or under the rest
+* Layer selection: Same as Cryptomatte, see above.
+* Force Update: Same as Cryptomatte, see above. 
+* Layers: If starting a fresh Cryptomatte, sets how many Cryptomatte layers are to be created. If starting from scratch, fill in Layer Selection manually. 
+* Setup Layers: If on, starts a fresh Cryptomatte. Otherwise, modifies one from the input. 
+
 ### Menu options
 
 * Cryptomatte: Creates a Cryptomatte gizmo
 * Decryptomatte All: Replaces all Cryptomatte gizmos with other nodes which are functionally equivalent. This is useful for sending nuke scripts to other users who do not have the Cryptomatte plugins installed. 
 * Decryptomatte Selected: Same as "decryptomatte all", except only applies to selected nodes. 
+* Encryptomatte: Creates an Encryptomatte gizmo
 
 ### Troubleshooting
 
