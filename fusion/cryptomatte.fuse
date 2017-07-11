@@ -15,6 +15,7 @@ MATTE_LIST_REGEX = "([^, ]+)"
 CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
 CHANNEL_REGEX = "(.*)[.]([A-Z])"
 FUSE_NAME = "Cryptomatte"
+METADATA_KEY_FILENAME = "Filename"
 
 function log(msg)
     print(string.format(LOG_TEMPLATE, msg))
@@ -644,8 +645,12 @@ end
 
 -- functions
 function CryptomatteInfo:extract_cryptomatte_metadata(exr_image)
+    local exr_path = ""
     for k, v in pairs(exr_image.Metadata) do
-        if string_starts_with(k, METADATA_PREFIX) then
+        if k == METADATA_KEY_FILENAME then
+            -- ensure all path separators are converted to single forward slash
+            exr_path = v:gsub("([\\])", "/")
+        elseif string_starts_with(k, METADATA_PREFIX) then
             -- e.g. cryptomatte/0/name/uCryptoObject
             local metadata_id, partial_key = string.match(k, METADATA_REGEX)
             if not is_key_in_table(metadata_id, self.cryptomattes) then
@@ -655,6 +660,7 @@ function CryptomatteInfo:extract_cryptomatte_metadata(exr_image)
             self.selection = metadata_id
         end
     end
+    self.cryptomattes[self.selection]["exr_path"] = exr_path
 end
 
 function CryptomatteInfo:set_layer_selection()
@@ -670,19 +676,47 @@ function CryptomatteInfo:set_layer_selection()
     end
 end
 
+function resolve_manifest_path(exr_path, sidecar_path)
+    local exr_dir = exr_path:match("(.*/)")
+    return exr_dir .. sidecar_path
+end
+
 function CryptomatteInfo:parse_manifest()
     -- load the manifest and translate ids and names out of it
     local from_names = {}
     local from_ids = {}
     local manifest = {}
+    local manifest_str = ""
     local all_names = {}
-    local manifest_str = self.cryptomattes[self.selection]["manifest"]
+
+    local sidecar_path = self.cryptomattes[self.selection]["manif_file"]
+    if sidecar_path ~= nil then
+        -- open the sidecar file in read mode
+        local path = resolve_manifest_path(self.cryptomattes[self.selection]["exr_path"], sidecar_path)
+        local fp = io.open(path, "r")
+        if fp == nil then
+            log(string.format('ERROR: following path does not exist: %s', path))
+        else
+            -- read all lines from file into a string
+            manifest_str = fp:read("*all")
+            -- close the file
+            fp:close()
+        end
+    else
+        manifest_str = self.cryptomattes[self.selection]["manifest"]
+    end
 
     -- call module dependant decode function
     if CJSON_LOADED then
         manifest = json.decode(manifest_str)
     else
         manifest = json:decode(manifest_str)
+    end
+
+    -- json decode function returns nil when an empty string is passed to decode
+    -- set manifest variable to emtpy table to avoid followed iteration to raise an exception
+    if manifest == nil then
+        manifest = {}
     end
 
     -- decrypt the hashes by name and store data
