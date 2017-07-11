@@ -313,6 +313,15 @@ class CryptomatteInfo(object):
 
         return errors, collisions
 
+def print_hash_info(name):
+    hash_32 = mmh3.hash(name)
+    print "Name:", name
+    print "UTF-8 bytes:", " ".join( hex(ord(x))[2:] for x in name)
+    print "Hash value (signed):", hash_32
+    if hash_32 < 0:
+        hash_32 = (-hash_32 - 1) ^ 0xFFFFFFFF
+    print "Hash value (unsigned):", hash_32
+    print "Float converted:", mm3hash_float(name)
 
 #############################################
 # Public - Create Crypto Gizmos
