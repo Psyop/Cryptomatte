@@ -664,14 +664,23 @@ def unload_manifest(node):
 
 
 def _set_expression(gizmo, cryptomatte_channels):
+    def is_number(s):
+        try:
+            float(s)
+            return True
+        except ValueError:
+            return False
+
     matte_list_str = gizmo.knob("matteList").getValue()
     ID_list = []
 
     matte_list = get_mattelist_as_set(gizmo)
 
     for item in matte_list:
-        if type(item) is float: 
-            ID_list.append(single_precision(item))
+        if item.startswith("<") and item.endswith(">"):
+            numstr = item[1:-1]
+            if is_number(numstr): 
+                ID_list.append(single_precision(float(numstr)))
         else:
             ID_list.append(mm3hash_float(item))
 
@@ -807,24 +816,12 @@ def _decode_csv(input_str):
 
 
 def get_mattelist_as_set(gizmo):
-    def is_number(s):
-        try:
-            float(s)
-            return True
-        except ValueError:
-            return False
-
     matte_list = gizmo.knob("matteList").getValue()
     raw_list = _decode_csv(matte_list)
     result = set()
     for item in raw_list:
         item = item.encode("utf-8") if type(item) is unicode else str(item)
-        if item.startswith("<") and item.endswith(">"):
-            numstr = item[1:-1]
-            if is_number(numstr): 
-                result.add(single_precision(float(numstr)))
-        else:
-            result.add(item) 
+        result.add(item) 
     return result
 
 def set_mattelist_from_set(gizmo, matte_items):
