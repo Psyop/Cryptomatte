@@ -141,16 +141,8 @@ function get_mattes_from_selection(cInfo)
 
     for _, matte in ipairs(matte_name_array) do
         for manifest_matte, _ in pairs(manifest_matte_names) do
-            -- pcall returns false when function raises error, true if successfull
-            -- thing function gets error handled to prevent lua from raising errors in the console regarding invalid regex syntax
-            if pcall(string.gmatch(manifest_matte, matte)) then
-                for m in string.gmatch(manifest_matte, matte) do
-                    if m == manifest_matte then
-                        if not mattes[m] then
-                            mattes[m] = true
-                        end
-                    end
-                end
+            if manifest_matte == matte then
+                mattes[matte] = true
             end
         end
     end
