@@ -323,6 +323,41 @@ def print_hash_info(name):
     print "Hash value (unsigned):", hash_32
     print "Float converted:", mm3hash_float(name)
 
+
+def test_csv_round_trip():
+    """Ensures the round trip is correct for CSV encoding and decoding. """
+    csv_str = ("""str, "str with space", "single 'quotes'", """
+        '"with_a,_comma", "with comma, and \\"quotes\\"", <123.45>, '
+        '" space_in_front", "space_at_end ", "has_escape\\\\chars", '
+        '"unicode \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"')
+    name_list = ["str", "str with space", "single 'quotes'",
+        "with_a,_comma", 'with comma, and "quotes"', "<123.45>", 
+        " space_in_front", "space_at_end ", "has_escape\\chars", 
+        "unicode \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"]
+
+    def check_results(encoded, decoded):
+        if encoded != csv_str:
+            print "list:   ", decoded
+            print "orig:   ", csv_str
+            print "encoded:", encoded
+            raise RuntimeError("Round trip to str failed: %s != %s" % (csv_str, encoded)); 
+        for x, y in zip(name_list, decoded):
+            if x != y:
+                raise RuntimeError("Round trip to list failed: %s != %s" % (x, y));     
+
+    # start from csv
+    decoded = _decode_csv(csv_str)
+    encoded = _encode_csv(decoded)
+    check_results(encoded, decoded)
+
+    # start from list
+    encoded = _encode_csv(name_list)
+    decoded = _decode_csv(encoded)
+    check_results(encoded, decoded)
+    print "Success."
+    return True
+
+
 #############################################
 # Public - Create Crypto Gizmos
 #############################################
@@ -781,12 +816,17 @@ def _update_gizmo_keyed_object(gizmo, cinfo, force=False, color_knob_name="Color
 
 
 def _encode_csv(iterable_items):
+    """
+    Encodes CSVs with special characters escaped, and surrounded in quotes
+    if it contains any of these or spaces, with a space after each comma. 
+    """
     cleaned_items = []
-    need_quotes_chars = ' '
     need_escape_chars = '"\\'
+    need_space_chars = ' ,'
     for item in iterable_items:
-        need_quotes = any(x in item for x in need_quotes_chars)
         need_escape = any(x in item for x in need_escape_chars)
+        need_quotes = need_escape or any(x in item for x in need_space_chars)
+
         cleaned = None
         if need_escape:
             cleaned = ""
@@ -797,7 +837,7 @@ def _encode_csv(iterable_items):
                     cleaned += char
         else:
             cleaned = item
-        if need_quotes or need_escape:
+        if need_quotes:
             cleaned_items.append('"%s"'%cleaned)
         else:
             cleaned_items.append(cleaned)
@@ -806,6 +846,7 @@ def _encode_csv(iterable_items):
 
 
 def _decode_csv(input_str):
+    """ Decodes CSVs into a list of strings. """
     import csv
     reader = csv.reader([input_str], quotechar='"', delimiter=',', escapechar="\\", 
         doublequote=False, quoting=csv.QUOTE_ALL, skipinitialspace=True);
