@@ -793,7 +793,7 @@ def set_mattelist_from_set(gizmo, matte_items):
     for item in matte_items:
         matte_names_list.append(item if type(item) is str else "<%s>" % item)
     matte_names_list.sort(key=lambda x: x.lower() if type(x) is str else 0)
-    yml_list = yaml.safe_dump(matte_names_list, encoding='utf-8', allow_unicode=True)
+    yml_list = yaml.safe_dump(matte_names_list, encoding='utf-8', allow_unicode=True, width=10000)
     gizmo.knob("matteList").setValue(yml_list.strip().strip("[]"))
 
 def _matteList_modify(gizmo, name, remove):
