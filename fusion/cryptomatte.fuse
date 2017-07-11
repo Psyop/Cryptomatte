@@ -10,10 +10,10 @@ Code       : Cedric Duriau         [duriau.cedric@live.be]
 LOG_TEMPLATE = "cryptomatte> %s"
 CJSON_LOADED = false
 METADATA_PREFIX = "cryptomatte/"
-METADATA_REGEX = "%a+/([a-z0-9]+)/(%a+)"
+METADATA_REGEX = "%a+/([a-z0-9]+)/(.+)"
 MATTE_LIST_REGEX = "([^, ]+)"
 CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
-CHANNEL_REGEX = "(.*)[.]([A-Z])"
+CHANNEL_REGEX = "(.*)[.]([a-zA-Z]+)"
 FUSE_NAME = "Cryptomatte"
 METADATA_KEY_FILENAME = "Filename"
 
@@ -298,46 +298,56 @@ function get_all_ranks_from_channels(channels)
     local ranks = {}
     for i, channel_slot_v in ipairs(channels) do
         local rank_name, channel = string.match(channel_slot_v, CHANNEL_REGEX)
-        if not ranks[rank_name] then
-            ranks[rank_name] = true
+        if not is_key_in_table(rank_name, ranks) then
+            ranks[rank_name] = {}
+        end
+        local _channel = channel:lower()
+        if _channel == "r" or _channel == "red" then
+            ranks[rank_name]["r"] = channel
+        elseif _channel == "g" or _channel == "green" then
+            ranks[rank_name]["g"] = channel
+        elseif _channel == "b" or _channel == "blue" then
+            ranks[rank_name]["b"] = channel
+        elseif _channel == "a" or _channel == "alpha" then
+            ranks[rank_name]["a"] = channel
         end
     end
     return ranks
 end
 
 function set_channel_slots(loader, ranks)
-    for rank, _ in pairs(ranks) do
+    for rank, channels in pairs(ranks) do
         if string.find(rank, "00") then
-            loader.Clip1.OpenEXRFormat.ZName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.CovName[0] = string.format("%s.%s", rank, "G")
+            loader.Clip1.OpenEXRFormat.ZName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.CovName[0] = string.format("%s.%s", rank, channels["g"])
             loader.Clip1.OpenEXRFormat.ObjIDName[0] = CHANNEL_KEY_NO_MATCH
             loader.Clip1.OpenEXRFormat.MatIDName[0] = CHANNEL_KEY_NO_MATCH
-            loader.Clip1.OpenEXRFormat.UName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.VName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.UName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.VName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "01") then
-            loader.Clip1.OpenEXRFormat.XNormName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.YNormName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.ZNormName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.XVelName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.XNormName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.YNormName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.ZNormName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.XVelName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "02") then
-            loader.Clip1.OpenEXRFormat.YVelName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.XRevVelName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.YRevVelName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.XPosName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.YVelName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.XRevVelName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.YRevVelName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.XPosName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "03") then
-            loader.Clip1.OpenEXRFormat.YPosName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.ZPosName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.XDispName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.YDispName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.YPosName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.ZPosName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.XDispName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.YDispName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "04") then
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["a"])
         else
-            loader.Clip1.OpenEXRFormat.RedName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.GreenName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.BlueName[0] = string.format("%s.%s", rank, "B")
+            loader.Clip1.OpenEXRFormat.RedName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.GreenName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.BlueName[0] = string.format("%s.%s", rank, channels["b"])
             loader.Clip1.OpenEXRFormat.AlphaName[0] = CHANNEL_KEY_NO_MATCH
         end
     end
@@ -650,7 +660,8 @@ function CryptomatteInfo:extract_cryptomatte_metadata(exr_image)
         if k == METADATA_KEY_FILENAME then
             -- ensure all path separators are converted to single forward slash
             exr_path = v:gsub("([\\])", "/")
-        elseif string_starts_with(k, METADATA_PREFIX) then
+        end
+        if string_starts_with(k, METADATA_PREFIX) then
             -- e.g. cryptomatte/0/name/uCryptoObject
             local metadata_id, partial_key = string.match(k, METADATA_REGEX)
             if not is_key_in_table(metadata_id, self.cryptomattes) then
