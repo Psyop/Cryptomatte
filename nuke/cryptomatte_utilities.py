@@ -771,6 +771,41 @@ def _update_gizmo_keyed_object(gizmo, cinfo, force=False, color_knob_name="Color
 #############################################
 
 
+def _encode_csv(iterable_items):
+    cleaned_items = []
+    need_quotes_chars = ' '
+    need_escape_chars = '"\\'
+    for item in iterable_items:
+        need_quotes = any(x in item for x in need_quotes_chars)
+        need_escape = any(x in item for x in need_escape_chars)
+        cleaned = None
+        if need_escape:
+            cleaned = ""
+            for char in item:
+                if char in need_escape_chars:
+                    cleaned +=( '\\%s' % char )
+                else:
+                    cleaned += char
+        else:
+            cleaned = item
+        if need_quotes or need_escape:
+            cleaned_items.append('"%s"'%cleaned)
+        else:
+            cleaned_items.append(cleaned)
+    result = ", ".join(cleaned_items)
+    return result
+
+
+def _decode_csv(input_str):
+    import csv
+    reader = csv.reader([input_str], quotechar='"', delimiter=',', escapechar="\\", 
+        doublequote=False, quoting=csv.QUOTE_ALL, skipinitialspace=True);
+    result = []
+    for row in reader:
+        result += row
+    return result
+
+
 def get_mattelist_as_set(gizmo):
     def is_number(s):
         try:
@@ -779,10 +814,8 @@ def get_mattelist_as_set(gizmo):
         except ValueError:
             return False
 
-    import yaml
     matte_list = gizmo.knob("matteList").getValue()
-    loader = yaml.loader.BaseLoader # baseloader doesn't parse numbers
-    raw_list = yaml.load("[%s]" % matte_list, Loader=loader) 
+    raw_list = _decode_csv(matte_list)
     result = set()
     for item in raw_list:
         item = item.encode("utf-8") if type(item) is unicode else str(item)
@@ -797,13 +830,13 @@ def get_mattelist_as_set(gizmo):
 def set_mattelist_from_set(gizmo, matte_items):
     """We internally use the yaml module to deal with strings containing commas or 
     spaces. Users are not shown yaml, we strip the [] from the front and end. """
-    import yaml
+    # import yaml
     matte_names_list = list()
     for item in matte_items:
         matte_names_list.append(item if type(item) is str else "<%s>" % item)
     matte_names_list.sort(key=lambda x: x.lower() if type(x) is str else 0)
-    yml_list = yaml.safe_dump(matte_names_list, encoding='utf-8', allow_unicode=True, width=10000)
-    gizmo.knob("matteList").setValue(yml_list.strip().strip("[]"))
+    matte_list_str = _encode_csv(set(matte_names_list))
+    gizmo.knob("matteList").setValue(matte_list_str)
 
 def _matteList_modify(gizmo, name, remove):
     def _matteList_set_add(name, matte_names):
