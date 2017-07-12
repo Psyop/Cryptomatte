@@ -56,6 +56,11 @@ Decoders:
 
 ## Release Notes
 
+1.2.0 (Beta 2):
+
+* Removed dependency of yaml
+* Added some testing utility functions to cryptomatte_utilities.py
+
 1.2.0 (Beta!):
 
 * Changed specification regarding sidecar manifests, such that they are always sidecars with relative paths. 
