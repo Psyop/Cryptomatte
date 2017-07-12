@@ -865,15 +865,12 @@ def get_mattelist_as_set(gizmo):
         result.add(item) 
     return result
 
+
 def set_mattelist_from_set(gizmo, matte_items):
-    """We internally use the yaml module to deal with strings containing commas or 
-    spaces. Users are not shown yaml, we strip the [] from the front and end. """
-    # import yaml
-    matte_names_list = list()
-    for item in matte_items:
-        matte_names_list.append(item if type(item) is str else "<%s>" % item)
-    matte_names_list.sort(key=lambda x: x.lower() if type(x) is str else 0)
-    matte_list_str = _encode_csv(set(matte_names_list))
+    " Creates a CSV matte list. "
+    matte_names_list = list(matte_items)
+    matte_names_list.sort(key=lambda x: x.lower())
+    matte_list_str = _encode_csv(matte_names_list)
     gizmo.knob("matteList").setValue(matte_list_str)
 
 def _matteList_modify(gizmo, name, remove):
