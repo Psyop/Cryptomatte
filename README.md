@@ -33,7 +33,7 @@ Encoders:
 * [Chaos Group V-Ray 3.6 (By Chaos Group)](https://docs.chaosgroup.com/display/VRAY3MAX/Cryptomatte+%7C+VRayCryptomatte)
 * [Arnold 4 (AlShaders), by Jonah Friedman, Andy Jones, Anders Langlands.]( http://www.anderslanglands.com/alshaders/index.html )
 * [Arnold 5 (AlShaders 2), by Jonah Friedman, Andy Jones, Anders Langlands.]( https://github.com/anderslanglands/alShaders2 )
-* Nuke 10 "Encryptomatte", by Andy Jones. In this repo. 
+* Nuke 7+ "Encryptomatte", by Andy Jones. In this repo. 
 
 Decoders:
 
