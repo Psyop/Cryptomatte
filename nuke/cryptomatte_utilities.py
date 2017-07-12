@@ -313,6 +313,7 @@ class CryptomatteInfo(object):
 
         return errors, collisions
 
+
 def print_hash_info(name):
     hash_32 = mmh3.hash(name)
     print "Name:", name
@@ -698,13 +699,15 @@ def unload_manifest(node):
 #############################################
 
 
+def _is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
 def _set_expression(gizmo, cryptomatte_channels):
-    def is_number(s):
-        try:
-            float(s)
-            return True
-        except ValueError:
-            return False
 
     matte_list_str = gizmo.knob("matteList").getValue()
     ID_list = []
@@ -714,7 +717,7 @@ def _set_expression(gizmo, cryptomatte_channels):
     for item in matte_list:
         if item.startswith("<") and item.endswith(">"):
             numstr = item[1:-1]
-            if is_number(numstr): 
+            if _is_number(numstr): 
                 ID_list.append(single_precision(float(numstr)))
         else:
             ID_list.append(mm3hash_float(item))
@@ -879,7 +882,14 @@ def _matteList_modify(gizmo, name, remove):
 
     def _matteList_set_remove(name, matte_names):
         if name in matte_names:
-            matte_names.remove(name)
+            matte_names.remove(name) # the simple case
+        elif name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
+            # maybe it was selected by name, but is being removed by num
+            num = single_precision(float(name[1:-1]))
+            for existing_name in matte_names:
+                if mm3hash_float(existing_name) == num:
+                    matte_names.remove(existing_name)
+                    break
 
     if not name or gizmo.knob("stopAutoUpdate").getValue() == 1.0:
         return
