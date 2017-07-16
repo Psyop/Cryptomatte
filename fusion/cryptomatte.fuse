@@ -10,11 +10,14 @@ Code       : Cedric Duriau         [duriau.cedric@live.be]
 LOG_TEMPLATE = "cryptomatte> %s"
 CJSON_LOADED = false
 METADATA_PREFIX = "cryptomatte/"
-METADATA_REGEX = "%a+/([a-z0-9]+)/(%a+)"
+METADATA_REGEX = "%a+/([a-z0-9]+)/(.+)"
 MATTE_LIST_REGEX = "([^, ]+)"
 CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
-CHANNEL_REGEX = "(.*)[.]([A-Z])"
+CHANNEL_REGEX = "(.*)[.]([a-zA-Z]+)"
 FUSE_NAME = "Cryptomatte"
+METADATA_KEY_FILENAME = "Filename"
+METADATA_KEY_MANIF_FILE = "manif_file"
+METADATA_KEY_MANIFEST = "manifest"
 
 function log(msg)
     print(string.format(LOG_TEMPLATE, msg))
@@ -297,46 +300,56 @@ function get_all_ranks_from_channels(channels)
     local ranks = {}
     for i, channel_slot_v in ipairs(channels) do
         local rank_name, channel = string.match(channel_slot_v, CHANNEL_REGEX)
-        if not ranks[rank_name] then
-            ranks[rank_name] = true
+        if not is_key_in_table(rank_name, ranks) then
+            ranks[rank_name] = {}
+        end
+        local _channel = channel:lower()
+        if _channel == "r" or _channel == "red" then
+            ranks[rank_name]["r"] = channel
+        elseif _channel == "g" or _channel == "green" then
+            ranks[rank_name]["g"] = channel
+        elseif _channel == "b" or _channel == "blue" then
+            ranks[rank_name]["b"] = channel
+        elseif _channel == "a" or _channel == "alpha" then
+            ranks[rank_name]["a"] = channel
         end
     end
     return ranks
 end
 
 function set_channel_slots(loader, ranks)
-    for rank, _ in pairs(ranks) do
+    for rank, channels in pairs(ranks) do
         if string.find(rank, "00") then
-            loader.Clip1.OpenEXRFormat.ZName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.CovName[0] = string.format("%s.%s", rank, "G")
+            loader.Clip1.OpenEXRFormat.ZName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.CovName[0] = string.format("%s.%s", rank, channels["g"])
             loader.Clip1.OpenEXRFormat.ObjIDName[0] = CHANNEL_KEY_NO_MATCH
             loader.Clip1.OpenEXRFormat.MatIDName[0] = CHANNEL_KEY_NO_MATCH
-            loader.Clip1.OpenEXRFormat.UName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.VName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.UName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.VName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "01") then
-            loader.Clip1.OpenEXRFormat.XNormName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.YNormName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.ZNormName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.XVelName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.XNormName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.YNormName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.ZNormName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.XVelName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "02") then
-            loader.Clip1.OpenEXRFormat.YVelName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.XRevVelName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.YRevVelName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.XPosName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.YVelName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.XRevVelName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.YRevVelName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.XPosName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "03") then
-            loader.Clip1.OpenEXRFormat.YPosName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.ZPosName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.XDispName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.YDispName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.YPosName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.ZPosName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.XDispName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.YDispName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "04") then
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["a"])
         else
-            loader.Clip1.OpenEXRFormat.RedName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.GreenName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.BlueName[0] = string.format("%s.%s", rank, "B")
+            loader.Clip1.OpenEXRFormat.RedName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.GreenName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.BlueName[0] = string.format("%s.%s", rank, channels["b"])
             loader.Clip1.OpenEXRFormat.AlphaName[0] = CHANNEL_KEY_NO_MATCH
         end
     end
@@ -644,6 +657,11 @@ end
 
 -- functions
 function CryptomatteInfo:extract_cryptomatte_metadata(exr_image)
+    local exr_path = ""
+    -- clear the previously extracted cryptomatte metadata to avoid values of the
+    -- optional manifest/manif_file keys staying in memory
+    self.cryptomattes = {}
+
     for k, v in pairs(exr_image.Metadata) do
         if string_starts_with(k, METADATA_PREFIX) then
             -- e.g. cryptomatte/0/name/uCryptoObject
@@ -653,8 +671,12 @@ function CryptomatteInfo:extract_cryptomatte_metadata(exr_image)
             end
             self.cryptomattes[metadata_id][partial_key] = v
             self.selection = metadata_id
+        elseif k == METADATA_KEY_FILENAME then
+            -- ensure all path separators are converted to single forward slash
+            exr_path = v:gsub("([\\])", "/")
         end
     end
+    self.cryptomattes[self.selection]["exr_path"] = exr_path
 end
 
 function CryptomatteInfo:set_layer_selection()
@@ -670,13 +692,35 @@ function CryptomatteInfo:set_layer_selection()
     end
 end
 
+function resolve_manifest_path(exr_path, sidecar_path)
+    local exr_dir = exr_path:match("(.*/)")
+    return exr_dir .. sidecar_path
+end
+
 function CryptomatteInfo:parse_manifest()
     -- load the manifest and translate ids and names out of it
     local from_names = {}
     local from_ids = {}
-    local manifest = {}
+    local manifest
+    local manifest_str = ""
     local all_names = {}
-    local manifest_str = self.cryptomattes[self.selection]["manifest"]
+
+    local sidecar_path = self.cryptomattes[self.selection][METADATA_KEY_MANIF_FILE]
+    if sidecar_path ~= nil then
+        -- open the sidecar file in read mode
+        local path = resolve_manifest_path(self.cryptomattes[self.selection]["exr_path"], sidecar_path)
+        local fp = io.open(path, "r")
+        if fp == nil then
+            log(string.format('ERROR: following path does not exist: %s', path))
+        else
+            -- read all lines from file into a string
+            manifest_str = fp:read("*all")
+            -- close the file
+            fp:close()
+        end
+    else
+        manifest_str = self.cryptomattes[self.selection][METADATA_KEY_MANIFEST]
+    end
 
     -- call module dependant decode function
     if CJSON_LOADED then
@@ -684,6 +728,11 @@ function CryptomatteInfo:parse_manifest()
     else
         manifest = json:decode(manifest_str)
     end
+
+    -- json decode function returns nil when an empty string is passed to decode
+    -- assert type of manifest is table to ensure value if valid
+    -- if value is not valid, raise error to exit the process function
+    assert(type(manifest) == "table", "invalid manifest")
 
     -- decrypt the hashes by name and store data
     for name, hex in pairs(manifest) do
