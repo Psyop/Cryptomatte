@@ -16,6 +16,8 @@ CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
 CHANNEL_REGEX = "(.*)[.]([a-zA-Z]+)"
 FUSE_NAME = "Cryptomatte"
 METADATA_KEY_FILENAME = "Filename"
+METADATA_KEY_MANIF_FILE = "manif_file"
+METADATA_KEY_MANIFEST = "manifest"
 
 function log(msg)
     print(string.format(LOG_TEMPLATE, msg))
@@ -656,11 +658,11 @@ end
 -- functions
 function CryptomatteInfo:extract_cryptomatte_metadata(exr_image)
     local exr_path = ""
+    -- clear the previously extracted cryptomatte metadata to avoid values of the
+    -- optional manifest/manif_file keys staying in memory
+    self.cryptomattes = {}
+
     for k, v in pairs(exr_image.Metadata) do
-        if k == METADATA_KEY_FILENAME then
-            -- ensure all path separators are converted to single forward slash
-            exr_path = v:gsub("([\\])", "/")
-        end
         if string_starts_with(k, METADATA_PREFIX) then
             -- e.g. cryptomatte/0/name/uCryptoObject
             local metadata_id, partial_key = string.match(k, METADATA_REGEX)
@@ -669,6 +671,9 @@ function CryptomatteInfo:extract_cryptomatte_metadata(exr_image)
             end
             self.cryptomattes[metadata_id][partial_key] = v
             self.selection = metadata_id
+        elseif k == METADATA_KEY_FILENAME then
+            -- ensure all path separators are converted to single forward slash
+            exr_path = v:gsub("([\\])", "/")
         end
     end
     self.cryptomattes[self.selection]["exr_path"] = exr_path
@@ -696,11 +701,11 @@ function CryptomatteInfo:parse_manifest()
     -- load the manifest and translate ids and names out of it
     local from_names = {}
     local from_ids = {}
-    local manifest = {}
+    local manifest
     local manifest_str = ""
     local all_names = {}
 
-    local sidecar_path = self.cryptomattes[self.selection]["manif_file"]
+    local sidecar_path = self.cryptomattes[self.selection][METADATA_KEY_MANIF_FILE]
     if sidecar_path ~= nil then
         -- open the sidecar file in read mode
         local path = resolve_manifest_path(self.cryptomattes[self.selection]["exr_path"], sidecar_path)
@@ -714,7 +719,7 @@ function CryptomatteInfo:parse_manifest()
             fp:close()
         end
     else
-        manifest_str = self.cryptomattes[self.selection]["manifest"]
+        manifest_str = self.cryptomattes[self.selection][METADATA_KEY_MANIFEST]
     end
 
     -- call module dependant decode function
@@ -725,10 +730,9 @@ function CryptomatteInfo:parse_manifest()
     end
 
     -- json decode function returns nil when an empty string is passed to decode
-    -- set manifest variable to emtpy table to avoid followed iteration to raise an exception
-    if manifest == nil then
-        manifest = {}
-    end
+    -- assert type of manifest is table to ensure value if valid
+    -- if value is not valid, raise error to exit the process function
+    assert(type(manifest) == "table", "invalid manifest")
 
     -- decrypt the hashes by name and store data
     for name, hex in pairs(manifest) do
