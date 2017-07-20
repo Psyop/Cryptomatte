@@ -5,7 +5,7 @@
 #
 #
 
-__version__ = "1.2.0-beta2"
+__version__ = "1.2.0-beta3"
 
 GIZMO_CHANNEL_KNOBS = ["previewChannel", "in00", "in01", "in02", "in03", "in04", "in05", "in06", "in07"]
 GIZMO_REMOVE_CHANNEL_KNOBS = ["removePreviewChannel", "remove00", "remove01", "remove02", "remove03", "remove04", "remove05", "remove06", "remove07"]
