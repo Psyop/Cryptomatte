@@ -11,7 +11,7 @@ LOG_TEMPLATE = "cryptomatte> %s"
 CJSON_LOADED = false
 METADATA_PREFIX = "cryptomatte/"
 METADATA_REGEX = "%a+/([a-z0-9]+)/(.+)"
-MATTE_LIST_REGEX = "([^, ]+)"
+MATTE_LIST_REGEX = "([^,]+),?%s*"
 CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
 CHANNEL_REGEX = "(.*)[.]([a-zA-Z]+)"
 FUSE_NAME = "Cryptomatte"
@@ -120,6 +120,7 @@ function set_keyed_name_checker(cInfo, id_float_value)
         text_to_set = "Background (Value is 0.0)"
     else
         text_to_set = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
+        text_to_set = "\"" .. text_to_set .. "\""
     end
     -- set the keyed name if different then before
     if text_to_set ~= keyed_name then
@@ -131,6 +132,8 @@ function convert_str_to_array(str, pattern)
     -- convert matte selection list in str format to set
     local matte_names = {}
     for matte in string.gmatch(str, pattern) do
+        -- strip the leading and trailing double quote
+        matte = string.sub(matte, 2, matte:len() - 1)
         table.insert(matte_names, matte)
     end
     return matte_names
@@ -170,6 +173,7 @@ function update_matte_list(cInfo, matte_name, remove)
     -- string concat .. operator allocates more memory than table.concat
     local new_content = {}
     for matte_name, _ in pairs(matte_set) do
+        matte_name = "\"" .. matte_name .. "\""
         table.insert(new_content, matte_name)
     end
     -- get string variant of updated table
@@ -284,11 +288,12 @@ function get_input_loader(tool)
     end
 end
 
-function get_all_channels_from_loader(loader)
+function get_all_channels_from_loader(cInfo, loader)
     local valid_channels = {}
     local loader_channel = loader.Clip1.OpenEXRFormat.RedName:GetAttrs().INPIDT_ComboControl_ID
     for i, channel in ipairs(loader_channel) do
-        if not (channel == CHANNEL_KEY_NO_MATCH or channel == "R" or channel == "G" or channel == "B" or channel == "A") then
+        -- only store the channels containg the cryptomatte name metadata value
+        if string.find(channel, cInfo.cryptomattes[cInfo.selection]["name"]) then
             table.insert(valid_channels, channel)
         end
     end
@@ -771,6 +776,10 @@ function Process(req)
     -- get input image
     local input_image = InImage:GetValue(req)
 
+    -- decode and translate manifest
+    cInfo:extract_cryptomatte_metadata(input_image)
+    cInfo:parse_manifest()
+
     -- connect input callback
     -- code is here instead of directly in OnConnect callback due to Fusion crashing when placed there
     local connect_triggered = InImageConnectCB:GetValue(req).Value
@@ -782,7 +791,7 @@ function Process(req)
             local tool = comp:FindTool(self.Name)
             local loader = get_input_loader(tool)
             -- get all channels listed in the loader's first channel slot
-            local all_channels = get_all_channels_from_loader(loader)
+            local all_channels = get_all_channels_from_loader(cInfo, loader)
             -- get all unique ranks from the channel list
             local ranks = get_all_ranks_from_channels(all_channels)
             -- fill in all the remaining slots correctly
@@ -791,10 +800,6 @@ function Process(req)
             InImageConnectCB:SetSource(Number(0), 0, 0)
         end
     end
-
-    -- decode and translate manifest
-    cInfo:extract_cryptomatte_metadata(input_image)
-    cInfo:parse_manifest()
 
     -- get all rank images from slots
     local crypto_images = get_all_rank_images(input_image)
