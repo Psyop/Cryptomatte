@@ -58,7 +58,7 @@ Decoders:
 1.2.0 (Beta 4):
 
 * Fusion - Support for names containing special characters in selection lists
- * Known limitation: Commas in names are not yet supported. 
+* Fusion - Known limitation: Commas in names are not yet supported. 
 
 1.2.0 (Beta 3):
 
