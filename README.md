@@ -205,3 +205,7 @@ Encryptomatte tab:
 ### Troubleshooting
 
 For common issues, see [troubleshooting.](troubleshooting.md)
+
+## Fusion Installation
+Copy the fuse file in the Fuses folder (C:\Program Files\Blackmagic Design\Fusion <n>\Fuses).
+Copy the lua files next to the exe file (C:\Program Files\Blackmagic Design\Fusion <n>).
