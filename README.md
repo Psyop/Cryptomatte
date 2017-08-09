@@ -17,7 +17,7 @@ The contents of this repository are:
 
 **Nuke:** This contains Python files, an image, and a gizmo. Together these are our implementation for The Foundry's Nuke.
 
-**Fusion:** Alpha version of Fusion integration, including a Fuse and Lua scripts
+**Fusion:** Fusion integration, including a Fuse and Lua scripts
 
 **Sample Images:** These example Cryptomatte images can be used for testing your Nuke installation, or for testing other implimentations. 
 
@@ -40,7 +40,6 @@ Decoders:
 * Nuke 7+, by Jonah Friedman, Andy Jones. In this repo.
 * Fusion: by Cedric Duriau and Kristof Indeherberge at Grid. In this repo.
 
-
 ## Acknowledgements 
 
 * Anders Langlands
@@ -55,6 +54,17 @@ Decoders:
 * Vladimir Koylazov
 
 ## Release Notes
+
+1.2.0 (Beta 4):
+
+* Fusion - Support for names containing special characters in selection lists
+* Fusion - Known limitation: Commas in names are not yet supported. 
+
+1.2.0 (Beta 3):
+
+* Fusion - Support for sidecar manifests
+* Fixed updating issue when connecting fuse to different cryptomatte types
+* Performance improvements in Fusion
 
 1.2.0 (Beta 2):
 

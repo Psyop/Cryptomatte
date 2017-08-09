@@ -5,7 +5,7 @@
 #
 #
 
-__version__ = "1.2.0-beta2"
+__version__ = "1.2.0-beta4"
 
 GIZMO_CHANNEL_KNOBS = ["previewChannel", "in00", "in01", "in02", "in03", "in04", "in05", "in06", "in07"]
 GIZMO_REMOVE_CHANNEL_KNOBS = ["removePreviewChannel", "remove00", "remove01", "remove02", "remove03", "remove04", "remove05", "remove06", "remove07"]
@@ -312,6 +312,7 @@ class CryptomatteInfo(object):
         print "    ", len(collisions), "hash collisions in manifest."
 
         return errors, collisions
+
 
 def print_hash_info(name):
     hash_32 = mmh3.hash(name)
@@ -698,13 +699,15 @@ def unload_manifest(node):
 #############################################
 
 
+def _is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
 def _set_expression(gizmo, cryptomatte_channels):
-    def is_number(s):
-        try:
-            float(s)
-            return True
-        except ValueError:
-            return False
 
     matte_list_str = gizmo.knob("matteList").getValue()
     ID_list = []
@@ -714,7 +717,7 @@ def _set_expression(gizmo, cryptomatte_channels):
     for item in matte_list:
         if item.startswith("<") and item.endswith(">"):
             numstr = item[1:-1]
-            if is_number(numstr): 
+            if _is_number(numstr): 
                 ID_list.append(single_precision(float(numstr)))
         else:
             ID_list.append(mm3hash_float(item))
@@ -865,15 +868,12 @@ def get_mattelist_as_set(gizmo):
         result.add(item) 
     return result
 
+
 def set_mattelist_from_set(gizmo, matte_items):
-    """We internally use the yaml module to deal with strings containing commas or 
-    spaces. Users are not shown yaml, we strip the [] from the front and end. """
-    # import yaml
-    matte_names_list = list()
-    for item in matte_items:
-        matte_names_list.append(item if type(item) is str else "<%s>" % item)
-    matte_names_list.sort(key=lambda x: x.lower() if type(x) is str else 0)
-    matte_list_str = _encode_csv(set(matte_names_list))
+    " Creates a CSV matte list. "
+    matte_names_list = list(matte_items)
+    matte_names_list.sort(key=lambda x: x.lower())
+    matte_list_str = _encode_csv(matte_names_list)
     gizmo.knob("matteList").setValue(matte_list_str)
 
 def _matteList_modify(gizmo, name, remove):
@@ -882,7 +882,14 @@ def _matteList_modify(gizmo, name, remove):
 
     def _matteList_set_remove(name, matte_names):
         if name in matte_names:
-            matte_names.remove(name)
+            matte_names.remove(name) # the simple case
+        elif name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
+            # maybe it was selected by name, but is being removed by num
+            num = single_precision(float(name[1:-1]))
+            for existing_name in matte_names:
+                if mm3hash_float(existing_name) == num:
+                    matte_names.remove(existing_name)
+                    break
 
     if not name or gizmo.knob("stopAutoUpdate").getValue() == 1.0:
         return

@@ -10,10 +10,14 @@ Code       : Cedric Duriau         [duriau.cedric@live.be]
 LOG_TEMPLATE = "cryptomatte> %s"
 CJSON_LOADED = false
 METADATA_PREFIX = "cryptomatte/"
-METADATA_REGEX = "%a+/([a-z0-9]+)/(%a+)"
-MATTE_LIST_REGEX = "([^, ]+)"
+METADATA_REGEX = "%a+/([a-z0-9]+)/(.+)"
+MATTE_LIST_REGEX = "([^,]+),?%s*"
 CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
-CHANNEL_REGEX = "(.*)[.]([A-Z])"
+CHANNEL_REGEX = "(.*)[.]([a-zA-Z]+)"
+FUSE_NAME = "Cryptomatte"
+METADATA_KEY_FILENAME = "Filename"
+METADATA_KEY_MANIF_FILE = "manif_file"
+METADATA_KEY_MANIFEST = "manifest"
 
 function log(msg)
     print(string.format(LOG_TEMPLATE, msg))
@@ -108,61 +112,72 @@ function set_output_image(cryptomatte, cryptomatte00)
 end
 
 function set_keyed_name_checker(cInfo, id_float_value)
-    -- get the keyed name input
+    -- current keyed name
     local keyed_name = InKeyedName:GetSource(0).Value
-
     -- get the matte name matching the float id
     local text_to_set = ""
     if id_float_value == 0.0 then
         text_to_set = "Background (Value is 0.0)"
     else
-        text_to_set = cInfo:get_matte_name_from_id(id_float_value)
+        text_to_set = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
+        text_to_set = "\"" .. text_to_set .. "\""
     end
-
-    if text_to_set == "" then
-        return
-    end
-
     -- set the keyed name if different then before
     if text_to_set ~= keyed_name then
         InKeyedName:SetSource(Text(text_to_set), 0, 0)
     end
 end
 
-function get_mattes_from_selection()
-    -- get the current list of mattes in string format
-    local matte_input_str = InMatteList:GetSource(0).Value
+function convert_str_to_array(str, pattern)
+    -- convert matte selection list in str format to set
     local matte_names = {}
-    for matte in string.gmatch(matte_input_str, MATTE_LIST_REGEX) do
+    for matte in string.gmatch(str, pattern) do
+        -- strip the leading and trailing double quote
+        matte = string.sub(matte, 2, matte:len() - 1)
         table.insert(matte_names, matte)
     end
     return matte_names
 end
 
-function update_matte_list(matte_name, remove)
-    local matte_array = get_mattes_from_selection()
+function get_mattes_from_selection(cInfo)
+    local mattes = {}
+    local matte_input_str = InMatteList:GetSource(0).Value
+    local matte_name_array = convert_str_to_array(matte_input_str, MATTE_LIST_REGEX)
+    local manifest_matte_names = cInfo.cryptomattes[cInfo.selection]["names"]
 
-    if remove then
-        local update = false
-        for i, matte in ipairs(matte_array) do
-            if matte_name == matte then
-                table.remove(matte_array, i)
-                update = true
-                break
+    for _, matte in ipairs(matte_name_array) do
+        for manifest_matte, _ in pairs(manifest_matte_names) do
+            if manifest_matte == matte then
+                mattes[matte] = true
             end
         end
-        if not update then
-            return
+    end
+    return mattes
+end
+
+function update_matte_list(cInfo, matte_name, remove)
+    local matte_set = get_mattes_from_selection(cInfo)
+    local matte_present = matte_set[matte_name]
+    local content_str = InMatteList:GetSource(0).Value
+
+    if remove then
+        if matte_present then
+            matte_set[matte_name] = nil
         end
     else
-        if is_item_in_array(matte_name, matte_array) then
-            return
+        if not matte_present then
+            matte_set[matte_name] = true
         end
-        table.insert(matte_array, matte_name)
     end
 
+    -- string concat .. operator allocates more memory than table.concat
+    local new_content = {}
+    for matte_name, _ in pairs(matte_set) do
+        matte_name = "\"" .. matte_name .. "\""
+        table.insert(new_content, matte_name)
+    end
     -- get string variant of updated table
-    local new_content_str = table.concat(matte_array, ", ")
+    local new_content_str = table.concat(new_content, ", ")
     InMatteList:SetSource(Text(new_content_str), 0, 0)
 end
 
@@ -175,18 +190,20 @@ function get_pixel(img, x, y)
     return p
 end
 
-function generate_matte_from_rank(y)
+function generate_mattes_from_rank(y)
     local global_p = Pixel()
     for x = 0, In.Width - 1 do
         In:GetPixel(x, y, global_p)
-        -- match one of the coverage ids with the id float value
-        if global_p.R == id_float_value or global_p.B == id_float_value then
+
+        local r_in_array = id_float_values[global_p.R]
+        local b_in_array = id_float_values[global_p.B]
+        if r_in_array or b_in_array then
             local local_p = Pixel()
-            if global_p.R == id_float_value then
+            if r_in_array then
                 local_p.R = 0.0
                 local_p.G = global_p.G
             end
-            if global_p.B == id_float_value then
+            if b_in_array then
                 local_p.B = 0.0
                 local_p.A = global_p.A
             end
@@ -195,48 +212,55 @@ function generate_matte_from_rank(y)
     end
 end
 
-function create_matte_image(crypto_images, output_image, id_float_value)
-    local matte = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
-    matte:Clear()
+function create_matte_images(crypto_images, output_image, id_float_values)
+    local combined_matte = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
+    combined_matte:Clear()
+
     for i, image in ipairs(crypto_images) do
-        -- create mono channel output to store matte in
-        local filtered_coverage = Image({ IMG_Like = image })
-        filtered_coverage:Clear()
+        local rank_matte = Image({ IMG_Like = image })
+        rank_matte:Clear()
 
         -- process pixels to retrieve the pixels matching the id float value
-        self:DoMultiProcess(nil, { In = image, Out = filtered_coverage, id_float_value = id_float_value }, image.Height, generate_matte_from_rank)
+        self:DoMultiProcess(nil, { In = image, Out = rank_matte, id_float_values = id_float_values }, image.Height, generate_mattes_from_rank)
 
         -- create mono channel output to store iterative matte in
         local i_matte = Image({ IMG_Like = image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
-        i_matte = i_matte:ChannelOpOf("Add", filtered_coverage, { A = "fg.G" })
-        i_matte = i_matte:ChannelOpOf("Add", filtered_coverage, { A = "fg.A" })
+        i_matte = i_matte:ChannelOpOf("Add", rank_matte, { A = "fg.G" })
+        i_matte = i_matte:ChannelOpOf("Add", rank_matte, { A = "fg.A" })
 
         -- add mono result to main output
-        matte = matte:ChannelOpOf("Add", i_matte, { A = "fg.A" })
+        combined_matte = combined_matte:ChannelOpOf("Add", i_matte, { A = "fg.A" })
     end
-    return matte
+
+    -- add combined matte to keyed image
+    return combined_matte
 end
 
 function add_matte(cInfo, crypto_images, output_image, id_float_value)
-    local matte_name = cInfo:get_matte_name_from_id(id_float_value)
-    if matte_name ~= "" then
-        -- generate matte for located id
-        local matte = create_matte_image(crypto_images, output_image, id_float_value)
-        -- keep track of mattes to add
-        cInfo:add_matte_image(matte_name, matte)
-        update_matte_list(matte_name, false)
-    end
+    local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
+    update_matte_list(cInfo, matte_name, false)
 end
 
 function remove_matte(cInfo, crypto_images, output_image, id_float_value)
-    local matte_name = cInfo:get_matte_name_from_id(id_float_value)
-    if matte_name ~= "" then
-        -- generate matte for located id
-        local matte = create_matte_image(crypto_images, output_image, id_float_value)
-        -- keep track of mattes to remove
-        cInfo:remove_matte_image(matte_name, matte)
-        update_matte_list(matte_name, true)
+    local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
+    update_matte_list(cInfo, matte_name, true)
+end
+
+function rebuild_matte(cInfo, crypto_images, output_image)
+    local matte_names = get_mattes_from_selection(cInfo)
+    local combined_matte = output_image
+    local ids = {}
+    for name, _ in pairs(matte_names) do
+        local id = cInfo.cryptomattes[cInfo.selection]["name_to_id"][name]
+        if id then
+            ids[id] = true
+        end
     end
+    if ids then
+        combined_matte = create_matte_images(crypto_images, output_image, ids)
+        output_image = output_image:ChannelOpOf("Add", combined_matte, { R = "fg.A", G = "fg.A", A = "fg.A" })
+    end
+    return output_image
 end
 
 function get_input_loader(tool)
@@ -249,7 +273,11 @@ function get_input_loader(tool)
     if input == nil then
         input = tool.Input
     end
-    local input_tool = input:GetConnectedOutput():GetTool()
+    local connected_output = input:GetConnectedOutput()
+    if not connected_output then
+        return
+    end
+    local input_tool = connected_output:GetTool()
     if input_tool.ID == "Loader" then
         -- if connected tool is a loader, return the connected tool
         return input_tool
@@ -260,11 +288,12 @@ function get_input_loader(tool)
     end
 end
 
-function get_all_channels_from_loader(loader)
+function get_all_channels_from_loader(cInfo, loader)
     local valid_channels = {}
     local loader_channel = loader.Clip1.OpenEXRFormat.RedName:GetAttrs().INPIDT_ComboControl_ID
     for i, channel in ipairs(loader_channel) do
-        if not (channel == CHANNEL_KEY_NO_MATCH or channel == "R" or channel == "G" or channel == "B" or channel == "A") then
+        -- only store the channels containg the cryptomatte name metadata value
+        if string.find(channel, cInfo.cryptomattes[cInfo.selection]["name"]) then
             table.insert(valid_channels, channel)
         end
     end
@@ -276,46 +305,56 @@ function get_all_ranks_from_channels(channels)
     local ranks = {}
     for i, channel_slot_v in ipairs(channels) do
         local rank_name, channel = string.match(channel_slot_v, CHANNEL_REGEX)
-        if not is_item_in_array(rank_name, ranks) then
-            table.insert(ranks, rank_name)
+        if not is_key_in_table(rank_name, ranks) then
+            ranks[rank_name] = {}
+        end
+        local _channel = channel:lower()
+        if _channel == "r" or _channel == "red" then
+            ranks[rank_name]["r"] = channel
+        elseif _channel == "g" or _channel == "green" then
+            ranks[rank_name]["g"] = channel
+        elseif _channel == "b" or _channel == "blue" then
+            ranks[rank_name]["b"] = channel
+        elseif _channel == "a" or _channel == "alpha" then
+            ranks[rank_name]["a"] = channel
         end
     end
     return ranks
 end
 
 function set_channel_slots(loader, ranks)
-    for i, rank in ipairs(ranks) do
+    for rank, channels in pairs(ranks) do
         if string.find(rank, "00") then
-            loader.Clip1.OpenEXRFormat.ZName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.CovName[0] = string.format("%s.%s", rank, "G")
+            loader.Clip1.OpenEXRFormat.ZName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.CovName[0] = string.format("%s.%s", rank, channels["g"])
             loader.Clip1.OpenEXRFormat.ObjIDName[0] = CHANNEL_KEY_NO_MATCH
             loader.Clip1.OpenEXRFormat.MatIDName[0] = CHANNEL_KEY_NO_MATCH
-            loader.Clip1.OpenEXRFormat.UName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.VName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.UName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.VName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "01") then
-            loader.Clip1.OpenEXRFormat.XNormName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.YNormName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.ZNormName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.XVelName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.XNormName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.YNormName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.ZNormName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.XVelName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "02") then
-            loader.Clip1.OpenEXRFormat.YVelName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.XRevVelName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.YRevVelName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.XPosName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.YVelName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.XRevVelName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.YRevVelName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.XPosName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "03") then
-            loader.Clip1.OpenEXRFormat.YPosName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.ZPosName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.XDispName[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.YDispName[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.YPosName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.ZPosName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.XDispName[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.YDispName[0] = string.format("%s.%s", rank, channels["a"])
         elseif string.find(rank, "04") then
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "B")
-            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, "A")
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["b"])
+            loader.Clip1.OpenEXRFormat.Name[0] = string.format("%s.%s", rank, channels["a"])
         else
-            loader.Clip1.OpenEXRFormat.RedName[0] = string.format("%s.%s", rank, "R")
-            loader.Clip1.OpenEXRFormat.GreenName[0] = string.format("%s.%s", rank, "G")
-            loader.Clip1.OpenEXRFormat.BlueName[0] = string.format("%s.%s", rank, "B")
+            loader.Clip1.OpenEXRFormat.RedName[0] = string.format("%s.%s", rank, channels["r"])
+            loader.Clip1.OpenEXRFormat.GreenName[0] = string.format("%s.%s", rank, channels["g"])
+            loader.Clip1.OpenEXRFormat.BlueName[0] = string.format("%s.%s", rank, channels["b"])
             loader.Clip1.OpenEXRFormat.AlphaName[0] = CHANNEL_KEY_NO_MATCH
         end
     end
@@ -356,17 +395,22 @@ function get_all_rank_images(input_image)
     local crypto_image_00 = input_image:ChannelOpOf("Copy", nil, { R = "bg.Z", G = "bg.Coverage", B = "bg.U", A = "bg.V" })
     local crypto_image_01 = input_image:ChannelOpOf("Copy", nil, { R = "bg.NX", G = "bg.NY", B = "bg.NZ", A = "bg.VectX" })
     local crypto_image_02 = input_image:ChannelOpOf("Copy", nil, { R = "bg.VectY", G = "bg.BackVectX", B = "bg.BackVectY", A = "bg.PositionX" })
-    return { crypto_image_std, crypto_image_00, crypto_image_01, crypto_image_02 }
+    return {
+        crypto_image_std,
+        crypto_image_00,
+        crypto_image_01,
+        crypto_image_02
+    }
 end
 
 -- ============================================================================
 -- cryptomatte fuse
 -- ============================================================================
-FuRegisterClass("Cryptomatte", CT_Tool, {
-    REGS_Name = "Cryptomatte",
-    REGS_Category = "Cryptomatte",
-    REGS_OpIconString = "Cryptomatte",
-    REGS_OpDescription = "Cryptomatte",
+FuRegisterClass(FUSE_NAME, CT_Tool, {
+    REGS_Name = FUSE_NAME,
+    REGS_Category = FUSE_NAME,
+    REGS_OpIconString = FUSE_NAME,
+    REGS_OpDescription = FUSE_NAME,
     REG_NoMotionBlurCtrls = true,
     REG_NoBlendCtrls = true,
     REG_OpNoMask = true
@@ -397,6 +441,7 @@ function Create()
         LINKID_DataType = "Image",
         LINK_Main = 1
     })
+
 
     -- ========================================================================
     -- locator
@@ -612,55 +657,31 @@ function CryptomatteInfo.new()
     -- members
     self.cryptomattes = {}
     self.selection = nil
-    self.mattes_to_add = {}
-    self.mattes_to_remove = {}
-    self.active_mattes = {}
     return self
 end
 
 -- functions
-function CryptomatteInfo:add_matte_image(matte_name, matte_image)
-    local present = false
-    for name, img in pairs(self.mattes_to_add) do
-        if name == matte_name then
-            present = true
-            break
-        end
-    end
-    if not present then
-        self.mattes_to_add[matte_name] = matte_image
-    end
-end
-
-function CryptomatteInfo:remove_matte_image(matte_name, matte_image)
-    local present = false
-    for name, img in pairs(self.mattes_to_remove) do
-        if name == matte_name then
-            present = true
-            break
-        end
-    end
-    if not present then
-        self.mattes_to_remove[matte_name] = matte_image
-    end
-end
-
 function CryptomatteInfo:extract_cryptomatte_metadata(exr_image)
-    local t_start = os.clock()
+    local exr_path = ""
+    -- clear the previously extracted cryptomatte metadata to avoid values of the
+    -- optional manifest/manif_file keys staying in memory
+    self.cryptomattes = {}
+
     for k, v in pairs(exr_image.Metadata) do
         if string_starts_with(k, METADATA_PREFIX) then
             -- e.g. cryptomatte/0/name/uCryptoObject
             local metadata_id, partial_key = string.match(k, METADATA_REGEX)
             if not is_key_in_table(metadata_id, self.cryptomattes) then
                 self.cryptomattes[metadata_id] = {}
-                self.selection = metadata_id
             end
             self.cryptomattes[metadata_id][partial_key] = v
+            self.selection = metadata_id
+        elseif k == METADATA_KEY_FILENAME then
+            -- ensure all path separators are converted to single forward slash
+            exr_path = v:gsub("([\\])", "/")
         end
     end
-    -- manifest content placeholders
-    self.cryptomattes[self.selection]["name_to_id"] = nil
-    self.cryptomattes[self.selection]["id_to_name"] = nil
+    self.cryptomattes[self.selection]["exr_path"] = exr_path
 end
 
 function CryptomatteInfo:set_layer_selection()
@@ -676,12 +697,35 @@ function CryptomatteInfo:set_layer_selection()
     end
 end
 
+function resolve_manifest_path(exr_path, sidecar_path)
+    local exr_dir = exr_path:match("(.*/)")
+    return exr_dir .. sidecar_path
+end
+
 function CryptomatteInfo:parse_manifest()
     -- load the manifest and translate ids and names out of it
     local from_names = {}
     local from_ids = {}
-    local manifest = {}
-    local manifest_str = self.cryptomattes[self.selection]["manifest"]
+    local manifest
+    local manifest_str = ""
+    local all_names = {}
+
+    local sidecar_path = self.cryptomattes[self.selection][METADATA_KEY_MANIF_FILE]
+    if sidecar_path ~= nil then
+        -- open the sidecar file in read mode
+        local path = resolve_manifest_path(self.cryptomattes[self.selection]["exr_path"], sidecar_path)
+        local fp = io.open(path, "r")
+        if fp == nil then
+            log(string.format('ERROR: following path does not exist: %s', path))
+        else
+            -- read all lines from file into a string
+            manifest_str = fp:read("*all")
+            -- close the file
+            fp:close()
+        end
+    else
+        manifest_str = self.cryptomattes[self.selection][METADATA_KEY_MANIFEST]
+    end
 
     -- call module dependant decode function
     if CJSON_LOADED then
@@ -689,6 +733,11 @@ function CryptomatteInfo:parse_manifest()
     else
         manifest = json:decode(manifest_str)
     end
+
+    -- json decode function returns nil when an empty string is passed to decode
+    -- assert type of manifest is table to ensure value if valid
+    -- if value is not valid, raise error to exit the process function
+    assert(type(manifest) == "table", "invalid manifest")
 
     -- decrypt the hashes by name and store data
     for name, hex in pairs(manifest) do
@@ -703,24 +752,13 @@ function CryptomatteInfo:parse_manifest()
 
         from_names[name_str] = id_float
         from_ids[id_float] = name_str
+        all_names[name_str] = true
     end
 
     -- create name to id from hexadecimal value of names
     self.cryptomattes[self.selection]["name_to_id"] = from_names
     self.cryptomattes[self.selection]["id_to_name"] = from_ids
-end
-
-function CryptomatteInfo:get_matte_name_from_id(id_float_value)
-    -- get the name of the id matching the blue channel out the manifest
-    local id_to_name = self.cryptomattes[self.selection]["id_to_name"]
-    local matte_name = ""
-    for k, v in pairs(id_to_name) do
-        if k == id_float_value then
-            matte_name = v
-            break
-        end
-    end
-    return matte_name
+    self.cryptomattes[self.selection]["names"] = all_names
 end
 
 -- ============================================================================
@@ -738,6 +776,10 @@ function Process(req)
     -- get input image
     local input_image = InImage:GetValue(req)
 
+    -- decode and translate manifest
+    cInfo:extract_cryptomatte_metadata(input_image)
+    cInfo:parse_manifest()
+
     -- connect input callback
     -- code is here instead of directly in OnConnect callback due to Fusion crashing when placed there
     local connect_triggered = InImageConnectCB:GetValue(req).Value
@@ -745,13 +787,11 @@ function Process(req)
         -- get loader connected to fuse
         local fusion = Fusion()
         local comp = fusion.CurrentComp
-        -- check if comp can be retrieved from fusion object, when rendering a comp with fusion render or console node
-        -- the comp will be nil, so skip this force update loader channel slots
         if comp then
             local tool = comp:FindTool(self.Name)
             local loader = get_input_loader(tool)
             -- get all channels listed in the loader's first channel slot
-            local all_channels = get_all_channels_from_loader(loader)
+            local all_channels = get_all_channels_from_loader(cInfo, loader)
             -- get all unique ranks from the channel list
             local ranks = get_all_ranks_from_channels(all_channels)
             -- fill in all the remaining slots correctly
@@ -761,33 +801,12 @@ function Process(req)
         end
     end
 
-    -- extract all cryptomatte metadata
-    if cInfo.selection == nil or not is_key_in_table(cInfo.selection, cInfo.cryptomattes) then
-        -- log("reading metadata")
-        cInfo:extract_cryptomatte_metadata(input_image)
-        -- decode and translate manifest
-        cInfo:parse_manifest()
-    end
-
     -- get all rank images from slots
     local crypto_images = get_all_rank_images(input_image)
 
-    -- create output image
+    -- create keyable image & matte only mono channel image
     local output_image = set_output_image(crypto_images[1], crypto_images[2])
-
-    -- create mono channel matte only image
     local matte_only_image = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
-
-    -- rebuild output image from previous matte selection session
-    local matte_names = get_mattes_from_selection()
-    if matte_names then
-        for i, matte_name in ipairs(matte_names) do
-            local id = cInfo.cryptomattes[cInfo.selection]["name_to_id"][matte_name]
-            local matte = create_matte_image(crypto_images, output_image, id)
-            output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", A = "fg.A" })
-            table.insert(cInfo.active_mattes, matte_name)
-        end
-    end
 
     -- set layer selection
     cInfo:set_layer_selection()
@@ -797,30 +816,30 @@ function Process(req)
     local name_checker_pixel = get_pixel(output_image, name_checker_position.X, name_checker_position.Y)
     set_keyed_name_checker(cInfo, name_checker_pixel.B)
 
-    -- get the id float value (blue channel of the pixel on matte locator position)
-    local position = InLocator:GetSource(0)
-    local pixel = get_pixel(output_image, position.X, position.Y)
-    local id_float_value = pixel.B
-
-    -- callbacks
-    -- + add mattes from matte selection
-    -- + remove mattes from matte selection
-    -- + clear matte selection
+    -- add mattes callback
+    -- remove mattes callback
     local add_triggered = InBtnAddCB:GetValue(req).Value
     local remove_triggered = InBtnRemoveCB:GetValue(req).Value
-    local clear_triggered = InBtnClearCB:GetValue(req).Value
+    if add_triggered == 1 or remove_triggered == 1 then
+        -- get the id float value (blue channel of the pixel on matte locator position)
+        local position = InLocator:GetSource(0)
+        local pixel = get_pixel(output_image, position.X, position.Y)
+        local id_float_value = pixel.B
 
-    if add_triggered == 1 then
-        add_matte(cInfo, crypto_images, output_image, id_float_value)
-        -- reset the callback
-        InBtnAddCB:SetSource(Number(0), 0, 0)
-    elseif remove_triggered == 1 then
-        remove_matte(cInfo, crypto_images, output_image, id_float_value)
-        -- reset the callback
-        InBtnRemoveCB:SetSource(Number(0), 0, 0)
-    elseif clear_triggered == 1 then
-        -- clear the array holding all the active matte names
-        cInfo.active_mattes = {}
+        if add_triggered == 1 then
+            add_matte(cInfo, crypto_images, output_image, id_float_value)
+            -- reset the callback
+            InBtnAddCB:SetSource(Number(0), 0, 0)
+        end
+        if remove_triggered == 1 then
+            remove_matte(cInfo, crypto_images, output_image, id_float_value)
+            -- reset the callback
+            InBtnRemoveCB:SetSource(Number(0), 0, 0)
+        end
+    end
+    -- clear matte callback
+    local clear_triggered = InBtnClearCB:GetValue(req).Value
+    if clear_triggered == 1 then
         -- regenerate output image
         output_image = set_output_image(crypto_images[1], crypto_images[2])
         -- clear the other ui elements
@@ -831,30 +850,8 @@ function Process(req)
         InBtnClearCB:SetSource(Number(0), 0, 0)
     end
 
-    -- add mattes
-    for matte_name, matte in pairs(cInfo.mattes_to_add) do
-        if not is_item_in_array(matte_name, cInfo.active_mattes) then
-            -- add matte A to output image R and G
-            output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", A = "fg.A" })
-            -- keep track of add action
-            table.insert(cInfo.active_mattes, matte_name)
-            cInfo.mattes_to_add[matte_name] = nil
-        end
-    end
-
-    -- remove mattes
-    for matte_name, matte in pairs(cInfo.mattes_to_remove) do
-        for i, name in ipairs(cInfo.active_mattes) do
-            if name == matte_name then
-                -- add matte A to output image R and G
-                output_image = output_image:ChannelOpOf("Subtract", matte, { R = "fg.A", G = "fg.A", A = "fg.A" })
-                -- keep track of remove action
-                cInfo.mattes_to_remove[matte_name] = nil
-                table.remove(cInfo.active_mattes, i)
-                break
-            end
-        end
-    end
+    -- rebuild matte
+    output_image = rebuild_matte(cInfo, crypto_images, output_image)
 
     -- show final matte or standard visual feedback
     local matte_only = InMatteOnly:GetValue(req).Value
