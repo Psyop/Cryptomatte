@@ -114,7 +114,9 @@ class CryptomatteInfo(object):
 
         #prefix = "exr/cryptomatte/"
         default_selection = None
+        
         for key, value in exr_metadata_dict.iteritems():
+        
             if key == "input/filename":
                 self.filename = value
             if not key.startswith(CRYPTOMATTE_METADATA_PREFIX): 
@@ -126,8 +128,11 @@ class CryptomatteInfo(object):
                 self.cryptomattes[metadata_id] = {}
             self.cryptomattes[metadata_id][partial_key] = value
 
-            if default_selection is None:
-                default_selection = metadata_id
+        if len(self.cryptomattes.keys()) > 0:
+            default_selection = sorted(self.cryptomattes.keys(), key=lambda x: self.cryptomattes[x]['name'])[0]
+
+        #if default_selection is None:
+        #   default_selection = metadata_id
 
         for metadata_id, value in self.cryptomattes.iteritems():
             name = value.get("name", "") 
@@ -378,40 +383,60 @@ def encryptomatte_create_gizmo():
 
 
 def cryptomatte_knob_changed_event(node = None, knob = None):
-    if knob.name() == "inputChange" or knob.name() == "cryptoLayer" or knob.name() == "cryptoLayerLock":
+    if knob.name() in ["inputChange", "cryptoLayer", "cryptoLayerLock"]:
         cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo)
-
+    elif knob.name() in ["cryptoLayerChoice"]:
+        if not node.knob('cryptoLayerLock').value():
+            prev_crypto_layer = node.knob('cryptoLayer').value()
+            new_crypto_layer = knob.values()[int(knob.getValue())]
+            if (node.knob('matteList').value() == "") or nuke.ask('Changing Cryptomatte layers will reset the Matte List and is not undoable. Are you sure you want to proceed?'):
+                node.knob('cryptoLayer').setValue(new_crypto_layer)
+                if new_crypto_layer != prev_crypto_layer:
+                    node.knob('matteList').setValue('')
+                cinfo = CryptomatteInfo(node)
+                _update_cryptomatte_gizmo(node, cinfo)
+                return
+        
+        # Undo user action
+        knob.setValue(knob.values().index(node.knob('cryptoLayer').value()))
     elif knob.name() == "pickerAdd":
-        if _get_knob_channel_value(node.knob("pickerAdd"), 2) == 0.0:
+        ID_value = _get_knob_channel_value(node.knob("pickerAdd"), recursive_mode = "add")
+        if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
-        keyed_object = _update_gizmo_keyed_object(node, cinfo, True, "pickerAdd")
-        node.knob("pickerRemove").setValue([0,0,0])
+        keyed_object = _update_gizmo_keyed_object(node, cinfo, True, ID_value=ID_value)
+        node.knob("pickerRemove").setValue([0] * 8)
         if node.knob("singleSelection").getValue():
             node.knob("matteList").setValue("")
         _matteList_modify(node, keyed_object, False)
         _update_cryptomatte_gizmo(node, cinfo)
 
     elif knob.name() == "pickerRemove":
-        cinfo = CryptomatteInfo(node)
-        if _get_knob_channel_value(node.knob("pickerRemove"), 2) == 0.0:
+        ID_value = _get_knob_channel_value(node.knob("pickerRemove"), recursive_mode = "remove")
+        if ID_value == 0.0:
             return
-        keyed_object = _update_gizmo_keyed_object(node, cinfo, True, "pickerRemove")
-        node.knob("pickerAdd").setValue([0,0,0])
+        cinfo = CryptomatteInfo(node)
+        keyed_object = _update_gizmo_keyed_object(node, cinfo, True, ID_value=ID_value)
+        node.knob("pickerAdd").setValue([0] * 8)
         _matteList_modify(node, keyed_object, True)
         _update_cryptomatte_gizmo(node, cinfo)  
 
     elif knob.name() == "matteList":
         cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo)
-        node.knob("pickerRemove").setValue([0,0,0])
-        node.knob("pickerAdd").setValue([0,0,0])
+        node.knob("pickerRemove").setValue([0] * 8)
+        node.knob("pickerAdd").setValue([0] * 8)
 
     elif knob.name() == "ColorKey":
         # probably superfluous, may remove later
+        ID_value = _get_knob_channel_value(knob)
         cinfo = CryptomatteInfo(node)
-        _update_gizmo_keyed_object(node, cinfo)
+        _update_gizmo_keyed_object(node, cinfo, ID_value=ID_value)
+
+    elif knob.name() in ["keyableSurfaceMode", "keyableSurfaceEnabled"]:
+        cinfo = CryptomatteInfo(node)
+        _set_keyable_surface_expression(node, cinfo)
 
 
 def encryptomatte_knob_changed_event(node = None, knob = None):
@@ -499,6 +524,12 @@ def _set_channels(gizmo, channels, default="none"):
         channel = channels[i] if i < len(channels) else default
         gizmo.knob(knob_name).setValue(channel)
 
+def _set_crypto_layer_choice(gizmo, cinfo):
+    choice_knob = gizmo.knob("cryptoLayerChoice")
+    values = [v.get('name', '') for v in cinfo.cryptomattes.values()]
+    values = sorted(values)
+    choice_knob.setValues(values)
+    choice_knob.setValue(values.index(cinfo.cryptomattes[cinfo.selection]['name']))
 
 def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     if _cancel_update(gizmo, force):
@@ -508,8 +539,16 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     cryptomatte_channels = cinfo.get_channels()
     if not cryptomatte_channels:
         return
+    _set_ui(gizmo)
     _set_channels(gizmo, cryptomatte_channels)
     _set_expression(gizmo, cryptomatte_channels)
+    _set_keyable_surface_expression(gizmo, cinfo)
+    _set_crypto_layer_choice(gizmo, cinfo)
+
+
+def _set_ui(gizmo):
+    layer_locked = gizmo.knob('cryptoLayerLock').value()
+    gizmo.knob('cryptoLayerChoice').setEnabled(not layer_locked)
 
 
 def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
@@ -766,10 +805,56 @@ def _build_extraction_expression(channel_list, IDs):
 
     return expression
 
+def _set_keyable_surface_expression(gizmo, cinfo):
+    cryptomatte_channels = cinfo.get_channels()
+    keyable_surface_mode = gizmo.knob('keyableSurfaceMode').value()
 
-#def _set_encryptomatte_expression(gizmo, cryptomatte_channels):
-#    expression = "1.0 - " + _build_extraction_expression(cryptomatte_channels, [0.0])
-#    gizmo.knob("alphaExpression").setValue(expression)
+    keyable_surface_enabled = gizmo.knob('keyableSurfaceEnabled').getValue()
+    
+    if not keyable_surface_enabled:
+        keyable_surface_mode = 'None'
+    
+    channel_pairs = []
+    for c in cryptomatte_channels[1:]:
+        channel_pairs.append([c + '.red', c + '.green'])
+        channel_pairs.append([c + '.blue', c + '.alpha'])
+
+    expressions = []
+    
+    if keyable_surface_mode in ['Colors']:
+        puzzle_layers = 2
+
+        # This all looks more complicated than it is.  In most languages, you would just reinterpret cast and bitshift.
+        shifts = [" * 256.0 % 1.0", "", " * 65536.0 % 1.0"]
+
+        # Include the one rogue exponent bit that makes it into the bitshift.  Doesn't seem to have a big performance impact, and stays closer to a real bitshift.
+        if True:
+            puzzle_bits = "(({id_chan} != 0.0) * (0.5 * ((exponent({id_chan}) + 126) % 2) + mantissa(abs({id_chan})) - 0.5){shift}) * {coverage_chan}"
+        else:
+            puzzle_bits = "(({id_chan} != 0.0) * (2.0 * mantissa(abs({id_chan})) - 1.0){shift}) * {coverage_chan}"
+        expressions = [" + ".join([puzzle_bits.format(shift=shift, id_chan=id_chan, coverage_chan=coverage_chan) for (id_chan, coverage_chan) in channel_pairs[:puzzle_layers]]) for shift in shifts]
+        expressions.append("")
+        
+        # Add normalization and match original Cryptomatte gizmo:
+        normalization = " / (.0001 + " + "+".join([coverage_chan for id_chan, coverage_chan in channel_pairs[:puzzle_layers]]) + ")"
+        for i in [0, 1, 2]:
+            expressions[i] = ".25 * (" + expressions[i] + normalization + ")"
+        
+    elif keyable_surface_mode in ['Edges']:
+        expressions = [
+            "",
+            "",
+            "",
+            "2.0 * {coverage_chan}".format(coverage_chan = channel_pairs[1][1])]
+
+    elif keyable_surface_mode in ['None']:
+        expressions = [""] * 4
+    else:
+        expressions = [""] * 4
+
+    for i in range(4):
+        gizmo.knob('keyableSurfaceExpression' + str(i)).setValue(expressions[i])
+    
     
 
 #############################################
@@ -785,19 +870,80 @@ def set_text_knob(gizmo, text_knob_name, text):
         gizmo.knob(text_knob_name).setValue(text)
 
 
-def _get_knob_channel_value(knob, c_index):
+def _id_from_matte_name(name):
+    if name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
+        return single_precision(float(name[1:-1]))
+    else:
+        return mm3hash_float(name)
+
+def _get_knob_channel_value(knob, recursive_mode = None):
     try:
-        return knob.getValue()[c_index]
+        bbox = knob.getValue()[4:]
+        node = knob.node()
+
+        if not recursive_mode is None:
+            matte_list = get_mattelist_as_set(node)
+            id_list = map(_id_from_matte_name, matte_list)
+        else:
+            id_list = []
+
+        saw_bg = False
+
+        for layer_knob in GIZMO_CHANNEL_KNOBS[1:]:
+
+            layer = node.knob(layer_knob).getValue()
+
+            if layer == "none":
+                return 0.0
+
+            for sub_channel in ['.red', '.blue']:
+                channel = layer + sub_channel
+                selected_id = node.sample(channel, bbox[0], bbox[1])
+                
+                if recursive_mode == "add":
+                    if selected_id == 0.0:
+                        # Seen bg twice?  Select bg.
+                        if saw_bg:
+                            return 0.0
+
+                        # Skip bg the first time
+                        saw_bg = True
+
+                    if not selected_id in id_list:
+                        return selected_id
+
+                elif recursive_mode == "remove":
+                    if selected_id == 0.0:
+                        
+                        # Seen bg twice?  Select bg.
+                        if saw_bg:
+                            return 0.0
+                        
+                        # Skip bg the first time
+                        saw_bg = True
+                        
+                    if selected_id in id_list:
+                        return selected_id
+
+                else:
+
+                    # Non-recursive.  Just return the first id found.
+                    return selected_id
+    
     except:
         return 0.0
 
-def _update_gizmo_keyed_object(gizmo, cinfo, force=False, color_knob_name="ColorKey", text_knob_name="keyedName"):
+def _update_gizmo_keyed_object(gizmo, cinfo, force=False, ID_value=None, color_knob_name=None, text_knob_name="keyedName"):
     if _cancel_update(gizmo, force):
         return None
     if not gizmo.knob(text_knob_name):
         return None
 
-    ID_value = _get_knob_channel_value(gizmo.knob(color_knob_name), 2)
+    if ID_value is None:
+        if not color_knob_name is None:
+            ID_value = _get_knob_channel_value(gizmo.knob(color_knob_name))
+        else:
+            return None
 
     if ID_value == 0.0:
         set_text_knob(gizmo, text_knob_name, "Background (Value is 0.0)")
