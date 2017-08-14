@@ -9,12 +9,10 @@ Gizmo {
  addUserKnob {36 pickerAdd l " " t "Key objects to add to the Matte List here. "}
  pickerAdd {0 0 0 0 1 0 0 0}
  addUserKnob {6 pickerAdd_panelDropped l "panel dropped state" -STARTLINE +HIDDEN}
- pickerAdd_panelDropped false
  addUserKnob {26 pickerAddLabel l Add -STARTLINE T " "}
  addUserKnob {36 pickerRemove l "" t "Key objects to remove from the Matte List here. " -STARTLINE}
  pickerRemove {0 0 0 0 1 0 0 0}
  addUserKnob {6 pickerRemove_panelDropped l "panel dropped state" -STARTLINE +HIDDEN}
- pickerRemove_panelDropped false
  addUserKnob {26 pickerRemoveLabel l Remove -STARTLINE T " "}
  addUserKnob {6 singleSelection l "Single Selection" t "Picker only selects matte at a time, rather than selecting a list. " +STARTLINE}
  addUserKnob {26 notUndoableWarning l "" +STARTLINE T "Warning: Changes made to the matte list using the pickers are not undoable. "}
@@ -38,8 +36,9 @@ Gizmo {
  addUserKnob {41 keyableSurfaceExpression2 l INVISIBLE +INVISIBLE T Expression_keyableSurface.expr2}
  addUserKnob {41 keyableSurfaceExpression3 l INVISIBLE +INVISIBLE T Expression_keyableSurface.expr3}
  addUserKnob {20 Advanced}
- addUserKnob {36 ColorKey l "" t "Key an object here to check its name. It will not effect your mattes. "}
+ addUserKnob {36 ColorKey l "" t "Key an object here to check its name. It will not effect your mattes. " -STARTLINE}
  ColorKey {0 0 0 0 0 0 0 0}
+ addUserKnob {6 ColorKey_panelDropped l "panel dropped state" -STARTLINE +HIDDEN}
  addUserKnob {26 ColorKeyLabel l "Name Checker" -STARTLINE T " "}
  addUserKnob {1 keyedName l "Keyed Name" t "This field is for information only."}
  addUserKnob {26 ""}
@@ -76,16 +75,16 @@ Gizmo {
   xpos -1327
   ypos -439
  }
-set N1efd7800 [stack 0]
+set N13c4bc00 [stack 0]
  Dot {
   name Dot15
-  xpos -1053
+  xpos -1093
   ypos -439
  }
-set N1efd7400 [stack 0]
+set N13c4b800 [stack 0]
  Dot {
   name Dot1
-  xpos -920
+  xpos -960
   ypos -439
  }
  Shuffle {
@@ -93,43 +92,44 @@ set N1efd7400 [stack 0]
   green black
   blue black
   name Shuffle_blackRGB
-  xpos -954
-  ypos -392
+  xpos -994
+  ypos -398
  }
  Expression {
   channel1 none
   channel2 none
   channel3 none
   name Expression_key
-  xpos -954
-  ypos -360
+  xpos -994
+  ypos -372
  }
  Unpremult {
   channels {rgba.red -rgba.green -rgba.blue none}
   name Unpremult_matte
-  xpos -954
-  ypos -334
+  xpos -994
+  ypos -340
   disable {{!parent.unpremultiply}}
  }
-set N1efd6000 [stack 0]
+set N13c4a400 [stack 0]
  Dot {
   name Dot11
-  xpos -920
+  xpos -960
   ypos -142
  }
-set Na8135c00 [stack 0]
+set N13c4a000 [stack 0]
  Dot {
-  name Dot14
-  xpos -1213
-  ypos -142
+  name Dot2
+  xpos -960
+  ypos -65
  }
-push $N1efd7800
+push $N13c4a000
+push $N13c4bc00
  Dot {
   name Dot8
   xpos -1327
   ypos -395
  }
-set Na8135400 [stack 0]
+set N12b01800 [stack 0]
  Dot {
   name Dot9
   xpos -1227
@@ -142,7 +142,7 @@ set Na8135400 [stack 0]
   xpos -1261
   ypos -360
  }
-push $Na8135400
+push $N12b01800
  Switch {
   inputs 2
   which {{parent.RemoveChannels}}
@@ -155,13 +155,13 @@ push $Na8135400
   xpos -1327
   ypos -235
  }
-set Na8134800 [stack 0]
+set N12b00c00 [stack 0]
  Dot {
   name Dot10
   xpos -1327
   ypos -193
  }
-set Na8134400 [stack 0]
+set N12b00800 [stack 0]
  ShuffleCopy {
   inputs 2
   red red
@@ -170,25 +170,24 @@ set Na8134400 [stack 0]
   alpha red
   name ShuffleCopy_matteOnly
   xpos -1361
-  ypos -93
+  ypos -146
  }
  Dot {
   name Dot16
   xpos -1327
-  ypos -40
+  ypos -91
  }
-push $Na8135c00
-push $N1efd6000
-push $N1efd7400
+push $N13c4a400
+push $N13c4b800
  Shuffle {
   alpha black
   name Shuffle_blackAlpha
-  xpos -1087
+  xpos -1127
   ypos -394
  }
  Expression {
   name Expression_keyableSurface
-  xpos -1087
+  xpos -1127
   ypos -368
  }
  Grade {
@@ -200,7 +199,7 @@ push $N1efd7400
   maskChannelMask rgba.red
   enable_mix_luminance false
   name Grade_selection
-  xpos -1087
+  xpos -1127
   ypos -340
  }
  Grade {
@@ -211,10 +210,10 @@ push $N1efd7400
   maskChannelInput rgba.alpha
   enable_mix_luminance false
   name Grade_highlight
-  xpos -1087
+  xpos -1127
   ypos -302
  }
-push $Na8134800
+push $N12b00c00
  ShuffleCopy {
   inputs 2
   red red
@@ -222,16 +221,23 @@ push $Na8134800
   blue blue
   alpha alpha2
   name ShuffleCopy_restoreAlpha
-  xpos -1087
+  xpos -1127
   ypos -239
  }
-push $Na8134400
+push $N12b00800
  Switch {
   inputs 2
   which {{parent.keyableSurfaceEnabled}}
   name Switch_keyableSurface
-  xpos -1087
+  xpos -1127
   ypos -197
+ }
+ Switch {
+  inputs 2
+  which {{parent.matteOnly}}
+  name Switch_matteOnly
+  xpos -1127
+  ypos -95
  }
  ShuffleCopy {
   inputs 2
@@ -241,19 +247,12 @@ push $Na8134400
   alpha red
   out alpha
   name ShuffleCopy_embedMask
-  xpos -1087
-  ypos -93
- }
- Switch {
-  inputs 2
-  which {{parent.matteOnly}}
-  name Switch_matteOnly
-  xpos -1087
-  ypos -44
+  xpos -1127
+  ypos -69
  }
  Output {
   name Output
-  xpos -1087
-  ypos 12
+  xpos -1127
+  ypos -21
  }
 end_group
