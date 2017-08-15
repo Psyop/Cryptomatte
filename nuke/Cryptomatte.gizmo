@@ -1,7 +1,6 @@
 version 7.0 v10
 #! C:/Temp/psyop_cache/apps/nuke/win64/10.0v6/nuke-10.0.6.dll -nx
 Gizmo {
- label "\([value matteOutput])"
  addUserKnob {20 cryptomatte l "Psyop Cryptomatte"}
 
  addUserKnob {36 pickerAdd l "Picker Add" t "Key objects to add to the Matte List here. " +STARTLINE}
