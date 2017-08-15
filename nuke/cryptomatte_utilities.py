@@ -909,20 +909,19 @@ def _get_knob_channel_value(knob, recursive_mode = None):
                         # Skip bg the first time
                         saw_bg = True
 
-                    if not selected_id in id_list:
+                    elif not selected_id in id_list:
                         return selected_id
 
                 elif recursive_mode == "remove":
-                    if selected_id == 0.0:
-                        
+                    if selected_id == 0.0:                        
                         # Seen bg twice?  Select bg.
                         if saw_bg:
                             return 0.0
                         
                         # Skip bg the first time
-                        saw_bg = True
-                        
-                    if selected_id in id_list:
+                        saw_bg = True         
+
+                    elif selected_id in id_list:
                         return selected_id
 
                 else:
