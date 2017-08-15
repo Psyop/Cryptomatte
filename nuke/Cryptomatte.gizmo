@@ -6,12 +6,12 @@ Gizmo {
  addUserKnob {6 keyableSurfaceEnabled l "Keyable Surface" +STARTLINE}
  keyableSurfaceEnabled true
  addUserKnob {4 keyableSurfaceMode l "" t "Choose how Cryptomatte will visualize keyable regions." -STARTLINE M {Colors Edges None ""}}
- addUserKnob {36 pickerAdd l " " t "Key objects to add to the Matte List here. "}
- pickerAdd {0 0 0 0 1 0 0 0}
+ addUserKnob {36 pickerAdd l "Picker Add" t "Key objects to add to the Matte List here. "}
+ pickerAdd {0 0 0 0 0 0 0 0}
  addUserKnob {6 pickerAdd_panelDropped l "panel dropped state" -STARTLINE +HIDDEN}
  addUserKnob {26 pickerAddLabel l Add -STARTLINE T " "}
  addUserKnob {36 pickerRemove l "" t "Key objects to remove from the Matte List here. " -STARTLINE}
- pickerRemove {0 0 0 0 1 0 0 0}
+ pickerRemove {0 0 0 0 0 0 0 0}
  addUserKnob {6 pickerRemove_panelDropped l "panel dropped state" -STARTLINE +HIDDEN}
  addUserKnob {26 pickerRemoveLabel l Remove -STARTLINE T " "}
  addUserKnob {6 singleSelection l "Single Selection" t "Picker only selects matte at a time, rather than selecting a list. " +STARTLINE}
@@ -26,7 +26,7 @@ Gizmo {
  addUserKnob {22 clear l Clear t "Clears the selection in this Gizmo" T "try: \n   import cryptomatte_utilities as cu\n   cu.clear_cryptomatte_gizmo(nuke.thisNode())\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. Please check with Pipeline that the Cryptomatte python plugin is available on this project. \n\nError Traceback (send this to Pipeline): \n\n%s''' % traceback.format_exc())" +STARTLINE}
  addUserKnob {41 expression l "Keyer Expression" t "The built expression. This knob is set automatically and is only left exposed as information for the user. " T Expression_key.expr0}
  addUserKnob {26 ""}
- addUserKnob {4 cryptoLayerChoice l "Layer Selection" t "Choose which Cryptomatte layer to key." M {"                       " ""}}
+ addUserKnob {4 cryptoLayerChoice l "Layer Selection" t "Choose which Cryptomatte layer to key." M {"                       " ""} +DO_NOT_WRITE +EXPAND_TO_WIDTH}
  addUserKnob {1 cryptoLayer l INVISIBLE t "If there are multiple cryptomattes, this is how you select the layer." -STARTLINE +INVISIBLE}
  addUserKnob {6 cryptoLayerLock l "Lock Layer Selection" t "Stops the automatic update of the layer selection." -STARTLINE}
  addUserKnob {6 stopAutoUpdate l "Stop Auto Update" t "Stops the automatic update of this copy of the Gizmo." +STARTLINE}
