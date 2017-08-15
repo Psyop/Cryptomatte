@@ -390,13 +390,10 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         if not node.knob('cryptoLayerLock').value():
             prev_crypto_layer = node.knob('cryptoLayer').value()
             new_crypto_layer = knob.values()[int(knob.getValue())]
-            if (node.knob('matteList').value() == "") or nuke.ask('Changing Cryptomatte layers will reset the Matte List and is not undoable. Are you sure you want to proceed?'):
+            if prev_crypto_layer != new_crypto_layer:
                 node.knob('cryptoLayer').setValue(new_crypto_layer)
-                if new_crypto_layer != prev_crypto_layer:
-                    node.knob('matteList').setValue('')
                 cinfo = CryptomatteInfo(node)
                 _update_cryptomatte_gizmo(node, cinfo)
-                return
         
         # Undo user action
         knob.setValue(knob.values().index(node.knob('cryptoLayer').value()))
