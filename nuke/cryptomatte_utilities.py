@@ -438,6 +438,9 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         cinfo = CryptomatteInfo(node)
         _set_keyable_surface_expression(node, cinfo)
 
+    elif knob.name() == "forceUpdate":
+        _update_cryptomatte_gizmo(node, CryptomatteInfo(node), True)
+
 
 def encryptomatte_knob_changed_event(node = None, knob = None):
     if knob.name() in ["matteName", "cryptoLayerLock"]:
@@ -460,13 +463,16 @@ def encryptomatte_on_create_event(node = None, knob = None):
 
 
 def update_cryptomatte_gizmo(node, force=False):
-    cinfo = CryptomatteInfo(node)
-    _update_cryptomatte_gizmo(node, CryptomatteInfo(node), force)
+    """
+    Invoked from a gizmo button. 
+    Relies on knob changed callbacks to update gizmo, to avoid recursive evaluation of callbacks.
+    """
+    pass
 
 
 def clear_cryptomatte_gizmo(node):
+    """Relies on knob changed callbacks to update gizmo after values change."""
     node.knob("matteList").setValue("")
-    _update_cryptomatte_gizmo(node, CryptomatteInfo(node), True)
 
 
 def update_all_cryptomatte_gizmos():
