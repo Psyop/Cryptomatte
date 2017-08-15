@@ -1063,6 +1063,11 @@ def decryptomatte_selected(ask=False):
     decryptomatte_nodes(nuke.selectedNodes(), ask)
 
 
+def decryptomatte_button(node):
+    with nuke.root():
+        decryptomatte_nodes([node], False)
+
+
 def decryptomatte_nodes(nodes, ask):
     gizmos = []
 

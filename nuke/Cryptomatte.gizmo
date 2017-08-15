@@ -44,11 +44,15 @@ Gizmo {
  addUserKnob {26 ColorKeyLabel l "Name Checker" -STARTLINE T " " +HIDDEN}
  addUserKnob {1 keyedName l "Keyed Name" t "This field is for information only." +HIDDEN}
  addUserKnob {26 "" +HIDDEN}
+
+ addUserKnob {22 decryptomatte l "Decryptomatte (Replace with Expression)" 
+ t "Replaces this gizmo with an expression node that does the extraction. This will replicate the matte extraction, but not the keyable surface generation. "
+ T "try: \n   import cryptomatte_utilities as cu\n   cu.decryptomatte_button(nuke.thisNode())\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run a Cryptomatte script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())" +STARTLINE}
  
  addUserKnob {22 unloadManifest l "Unload Manifest (Extract all Mattes)" 
  t  "Unload Manifest will create a separate gizmo for every named matte in the Cryptomatte manifest. This can potentially be thousands of nodes, though if the number is high a warning will be displayed before creating them. " T "try: \n   import cryptomatte_utilities as cu\n   cu.unload_manifest(nuke.thisNode())\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run a Cryptomatte script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())" +STARTLINE}
 
- addUserKnob {22 forceUpdateAll l "Force Update all Gizmos in Script" 
+ addUserKnob {22 forceUpdateAll l "Force Update All (Update all Gizmos)" 
  t "'Force Update All' will run 'Force Update' on all Cryptomatte gizmos in the Nuke script. 'Force Update' orders the gizmos to re-configure themselves based on available metadata, Cryptomatte depth, and the matte list. This updates all aspects of thier operation, from the keyable surface to the extraction expression. Usually these updates occur automatically on certain actions, such as 'keying' the image, changing layer selection, or reconnecting images. However if changes occur upstream of the gizmos that require manually invoked updates, 'Force Update' and 'Force Update All' may be used. "
  T "try: \n   import cryptomatte_utilities as cu\n   cu.update_all_cryptomatte_gizmos()\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())" +STARTLINE}
 
