@@ -1009,12 +1009,20 @@ def _matteList_modify(gizmo, name, remove):
         if name in matte_names:
             matte_names.remove(name) # the simple case
         elif name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
-            # maybe it was selected by name, but is being removed by num
+            # maybe it was selected by name before, but is being removed by number
+            # (manifest was working, now it doesn't)
             num = single_precision(float(name[1:-1]))
             for existing_name in matte_names:
                 if mm3hash_float(existing_name) == num:
                     matte_names.remove(existing_name)
                     break
+        else:
+            # maybe it was selected by number before, but is being removed by name
+            # (manifest was broken, now it works)
+            num_str = "<%s>" % mm3hash_float(name)
+            if num_str in matte_names:
+                matte_names.remove(num_str) # the simple case
+
 
     if not name or gizmo.knob("stopAutoUpdate").getValue() == 1.0:
         return
