@@ -398,14 +398,14 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         # Undo user action
         knob.setValue(knob.values().index(node.knob('cryptoLayer').value()))
     elif knob.name() == "pickerAdd":
+        if node.knob("singleSelection").getValue():
+            node.knob("matteList").setValue("")
         ID_value = _get_knob_channel_value(node.knob("pickerAdd"), recursive_mode = "add")
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
         keyed_object = _update_gizmo_keyed_object(node, cinfo, True, ID_value=ID_value)
         node.knob("pickerRemove").setValue([0] * 8)
-        if node.knob("singleSelection").getValue():
-            node.knob("matteList").setValue("")
         _matteList_modify(node, keyed_object, False)
         _update_cryptomatte_gizmo(node, cinfo)
 
