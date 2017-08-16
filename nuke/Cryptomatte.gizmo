@@ -1,4 +1,4 @@
-version 7.0 v10
+version 7.0 v1
 #! C:/Temp/psyop_cache/apps/nuke/win64/10.0v6/nuke-10.0.6.dll -nx
 Gizmo {
  addUserKnob {20 cryptomatte l "Psyop Cryptomatte"}
@@ -215,7 +215,6 @@ push $N13c4b800
   add 1
   black_clamp false
   maskChannelMask rgba.red
-  enable_mix_luminance false
   name Grade_selection
   xpos -1127
   ypos -340
@@ -226,7 +225,6 @@ push $N13c4b800
   add 1
   black_clamp false
   maskChannelInput rgba.alpha
-  enable_mix_luminance false
   name Grade_highlight
   xpos -1127
   ypos -302
