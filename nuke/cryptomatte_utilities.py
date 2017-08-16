@@ -425,12 +425,6 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         node.knob("pickerRemove").setValue([0] * 8)
         node.knob("pickerAdd").setValue([0] * 8)
 
-    elif knob.name() == "ColorKey":
-        # probably superfluous, may remove later
-        ID_value = _get_knob_channel_value(knob)
-        cinfo = CryptomatteInfo(node)
-        _update_gizmo_keyed_object(node, cinfo, ID_value=ID_value)
-
     elif knob.name() in ["keyableSurfaceMode", "keyableSurfaceEnabled"]:
         cinfo = CryptomatteInfo(node)
         _set_keyable_surface_expression(node, cinfo)
@@ -865,14 +859,6 @@ def _set_keyable_surface_expression(gizmo, cinfo):
 #############################################
 
 
-def set_text_knob(gizmo, text_knob_name, text):
-    if not text_knob_name:
-        return
-    knob = gizmo.knob(text_knob_name)
-    if knob:
-        gizmo.knob(text_knob_name).setValue(text)
-
-
 def _id_from_matte_name(name):
     if name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
         return single_precision(float(name[1:-1]))
@@ -935,10 +921,8 @@ def _get_knob_channel_value(knob, recursive_mode = None):
     except:
         return 0.0
 
-def _update_gizmo_keyed_object(gizmo, cinfo, force=False, ID_value=None, color_knob_name=None, text_knob_name="keyedName"):
+def _update_gizmo_keyed_object(gizmo, cinfo, force=False, ID_value=None, color_knob_name=None):
     if _cancel_update(gizmo, force):
-        return None
-    if not gizmo.knob(text_knob_name):
         return None
 
     if ID_value is None:
@@ -948,17 +932,10 @@ def _update_gizmo_keyed_object(gizmo, cinfo, force=False, ID_value=None, color_k
             return None
 
     if ID_value == 0.0:
-        set_text_knob(gizmo, text_knob_name, "Background (Value is 0.0)")
         return None
-
-    name = cinfo.id_to_name(ID_value)
-
-    if name:
-        set_text_knob(gizmo, text_knob_name, name)
-        return name
-
-    set_text_knob(gizmo, text_knob_name, "ID value not in manifest.")
-    return "<%s>" % ID_value
+    else:
+        name = cinfo.id_to_name(ID_value)
+        return name or "<%s>" % ID_value
 
 
 #############################################
