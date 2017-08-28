@@ -436,12 +436,13 @@ def encryptomatte_on_create_event(node = None, knob = None):
 
 def update_cryptomatte_gizmo(node, force=False):
     cinfo = CryptomatteInfo(node)
-    _update_cryptomatte_gizmo(node, CryptomatteInfo(node), force)
+    _update_cryptomatte_gizmo(node, cinfo, force)
 
 
 def clear_cryptomatte_gizmo(node):
     node.knob("matteList").setValue("")
-    _update_cryptomatte_gizmo(node, CryptomatteInfo(node), True)
+    cinfo = CryptomatteInfo(node)
+    _update_cryptomatte_gizmo(node, cinfo, True)
 
 
 def update_all_cryptomatte_gizmos():
@@ -450,12 +451,13 @@ def update_all_cryptomatte_gizmos():
 
 def update_encryptomatte_gizmo(node, force=False):
     cinfo = CryptomatteInfo(node)
-    _update_encryptomatte_gizmo(node, CryptomatteInfo(node), force)
+    _update_encryptomatte_gizmo(node, cinfo, force)
 
 
 def clear_encryptomatte_gizmo(node):
     node.knob("matteName").setValue("")
-    _update_encryptomatte_gizmo(node, CryptomatteInfo(node), True)
+    cinfo = CryptomatteInfo(node)
+    _update_encryptomatte_gizmo(node, cinfo, True)
 
 
 #############################################
