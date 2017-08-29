@@ -292,7 +292,7 @@ class CryptomatteInfo(object):
     def name_to_ID(self, name):
         return mm3hash_float(name)
 
-    def test_manifest(self):        
+    def test_manifest(self, quiet=False):        
         """Testing function to check for implementation errors and hash collisions.
         Checks all names and values in the manifest in the manifest by rehashing them,
         to ensure that the entire process is sound. Also finds collisions. Returns a tuple
@@ -312,9 +312,10 @@ class CryptomatteInfo(object):
                     collisions.append("colliding: %s %s" % (ids[idvalue], name))
                 ids[idvalue] = name
 
-        print "Tested %s, %s names" % (self.nuke_node.name(), len(manifest))
-        print "    ", len(errors), "non-matching IDs between python and c++."
-        print "    ", len(collisions), "hash collisions in manifest."
+        if not quiet:
+            print "Tested %s, %s names" % (self.nuke_node.name(), len(manifest))
+            print "    ", len(errors), "non-matching IDs between python and c++."
+            print "    ", len(collisions), "hash collisions in manifest."
 
         return errors, collisions
 
@@ -329,39 +330,6 @@ def print_hash_info(name):
     print "Hash value (unsigned):", hash_32
     print "Float converted:", mm3hash_float(name)
 
-
-def test_csv_round_trip():
-    """Ensures the round trip is correct for CSV encoding and decoding. """
-    csv_str = ("""str, "str with space", "single 'quotes'", """
-        '"with_a,_comma", "with comma, and \\"quotes\\"", <123.45>, '
-        '" space_in_front", "space_at_end ", "has_escape\\\\chars", '
-        '"unicode \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"')
-    name_list = ["str", "str with space", "single 'quotes'",
-        "with_a,_comma", 'with comma, and "quotes"', "<123.45>", 
-        " space_in_front", "space_at_end ", "has_escape\\chars", 
-        "unicode \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"]
-
-    def check_results(encoded, decoded):
-        if encoded != csv_str:
-            print "list:   ", decoded
-            print "orig:   ", csv_str
-            print "encoded:", encoded
-            raise RuntimeError("Round trip to str failed: %s != %s" % (csv_str, encoded)); 
-        for x, y in zip(name_list, decoded):
-            if x != y:
-                raise RuntimeError("Round trip to list failed: %s != %s" % (x, y));     
-
-    # start from csv
-    decoded = _decode_csv(csv_str)
-    encoded = _encode_csv(decoded)
-    check_results(encoded, decoded)
-
-    # start from list
-    encoded = _encode_csv(name_list)
-    decoded = _decode_csv(encoded)
-    check_results(encoded, decoded)
-    print "Success."
-    return True
 
 
 #############################################
@@ -1117,3 +1085,33 @@ def _decryptomatte(gizmo):
         node.setInput(inputID, last_node)
 
     gizmo.knob("disable").setValue(True)
+
+
+#############################################
+# Testing access
+#############################################
+
+class CryptomatteTesting(object):
+    """
+    To run tests in an ad-hoc style in a Nuke session, in the script editor: 
+
+    import cryptomatte_utilities as cu
+    cu.run_nuke_tests()
+    """
+    def get_all_unit_tests(self):
+        import cryptomatte_utilities_tests as cu_tests
+        return cu_tests.get_all_unit_tests()
+
+    def get_all_nuke_tests(self):
+        import cryptomatte_utilities_tests as cu_tests
+        return cu_tests.get_all_nuke_tests()
+
+    def run_unit_tests(self):
+        import cryptomatte_utilities_tests as cu_tests
+        return cu_tests.run_unit_tests()
+
+    def run_nuke_tests(self):
+        import cryptomatte_utilities_tests as cu_tests
+        return cu_tests.run_nuke_tests()
+
+tests = CryptomatteTesting()
