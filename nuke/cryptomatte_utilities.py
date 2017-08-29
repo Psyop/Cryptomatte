@@ -137,7 +137,11 @@ class CryptomatteInfo(object):
         self.selection = default_selection
 
         if self.nuke_node.Class() == "Cryptomatte":
-            selection_name = node_in.knob("cryptoLayer").getValue()
+            selection_name = node_in.knob("cryptoLayerList").value()
+            cryptoLayerNames = []
+            for l in self.cryptomattes:
+                cryptoLayerNames.append(self.cryptomattes[l]['channels'][0])			
+            node_in.knob('cryptoLayerList').setValues(cryptoLayerNames)
             if not selection_name:
                 return
 
@@ -378,7 +382,7 @@ def encryptomatte_create_gizmo():
 
 
 def cryptomatte_knob_changed_event(node = None, knob = None):
-    if knob.name() == "inputChange" or knob.name() == "cryptoLayer" or knob.name() == "cryptoLayerLock":
+    if knob.name() == "inputChange" or knob.name() == "cryptoLayerList" or knob.name() == "cryptoLayerLock":
         cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo)
 
@@ -419,7 +423,7 @@ def encryptomatte_knob_changed_event(node = None, knob = None):
         cinfo = CryptomatteInfo(node)
         _update_encryptomatte_gizmo(node, cinfo)
 
-    if knob.name() in ["setupLayers", "cryptoLayer", "inputChange", "cryptoLayers"]:
+    if knob.name() in ["setupLayers", "cryptoLayerList", "inputChange", "cryptoLayers"]:
         _update_encyptomatte_setup_layers(node)
         cinfo = CryptomatteInfo(node)
         _update_encryptomatte_gizmo(node, cinfo)
@@ -436,12 +440,13 @@ def encryptomatte_on_create_event(node = None, knob = None):
 
 def update_cryptomatte_gizmo(node, force=False):
     cinfo = CryptomatteInfo(node)
-    _update_cryptomatte_gizmo(node, CryptomatteInfo(node), force)
+    _update_cryptomatte_gizmo(node, cinfo, force)
 
 
 def clear_cryptomatte_gizmo(node):
     node.knob("matteList").setValue("")
-    _update_cryptomatte_gizmo(node, CryptomatteInfo(node), True)
+    cinfo = CryptomatteInfo(node)
+    _update_cryptomatte_gizmo(node, cinfo, True)
 
 
 def update_all_cryptomatte_gizmos():
@@ -450,12 +455,13 @@ def update_all_cryptomatte_gizmos():
 
 def update_encryptomatte_gizmo(node, force=False):
     cinfo = CryptomatteInfo(node)
-    _update_encryptomatte_gizmo(node, CryptomatteInfo(node), force)
+    _update_encryptomatte_gizmo(node, cinfo, force)
 
 
 def clear_encryptomatte_gizmo(node):
     node.knob("matteName").setValue("")
-    _update_encryptomatte_gizmo(node, CryptomatteInfo(node), True)
+    cinfo = CryptomatteInfo(node)
+    _update_encryptomatte_gizmo(node, cinfo, True)
 
 
 #############################################
@@ -494,7 +500,7 @@ def _force_update_all():
 #############################################
 
 def _set_channels(gizmo, channels, default="none"):
-    gizmo.knob("cryptoLayer").setValue(channels[0])
+    gizmo.knob("cryptoLayerList").setValue(channels[0])
     for i, knob_name in enumerate(GIZMO_CHANNEL_KNOBS):
         channel = channels[i] if i < len(channels) else default
         gizmo.knob(knob_name).setValue(channel)
@@ -518,7 +524,7 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
     
     matte_name = gizmo.knob('matteName').value()
     matte_input = gizmo.input(1)
-
+     
     if matte_name == "" and not matte_input is None:
         matte_name = matte_input.name()
         gizmo.knob('matteName').setValue(matte_name)
@@ -542,8 +548,8 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
                 cryptomatte_channels = []
         else:
             cryptomatte_channels = []
-
-        crypto_layer = gizmo.knob('cryptoLayer').value()
+		
+        crypto_layer = gizmo.knob('cryptoLayerList').value()
         if crypto_layer in cryptomatte_channels:
             gizmo.knob('inputCryptoLayers').setValue(len(cryptomatte_channels) - 1)
             manifest_key = cinfo.get_selection_metadata_key("")
@@ -579,7 +585,7 @@ def _update_encyptomatte_setup_layers(gizmo):
     setup_layers = gizmo.knob('setupLayers').value()
     num_layers = gizmo.knob('cryptoLayers').value()
     input_layers = gizmo.knob('inputCryptoLayers').value()
-    crypto_layer = gizmo.knob('cryptoLayer').value()
+    crypto_layer = gizmo.knob('cryptoLayerList').value()
 
     if not setup_layers:
         for i in range(len(GIZMO_ADD_CHANNEL_KNOBS)):
