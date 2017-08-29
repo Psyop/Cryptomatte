@@ -1,3 +1,8 @@
+#
+#  Copyright (c) 2014, 2015, 2016, 2017 Psyop Media Company, LLC
+#  See license.txt
+#
+
 version 7.0 v1
 #! C:/Temp/psyop_cache/apps/nuke/win64/10.0v6/nuke-10.0.6.dll -nx
 Gizmo {

@@ -1,11 +1,11 @@
 #
 #
-#  Copyright (c) 2014, 2015, 2016 Psyop Media Company, LLC
+#  Copyright (c) 2014, 2015, 2016, 2017 Psyop Media Company, LLC
 #  See license.txt
 #
 #
 
-__version__ = "1.2.0-beta4"
+__version__ = "1.2.0-beta5"
 
 GIZMO_CHANNEL_KNOBS = ["previewChannel", "in00", "in01", "in02", "in03", "in04", "in05", "in06", "in07"]
 GIZMO_REMOVE_CHANNEL_KNOBS = ["removePreviewChannel", "remove00", "remove01", "remove02", "remove03", "remove04", "remove05", "remove06", "remove07"]
