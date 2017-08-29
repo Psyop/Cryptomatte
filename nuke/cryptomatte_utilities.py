@@ -398,7 +398,8 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         _set_keyable_surface_expression(node, cinfo)
 
     elif knob.name() == "forceUpdate":
-        _update_cryptomatte_gizmo(node, CryptomatteInfo(node), True)
+        cinfo = CryptomatteInfo(node)
+        _update_cryptomatte_gizmo(node, cinfo, True)
 
 
 def encryptomatte_knob_changed_event(node = None, knob = None):
@@ -440,12 +441,12 @@ def update_all_cryptomatte_gizmos():
 
 def update_encryptomatte_gizmo(node, force=False):
     cinfo = CryptomatteInfo(node)
-    _update_encryptomatte_gizmo(node, CryptomatteInfo(node), force)
+    _update_encryptomatte_gizmo(node, cinfo, force)
 
 
 def clear_encryptomatte_gizmo(node):
     node.knob("matteName").setValue("")
-    _update_encryptomatte_gizmo(node, CryptomatteInfo(node), True)
+    _update_encryptomatte_gizmo(node, cinfo, True)
 
 
 #############################################
