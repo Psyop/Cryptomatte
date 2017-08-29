@@ -8,8 +8,7 @@
 __version__ = "1.2.0-beta5"
 
 GIZMO_CHANNEL_KNOBS = [
-    "previewChannel", "in00", "in01", "in02", 
-    "in03", "in04", "in05", "in06", "in07"]
+    "in00", "in01", "in02", "in03", "in04", "in05", "in06", "in07"]
 GIZMO_REMOVE_CHANNEL_KNOBS = [
     "removePreviewChannel", "remove00", "remove01", "remove02", 
     "remove03", "remove04", "remove05", "remove06", "remove07"]
@@ -157,7 +156,7 @@ class CryptomatteInfo(object):
             return False
         if "channels" not in self.cryptomattes[self.selection]:
             return False
-        if len(self.cryptomattes[self.selection]["channels"]) < 2:
+        if not self.cryptomattes[self.selection]["channels"]:
             return False
         return True
 
@@ -184,6 +183,9 @@ class CryptomatteInfo(object):
     def get_channels(self):
         return self.cryptomattes[self.selection]["channels"]
 
+    def get_selection_name(self):
+        return self.cryptomattes[self.selection]["name"]
+
     def _identify_channels(self, name):
         """from a name like "cryptoObject", 
         gets sorted channels, such as cryptoObject, cryptoObject00, cryptoObject01
@@ -203,9 +205,9 @@ class CryptomatteInfo(object):
             suffix = ".red"
             if not channel.endswith(suffix):
                 continue
-            # to do: validate this somewhere else
             pure_channel = channel[:-len(suffix)]
-            pure_channels.append(pure_channel)
+            if pure_channel != name: # ignore the human readable ones
+                pure_channels.append(pure_channel)
 
         return sorted(pure_channels)
 
@@ -486,8 +488,8 @@ def _force_update_all():
 # Utils - Update Gizmi 
 #############################################
 
-def _set_channels(gizmo, channels, default="none"):
-    gizmo.knob("cryptoLayer").setValue(channels[0])
+def _set_channels(gizmo, channels, layer_name, default="none"):
+    gizmo.knob("cryptoLayer").setValue(layer_name)
     for i, knob_name in enumerate(GIZMO_CHANNEL_KNOBS):
         channel = channels[i] if i < len(channels) else default
         gizmo.knob(knob_name).setValue(channel)
@@ -508,7 +510,7 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     if not cryptomatte_channels:
         return
     _set_ui(gizmo)
-    _set_channels(gizmo, cryptomatte_channels)
+    _set_channels(gizmo, cryptomatte_channels, cinfo.get_selection_name())
     _set_expression(gizmo, cryptomatte_channels)
     _set_keyable_surface_expression(gizmo, cinfo)
     _set_crypto_layer_choice(gizmo, cinfo)
@@ -558,11 +560,15 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
             gizmo.knob('newLayer').setValue(False)
         else:
             gizmo.knob('inputCryptoLayers').setValue(0)
-            gizmo.knob('manifestKey').setValue(CRYPTOMATTE_METADATA_PREFIX + layer_hash(crypto_layer) + '/')
+            gizmo.knob('manifestKey').setValue(
+                CRYPTOMATTE_METADATA_PREFIX + layer_hash(crypto_layer) + '/')
             gizmo.knob('newLayer').setValue(True)
 
-        cryptomatte_channels = [crypto_layer] + [crypto_layer + "{0:02d}".format(i) for i in range(int(gizmo.knob('cryptoLayers').value()))]
-        _set_channels(gizmo, cryptomatte_channels, default="none")
+        cryptomatte_channels = [
+            crypto_layer + "{0:02d}".format(i) 
+            for i in range(int(gizmo.knob('cryptoLayers').value()))
+        ]
+        _set_channels(gizmo, cryptomatte_channels, crypto_layer)
 
     else:
         gizmo.knob('cryptoLayers').setEnabled(False)
@@ -574,7 +580,7 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
             return
 
         gizmo.knob('newLayer').setValue(False)
-        _set_channels(gizmo, cryptomatte_channels, default="none")
+        _set_channels(gizmo, cryptomatte_channels, cinfo.get_selection_name())
         gizmo.knob('inputCryptoLayers').setValue(len(cryptomatte_channels) - 1)
         gizmo.knob('cryptoLayers').setValue(len(cryptomatte_channels) - 1)
         manifest_key = cinfo.get_selection_metadata_key("")
@@ -749,12 +755,8 @@ def _build_extraction_expression(channel_list, IDs):
     subcondition_red =  "sub_channel.red == ID"
     subcondition_blue = "sub_channel.blue == ID"
 
-    start_channel = channel_list[0]
-    sub_channels = list(channel_list)
-    sub_channels.remove(start_channel)
-
     expression = ""
-    for channel in sub_channels:
+    for channel in channel_list:
         condition_r = _build_condition(subcondition_red, IDs)
         condition_b = _build_condition(subcondition_blue, IDs)
 
@@ -782,7 +784,7 @@ def _set_keyable_surface_expression(gizmo, cinfo):
         keyable_surface_mode = 'None'
     
     channel_pairs = []
-    for c in cryptomatte_channels[1:]:
+    for c in cryptomatte_channels:
         channel_pairs.append([c + '.red', c + '.green'])
         channel_pairs.append([c + '.blue', c + '.alpha'])
 
@@ -848,7 +850,7 @@ def _get_knob_channel_value(knob, recursive_mode = None):
 
         saw_bg = False
 
-        for layer_knob in GIZMO_CHANNEL_KNOBS[1:]:
+        for layer_knob in GIZMO_CHANNEL_KNOBS:
 
             layer = node.knob(layer_knob).getValue()
 
