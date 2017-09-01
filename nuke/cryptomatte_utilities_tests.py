@@ -19,6 +19,16 @@ def get_all_nuke_tests():
 
 
 #############################################
+# Env. variables
+#############################################
+"""
+The supplied Cryptomatte sample images are required for testing.  The path to the sample_images 
+directory can be defined using the environment variable below. Otherwise, they are searched for 
+relative to this file.
+"""
+SAMPLES_IMAGES_DIR_ENVIRON = "CRYPTOMATTE_TESTING_SAMPLES"
+
+#############################################
 # Unit tests
 #############################################
 
@@ -89,12 +99,18 @@ class CryptomatteGizmoSetup(unittest.TestCase):
     def setUpClass(self):
         import nuke
         import os
-        sample_images = os.path.normpath(os.path.join(__file__, "../", "../", "sample_images"))
+        default_path = os.path.normpath(os.path.join(__file__, "../", "../", "sample_images"))
+        sample_images = os.environ.get(SAMPLES_IMAGES_DIR_ENVIRON, "") or default_path
         obj_path = os.path.join(sample_images, "bunny_CryptoObject.exr").replace("\\", "/")
         asset_path = os.path.join(sample_images, "bunny_CryptoAsset.exr").replace("\\", "/")
         material_path = os.path.join(sample_images, "bunny_CryptoMaterial.exr").replace("\\", "/")
         sidecar_path = os.path.join(sample_images, "sidecar_manifest",
                                     "bunny_CryptoObject.exr").replace("\\", "/")
+        for file_path in [obj_path, asset_path, material_path, sidecar_path]:
+            if not os.path.isfile(file_path):
+                raise IOError(
+                    ("Could not find: %s. Sample image dir can be defined env variable, %s") %
+                    (file_path, SAMPLES_IMAGES_DIR_ENVIRON))
 
         self.read_obj = nuke.nodes.Read(file=obj_path)
         self.read_asset = nuke.nodes.Read(file=asset_path)

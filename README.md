@@ -76,6 +76,7 @@ Decoders:
 * Nuke - Bug fixes
   * Mixed selections of names and raw IDs now work correctly for all cases
   * Encryptomatte retains its layer selection properly
+* Nuke - Added unit tests and integration tests. 
 
 1.2.0 (Beta 4):
 
@@ -232,3 +233,20 @@ Encryptomatte tab:
 ### Troubleshooting
 
 For common issues, see [troubleshooting.](troubleshooting.md)
+
+### Testing (developers)
+
+Nuke Cryptomatte has a suite of unit and integration tests. These cover hashing, CSV resolution, operations of the Cryptomatte and Encryptomatte gizmos, and decryptomatte. Use of these is strongly encouraged if working with the Cryptomatte code.  
+
+```
+# To run tests in an ad-hoc style in a Nuke session, in the script editor: 
+import cryptomatte_utilities as cu
+cu.tests.run_nuke_tests()
+```
+
+Tests require the provided sample_images directory. If it is not located in the default location relative to the Python files, its location may be specified using an env variable, $CRYPTOMATTE_TESTING_SAMPLES. This can also be done ad-hoc in Nuke prior to running tests:
+
+```
+import os
+os.environ["CRYPTOMATTE_TESTING_SAMPLES"] = "" #  < specify sample_images dir here
+```

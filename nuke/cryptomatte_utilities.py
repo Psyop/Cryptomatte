@@ -44,6 +44,29 @@ def setup_cryptomatte():
 
 
 #############################################
+# Testing
+#############################################
+
+tests = CryptomatteTesting()
+
+class CryptomatteTesting(object):
+    def get_all_unit_tests(self):
+        import cryptomatte_utilities_tests as cu_tests
+        return cu_tests.get_all_unit_tests()
+
+    def get_all_nuke_tests(self):
+        import cryptomatte_utilities_tests as cu_tests
+        return cu_tests.get_all_nuke_tests()
+
+    def run_unit_tests(self):
+        import cryptomatte_utilities_tests as cu_tests
+        return cu_tests.run_unit_tests()
+
+    def run_nuke_tests(self):
+        import cryptomatte_utilities_tests as cu_tests
+        return cu_tests.run_nuke_tests()
+
+#############################################
 # Hash to float
 #############################################
 
@@ -1123,34 +1146,3 @@ def _decryptomatte(gizmo):
     for node, inputID in connect_to:
         node.setInput(inputID, shufflecopy)
     return new_nodes
-        
-
-
-#############################################
-# Testing access
-#############################################
-
-class CryptomatteTesting(object):
-    """
-    To run tests in an ad-hoc style in a Nuke session, in the script editor: 
-
-    import cryptomatte_utilities as cu
-    cu.run_nuke_tests()
-    """
-    def get_all_unit_tests(self):
-        import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.get_all_unit_tests()
-
-    def get_all_nuke_tests(self):
-        import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.get_all_nuke_tests()
-
-    def run_unit_tests(self):
-        import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.run_unit_tests()
-
-    def run_nuke_tests(self):
-        import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.run_nuke_tests()
-
-tests = CryptomatteTesting()
