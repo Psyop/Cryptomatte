@@ -10,11 +10,13 @@ __version__ = "1.2.0-beta5"
 GIZMO_CHANNEL_KNOBS = [
     "in00", "in01", "in02", "in03", "in04", "in05", "in06", "in07"]
 GIZMO_REMOVE_CHANNEL_KNOBS = [
-    "removePreviewChannel", "remove00", "remove01", "remove02", 
-    "remove03", "remove04", "remove05", "remove06", "remove07"]
+    "remove00", "remove01", "remove02", "remove03", 
+    "remove04", "remove05", "remove06", "remove07"
+]
 GIZMO_ADD_CHANNEL_KNOBS = [
-    "addPreviewChannel", "add00", "add01", "add02", "add03", 
-    "add04", "add05", "add06", "add07"]
+    "add00", "add01", "add02", "add03", 
+    "add04", "add05", "add06", "add07"
+]
 
 CRYPTOMATTE_METADATA_PREFIX = "exr/cryptomatte/"
 
