@@ -152,15 +152,14 @@ Decoders:
 
 ## Nuke Installation
 
-See also: https://www.thefoundry.co.uk/products/nuke/developers/63/pythondevguide/installing_plugins.html
+1. Download the entire Cryptomatte GitHub repository using the green “Clone or download” button. Select “Download Zip” and then extract the contents.
+2. Copy the contents of the “nuke” folder from Cryptomatte into a folder in your Nuke plugin path, such as your home directory’s “.nuke” folder.
+3. If the destination folder already contains an “init.py” and/or “menu.py” file, open those files in a text editor, and append the contents of the Cryptomatte “init.py” and “menu.py” to those files.
+4. After launching Nuke, if you've installed the plugin correctly you should be able to tab-create a Cryptomatte gizmo.
 
-The files in the "nuke" folder of the repo need to be in a directory that's in your Nuke plugin path. If you are a single user, the easiest way to do this is to use the .nuke directory in your home directory. This will be referred to as the your install directory. 
+For more information on installing Nuke plugins, see: https://www.thefoundry.co.uk/products/nuke/developers/70/pythondevguide/installing_plugins.html
 
-Copy the files in the "nuke" directory of this repo into your install directory. These files include include an init.py and a menu.py file, special file names Nuke looks for. If your install directory already contains a init.py, open it in a text editor, and add the contents of the cryptomatte init.py to the end of the current init.py. Similarly for the menu.py file. The rest of the files, including python files, gizmos and an image should just be copied over.
-
-After launching Nuke, if you've installed the plugin correctly you should be able to tab-create a Cryptomatte gizmo. 
-
-You can test the rest of the functionality by loading one of the sample images supplied. Load the sample images into Nuke, select one of them, and tab-create the gizmo. Viewing the output of the gizmo should show you a 'keyable surface'. Use the color knob, "Picker Add" to eye-dropper colors on the image to create your mattes. 
+To test the functionality, you can try loading one of the sample images supplied. Load the sample images into Nuke, select one of them, and tab-create the gizmo. Viewing the output of the gizmo should show you a 'keyable surface'. Use the color knob, "Picker Add" to eye-dropper colors on the image to create your mattes.
 
 ## Nuke Usage
 
