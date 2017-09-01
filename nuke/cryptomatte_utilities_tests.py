@@ -763,10 +763,10 @@ class CryptomatteGizmoSetup(unittest.TestCase):
             self.triangle_pkr, "Encryptomatte result not keyable after bogus manifest", alpha=1.0)
 
     def test_encrypt_merge_operations(self):
-        # todo: figure out what this 
+        # todo(jfriedman): figure out whether this is our bug or just a quirk of Nuke
         if hasattr(self, "skipTest"):
             self.skipTest("Auto failed this test to stop it wrecking the rest of the tests")
-        return # just pass tests on nuke 7 (python 2.6)
+        return  # just pass tests on nuke 7 (python 2.6)
         """
         There's something wrong here and I think it's a nuke bug. 
 
