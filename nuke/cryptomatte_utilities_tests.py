@@ -668,6 +668,27 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         encryptomatte = self.tempNode("Encryptomatte", inputs=[self.gizmo])
         self.test_layer_forced_update_btn(encryptomatte)
 
+    def test_encrypt_matte_name_autofill2(self):
+        encryptomatte = self.tempNode("Encryptomatte", inputs=[self.read_asset])
+        self.assertEqual(
+            encryptomatte.knob("matteName").getValue(), "",
+            "Encryptomatte got a matte name not properly blank to start. ")
+        encryptomatte.setInput(1, self.constant)
+        self.assertEqual(
+            encryptomatte.knob("matteName").getValue(),
+            self.constant.name(), "Encryptomatte matte name was not set automatically.")
+        encryptomatte.setInput(1, self.gizmo)
+        self.assertEqual(
+            encryptomatte.knob("matteName").getValue(),
+            self.constant.name(), ("Encryptomatte matte should not have been "
+                                   "set automatically if it was already connected. "))
+
+        preconnected_encrypto = self.tempNode(
+            "Encryptomatte", inputs=[self.read_asset, self.constant])
+        self.assertEqual(
+            encryptomatte.knob("matteName").getValue(),
+            self.constant.name(), "Encryptomatte matte name was not set automatically on creation.")
+
     def test_encrypt_bogus_inputs(self):
         """ Tests that when setting up layers, entering the name before pressing "setup layers"
         doesn't spew python errors but fails gracefully. 
