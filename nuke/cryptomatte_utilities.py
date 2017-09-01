@@ -1045,48 +1045,79 @@ def _decryptomatte(gizmo):
     def _decryptomatte_get_name(gizmo):
         name_out = gizmo.knob("matteList").value()
         name_out.replace(", ", "_")
-        if len(name_out) > 100:
-            name_out = name_out[0:100]
+        if len(name_out) > 16:
+            name_out = "%s_._%s" % (name_out[:16], hex(mmh3.hash(name_out))[2:8])
         return name_out
 
     matte_name = _decryptomatte_get_name(gizmo)
-    expression_str = gizmo.knob("expression").value()
 
-    remove_channels = gizmo.knob("RemoveChannels").value()
-    matte_only = gizmo.knob("matteOnly").value()
+    expr_setting = gizmo.knob("expression").value()
+    rm_channels_setting = gizmo.knob("RemoveChannels").value()
+    matte_only_setting = gizmo.knob("matteOnly").value()
+    output_setting = gizmo.knob("matteOutput").value()
+    unpremult_setting = gizmo.knob("unpremultiply").value()
+    disabled_setting = gizmo.knob("disable").getValue()
 
+    # compile list immediate outputs to connect to
     connect_to = []
-    dependents = gizmo.dependent()
-    for node in dependents:
-        num_inputs = node.inputs()
-        for iid in range(0, num_inputs):
-            inode =  node.input(iid)
-            if inode:
-                if inode.fullName() == gizmo.fullName():
-                    connect_to.append((node, iid))
+    for node in gizmo.dependent():
+        for input_index in xrange(node.inputs()):
+            inode = node.input(input_index)
+            if inode and inode.fullName() == gizmo.fullName():
+                connect_to.append((node, input_index))
 
-    disabled = gizmo.knob("disable").getValue()
-    expr_node = nuke.nodes.Expression(inputs=[gizmo], channel0="alpha", 
-        expr0=expression_str, name="CryptExpr_%s"%matte_name, disable=disabled)
+    start_dot = nuke.nodes.Dot(inputs=[gizmo])
+    expr_node = nuke.nodes.Expression(
+        inputs=[start_dot], channel0="red", expr0=expr_setting, 
+        name="CryptExpr_%s"%matte_name, disable=disabled_setting
+    )
+    new_nodes = [start_dot, expr_node]
+
     for knob_name in GIZMO_CHANNEL_KNOBS:
         expr_node.addKnob(nuke.nuke.Channel_Knob(knob_name, "none") )
         expr_node.knob(knob_name).setValue(gizmo.knob(knob_name).value())
         expr_node.knob(knob_name).setVisible(False)
-    expr_node.knob("expr0").setValue(expression_str)
 
-    last_node = expr_node
-    if matte_only:
-        shuffler = nuke.nodes.Shuffle(inputs=[last_node], red="alpha", 
-            green="alpha", blue="alpha", name="CryptShuf_%s"%matte_name, disable=disabled)
-        last_node = shuffler
-    if remove_channels:
-        remover = nuke.nodes.Remove(inputs=[last_node], operation="keep", 
-            channels="rgba", name="CryptRemove_%s"%matte_name, disable=disabled)
-        last_node = remover
-    for node, inputID in connect_to:
-        node.setInput(inputID, last_node)
+    shufflecopy_main, shufflecopy_side = start_dot, expr_node
+
+    if rm_channels_setting:
+        channels2 = output_setting if output_setting != "alpha" else ""
+        shufflecopy_main = nuke.nodes.Remove(
+            inputs=[shufflecopy_main], operation="keep", channels="rgba", 
+            channels2=channels2, name="CryptRemove_%s"%matte_name, 
+            disable=disabled_setting
+        )
+        new_nodes.append(shufflecopy_main)
+
+    if unpremult_setting:
+        shufflecopy_side = nuke.nodes.Unpremult(
+            inputs=[shufflecopy_side], channels="red", 
+            name="CryptUnpremul_%s"%matte_name, disable=disabled_setting
+        )
+        new_nodes.append(shufflecopy_side)
+
+    shufflecopy = nuke.nodes.ShuffleCopy(
+        inputs=[shufflecopy_main, shufflecopy_side], out="rgb",
+        alpha="alpha2", red2="red", green2="red", white="red", black="red",
+        out2=output_setting, name="CryptShufCpy_%s"%matte_name,
+        disable=disabled_setting
+    )
+    new_nodes.append(shufflecopy)
+    
+    if matte_only_setting:
+        if output_setting != "alpha":
+            shufflecopy.knob("out").setValue("rgba")
+        shufflecopy.knob("red").setValue("red")
+        shufflecopy.knob("green").setValue("red")
+        shufflecopy.knob("blue").setValue("red")
+        shufflecopy.knob("alpha").setValue("red")
 
     gizmo.knob("disable").setValue(True)
+
+    for node, inputID in connect_to:
+        node.setInput(inputID, shufflecopy)
+    return new_nodes
+        
 
 
 #############################################
