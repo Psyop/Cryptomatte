@@ -59,23 +59,23 @@ Decoders:
 
 * Nuke - Added layer selection pulldown
 * Nuke - New Eyedropper "picker" knobs which use picker position and not sampled values
- * No longer use Color knob's built in picker
- * Fixed keying problems sometimes caused by GPU-enabled viewers
- * Can pick mattes while viewing downstream node (or looking at the RGB/beauty)
- * Enables new "Keyable Surface" options
+  * No longer use Color knob's built in picker
+  * Fixed keying problems sometimes caused by GPU-enabled viewers
+  * Can pick mattes while viewing downstream node (or looking at the RGB/beauty)
+  * Enables new "Keyable Surface" options
 * Nuke - "Keyable Surface" option provides 3 modes of visual feedback
- * "Edges" allows viewing input RGBA with borders around keyable regions
- * "Colors" is an improved version of the old style random colors
- * "None" allows viewing of input RGBA without borders, but with a visible highlight on selected areas
- * Colors now generated dynamically, removing need for preview channels
+  * "Edges" allows viewing input RGBA with borders around keyable regions
+  * "Colors" is an improved version of the old style random colors
+  * "None" allows viewing of input RGBA without borders, but with a visible highlight on selected areas
+  * Colors now generated dynamically, removing need for preview channels
 * Nuke - Enhancements for multi-channel inline workflow
- * "Matte Output" knob enables output to a custom channel
- * "Remove Channels" now defaults to false
- * "Matte only" now causes mattes to be written to R, G, B, A in addition to specified output
+  * "Matte Output" knob enables output to a custom channel
+  * "Remove Channels" now defaults to false
+  * "Matte only" now causes mattes to be written to R, G, B, A in addition to specified output
 * Nuke - "Unpremultiply" option to unpremult output matte by input alpha
 * Nuke - Bug fixes
- * Mixed selections of names and raw IDs now work correctly for all cases
- * Encryptomatte retains its layer selection properly
+  * Mixed selections of names and raw IDs now work correctly for all cases
+  * Encryptomatte retains its layer selection properly
 
 1.2.0 (Beta 4):
 
@@ -100,8 +100,8 @@ Decoders:
 * Support for UTF-8 Characters in Nuke plugin and specification
 * Encryptomatte for modifying or creating Cryptomattes in Nuke
 * Support names containing spaces, commas, and angle brackets. 
- * Switched matte lists to be yaml-style. This mainly effects names containing spaces, commas, or quotes. 
- * Names with special character (or names that look like numbers) will be enclosed in quotes. 
+  * Switched matte lists to be yaml-style. This mainly effects names containing spaces, commas, or quotes. 
+  * Names with special character (or names that look like numbers) will be enclosed in quotes. 
 
 1.1.4: 
 
@@ -110,7 +110,7 @@ Decoders:
 1.1.3:
 
 * Adds beta version of Fusion support, also by Cedric Duriau and Kristof Indeherberge at Grid. 
- * Major tool connection workflow improvement. No longer requires multiple loaders to work, instead populates single loader channel slots when viewed. 
+  * Major tool connection workflow improvement. No longer requires multiple loaders to work, instead populates single loader channel slots when viewed. 
 
 1.1.2:
 
@@ -119,16 +119,16 @@ Decoders:
 1.1.1:
 
 * Store channels on hidden knobs on Cryptomatte gizmo and decryptomatte expression nodes
- * Fixes expression node errors in batch mode
+  * Fixes expression node errors in batch mode
 * No longer prompts users on "decryptomatte selected"
- * Allow API users to use decryptomatte without prompt
+  * Allow API users to use decryptomatte without prompt
 * Fixed error when loading gizmo in Nuke 7
 
 1.1.0:
 
 * Changes to specification regarding storage of metadata
 * Enabled Nuke code to read this metadata
- * (1.1.0 Nuke plugin is compatible with older Cryptomattes)
+  * (1.1.0 Nuke plugin is compatible with older Cryptomattes)
 * No longer raises errors if no metadata is available (would happen in batch mode)
 * No longer raises errors if picker in is in single value mode rather than RGB
 
@@ -180,9 +180,9 @@ Psyop Cryptomatte Tab:
 * Picker Add: This adds "keyed" objects to the matte selection, meant to be used with Nuke's eyedropper. 
 * Picker Remove: This removes "keyed" objects from the matte selection, meant to be used with Nuke's eyedropper. 
 * Keyable Surface: Controls whether or not previews of the matte boundaries are drawn. A pulldown controls how they are drawn. 
- * "Edges" allows viewing input RGBA with borders around keyable regions
- * "Colors" is random colors per matte
- * "None" allows viewing of input RGBA without borders, but with a visible highlight on selected areas
+  * "Edges" allows viewing input RGBA with borders around keyable regions
+  * "Colors" is random colors per matte
+  * "None" allows viewing of input RGBA without borders, but with a visible highlight on selected areas
 * Matte Only: Also write the matte to RGBA channels
 * Single Selection: Changes the gizmo behavior so that only one object may be selected at a time. 
 * Remove Channels: Removes the Cryptomatte channels so that downstream of the gizmo, the additional channels are not present. 
