@@ -55,6 +55,28 @@ Decoders:
 
 ## Release Notes
 
+1.2.0 (Beta 5):
+
+* Nuke - Added layer selection pulldown
+* Nuke - New Eyedropper "picker" knobs which use picker position and not sampled values
+ * No longer use Color knob's built in picker
+ * Fixed keying problems sometimes caused by GPU-enabled viewers
+ * Can pick mattes while viewing downstream node (or looking at the RGB/beauty)
+ * Enables new "Keyable Surface" options
+* Nuke - "Keyable Surface" option provides 3 modes of visual feedback
+ * "Edges" allows viewing input RGBA with borders around keyable regions
+ * "Colors" is an improved version of the old style random colors
+ * "None" allows viewing of input RGBA without borders, but with a visible highlight on selected areas
+ * Colors now generated dynamically, removing need for preview channels
+* Nuke - Enhancements for multi-channel inline workflow
+ * "Matte Output" knob enables output to a custom channel
+ * "Remove Channels" now defaults to false
+ * "Matte only" now causes mattes to be written to R, G, B, A in addition to specified output
+* Nuke - "Unpremultiply" option to unpremult output matte by input alpha
+* Nuke - Bug fixes
+ * Mixed selections of names and raw IDs now work correctly for all cases
+ * Encryptomatte retains its layer selection properly
+
 1.2.0 (Beta 4):
 
 * Fusion - Support for names containing special characters in selection lists
@@ -157,20 +179,25 @@ To get started:
 Psyop Cryptomatte Tab:
 * Picker Add: This adds "keyed" objects to the matte selection, meant to be used with Nuke's eyedropper. 
 * Picker Remove: This removes "keyed" objects from the matte selection, meant to be used with Nuke's eyedropper. 
-* Matte Only: This changes the output of the picker to output the matte in RGB channels as well. 
+* Keyable Surface: Controls whether or not previews of the matte boundaries are drawn. A pulldown controls how they are drawn. 
+ * "Edges" allows viewing input RGBA with borders around keyable regions
+ * "Colors" is random colors per matte
+ * "None" allows viewing of input RGBA without borders, but with a visible highlight on selected areas
+* Matte Only: Also write the matte to RGBA channels
 * Single Selection: Changes the gizmo behavior so that only one object may be selected at a time. 
 * Remove Channels: Removes the Cryptomatte channels so that downstream of the gizmo, the additional channels are not present. 
+* Matte Output: Which channel the extracted matte is written to.
+* Unpremultiply: Unpremults the extracted matte against by the alpha.
 * Matte List: A list of names to extract mattes from. This list may be modified in text form or using the Picker color knobs. 
 * Clear: Clears the matte list. 
 * Force Update: The python scripts keep Cryptomatte gizmos updated when inputs or relevant knobs are changed. If there's a case that it does not update, this button will manually update it. 
 * Stop Auto Update: Stops the automatic updating described above.
-* Layer Selection: If there are multiple cryptomattes, this is how you select the layer. This is filled in automatically, but may be changed manually. 
+* Layer Selection: If there are multiple Cryptomattes, this is how you select the layer. This is filled in automatically, but may be changed manually. 
 * Lock Layer Selection: Stops the automatic updating of layer selection, which occurs if the specified selection is not available. 
 * Expression: Internally the gizmo generates an expression to extract the matte. The expression is saved here. 
 
 Advanced Tab: 
-* Name Checker: Same as the picker knobs, except this allows you to key objects to see what they are, without changing your matte.
-* Keyed Name: The name keyed in using the name checker. 
+* Decryptomatte: Replaces gizmo with equivelant nodes
 * Unload Manifest: Generates a keyer for every name in the manifest. 
 * Force Update All Gizmos in Script: Same as "Force Update", but runs the force update functionality on all Gizmos in the script. 
 
