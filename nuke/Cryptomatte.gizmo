@@ -20,7 +20,7 @@ Gizmo {
 
  addUserKnob {6 keyableSurfaceEnabled l "Keyable Surface" +STARTLINE}
  keyableSurfaceEnabled true
- addUserKnob {4 keyableSurfaceMode l "" t "Choose how Cryptomatte will visualize keyable regions." -STARTLINE M {Colors Edges None ""}}
+ addUserKnob {4 keyableSurfaceMode l "" t "Choose how Cryptomatte will visualize keyable regions." -STARTLINE M {Edges Colors None ""}}
  
  addUserKnob {6 matteOnly l "Matte Only" t "Extracted matte is copied to RGB channels as well. This disables keying. " +STARTLINE}
  addUserKnob {6 singleSelection l "Single Selection" t "Picker only selects matte at a time, rather than selecting a list. " -STARTLINE}

@@ -554,7 +554,7 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         import cryptomatte_utilities as cu
 
         self.key_on_image(self.bunny_pkr)
-        wrong_hash = self._scansample(self.gizmo, self.bunny_pkr, "red")
+        wrong_hash = self._scansample(self.gizmo, self.bunny_pkr, "green")
         correct_hash = self._scansample(self.gizmo, self.bunny_pkr, "alpha")
 
         new_nodes = cu._decryptomatte(self.gizmo)
@@ -632,7 +632,6 @@ class CryptomatteGizmoSetup(unittest.TestCase):
     #############################################
     # Encryptomatte
     #############################################
-    
     # todo(jfriedman): test stop_auto_update, auto filling in "matte name"
 
     triangle_coords = [

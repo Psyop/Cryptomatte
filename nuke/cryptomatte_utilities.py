@@ -789,8 +789,15 @@ def _set_keyable_surface_expression(gizmo, cinfo):
         channel_pairs.append([c + '.blue', c + '.alpha'])
 
     expressions = []
+        
+    if keyable_surface_mode in ['Edges']:
+        expressions = [
+            "",
+            "",
+            "",
+            "2.0 * {coverage_chan}".format(coverage_chan = channel_pairs[1][1])]
     
-    if keyable_surface_mode in ['Colors']:
+    elif keyable_surface_mode in ['Colors']:
         puzzle_layers = 2
 
         # This all looks more complicated than it is.  In most languages, you would just reinterpret cast and bitshift.
@@ -808,13 +815,6 @@ def _set_keyable_surface_expression(gizmo, cinfo):
         normalization = " / (.0001 + " + "+".join([coverage_chan for id_chan, coverage_chan in channel_pairs[:puzzle_layers]]) + ")"
         for i in [0, 1, 2]:
             expressions[i] = ".25 * (" + expressions[i] + normalization + ")"
-        
-    elif keyable_surface_mode in ['Edges']:
-        expressions = [
-            "",
-            "",
-            "",
-            "2.0 * {coverage_chan}".format(coverage_chan = channel_pairs[1][1])]
 
     elif keyable_surface_mode in ['None']:
         expressions = [""] * 4
