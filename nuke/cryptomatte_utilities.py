@@ -133,11 +133,8 @@ class CryptomatteInfo(object):
                 self.cryptomattes[metadata_id] = {}
             self.cryptomattes[metadata_id][partial_key] = value
 
-        if len(self.cryptomattes.keys()) > 0:
+        if self.cryptomattes:
             default_selection = sorted(self.cryptomattes.keys(), key=lambda x: self.cryptomattes[x]['name'])[0]
-
-        #if default_selection is None:
-        #   default_selection = metadata_id
 
         for metadata_id, value in self.cryptomattes.iteritems():
             name = value.get("name", "") 
@@ -145,15 +142,12 @@ class CryptomatteInfo(object):
             self.cryptomattes[metadata_id]["channels"] = channels
 
         self.selection = default_selection
-
-        if self.nuke_node.Class() == "Cryptomatte":
+        if self.nuke_node.Class() in ["Cryptomatte", "Encryptomatte"]:
             selection_name = node_in.knob("cryptoLayer").getValue()
-            if not selection_name:
-                return
-
-            valid_selection = self.set_selection(selection_name)
-            if not valid_selection and not self.nuke_node.knob("cryptoLayerLock").getValue():
-                self.selection = default_selection
+            if selection_name:
+                valid_selection = self.set_selection(selection_name)
+                if not valid_selection and not self.nuke_node.knob("cryptoLayerLock").getValue():
+                    self.selection = default_selection
 
     def is_valid(self):
         """Checks that the selection is valid."""
