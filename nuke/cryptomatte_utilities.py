@@ -429,10 +429,13 @@ def encryptomatte_on_create_event(node = None, knob = None):
 
 def update_cryptomatte_gizmo(node, force=False):
     """
-    Invoked from a gizmo button. 
-    Relies on knob changed callbacks to update gizmo, to avoid recursive evaluation of callbacks.
+    Not invoked by gizmo button. 
+
+    The gizmo button relies on knob changed callbacks, to avoid 
+    recursive evaluation of callbacks.
     """
-    pass
+    cinfo = CryptomatteInfo(node)
+    _update_cryptomatte_gizmo(node, cinfo, force=force)
 
 
 def clear_cryptomatte_gizmo(node):
