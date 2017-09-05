@@ -47,8 +47,6 @@ def setup_cryptomatte():
 # Testing
 #############################################
 
-tests = CryptomatteTesting()
-
 class CryptomatteTesting(object):
     def get_all_unit_tests(self):
         import cryptomatte_utilities_tests as cu_tests
@@ -65,6 +63,8 @@ class CryptomatteTesting(object):
     def run_nuke_tests(self):
         import cryptomatte_utilities_tests as cu_tests
         return cu_tests.run_nuke_tests()
+
+tests = CryptomatteTesting()
 
 #############################################
 # Hash to float
