@@ -368,6 +368,11 @@ class CryptomatteGizmoSetup(unittest.TestCase):
             self.gizmo.knob("expression").getValue(), self.heroflower_expr,
             "Expression did not update on setting matte list. ")
 
+    def test_keying_with_removechannels(self):
+        self.gizmo.knob("RemoveChannels").setValue(True)
+        self.key_on_image(self.bunny_pkr)
+        self.assertMatteList("bunny", "Could not key on image after Remove Channels was enabled.")
+
     def test_keying_blank_matteList(self):
         self._test_keying_partial_black()
         self.gizmo.knob("matteList").setValue("")
