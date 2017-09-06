@@ -77,6 +77,10 @@ Decoders:
   * Mixed selections of names and raw IDs now work correctly for all cases
   * Encryptomatte retains its layer selection properly
 * Nuke - Added unit tests and integration tests. 
+* Fusion - Added layer selection slider with layer name display
+* Fusion - Added support for EXR's up to 8 ranks
+* Fusion - Added cryptomatte_utilities.lua module
+* Fusion - Can pick mattes while viewing downstream node
 
 1.2.0 (Beta 4):
 
