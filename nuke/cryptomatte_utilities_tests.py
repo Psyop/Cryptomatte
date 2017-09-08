@@ -856,23 +856,29 @@ class CryptomatteGizmoSetup(unittest.TestCase):
 #############################################
 
 
-def run_unit_tests():
+def run_unit_tests(test_filter=""):
     """ Utility function for manually running tests unit tests.
     Returns unittest results if there are failures, otherwise None """
 
-    return run_tests(get_all_unit_tests())
+    return run_tests(get_all_unit_tests(), test_filter=test_filter)
 
 
-def run_nuke_tests():
+def run_nuke_tests(test_filter=""):
     """ Utility function for manually running tests inside Nuke
     Returns unittest results if there are failures, otherwise None """
 
-    return run_tests(get_all_unit_tests() + get_all_nuke_tests())
+    return run_tests(get_all_unit_tests() + get_all_nuke_tests(), test_filter=test_filter)
 
 
-def run_tests(test_cases):
-    """ Utility function for manually running tests inside Nuke. 
-    Returns results if there are failures, otherwise None """
+def run_tests(test_cases, test_filter=""):
+    """ Utility function for manually running tests. 
+    Returns results if there are failures, otherwise None 
+
+    test_filter will be matched fnmatch style (* wildcards) to either the name of the TestCase 
+    class or test method. 
+
+    """
+    import fnmatch
 
     def find_test_method(traceback):
         """ Finds first "test*" function in traceback called. """
@@ -884,14 +890,25 @@ def run_tests(test_cases):
     suite = unittest.TestSuite()
     for case in test_cases:
         suite.addTests(unittest.TestLoader().loadTestsFromTestCase(case))
+
+    if test_filter:
+        filtered_suite = unittest.TestSuite()
+        for test in suite:
+            if any(fnmatch.fnmatch(x, test_filter) for x in test.id().split(".")):
+                filtered_suite.addTest(test)
+        if not any(True for _ in filtered_suite):
+            raise RuntimeError("Filter %s selected no tests. " % test_filter)
+        suite = filtered_suite
+
     suite.run(result)
+    print "---------"
     for test_instance, traceback in result.failures:
-        print "%s Failed: " % type(test_instance).__name__, find_test_method(traceback)
+        print "Failed: %s.%s" % (type(test_instance).__name__, find_test_method(traceback))
         print
         print traceback
         print "---------"
     for test_instance, traceback in result.errors:
-        print "%s Error: " % type(test_instance).__name__, find_test_method(traceback)
+        print "Error: %s.%s" % (type(test_instance).__name__, find_test_method(traceback))
         print
         print traceback
         print "---------"

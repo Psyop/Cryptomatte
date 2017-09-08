@@ -48,21 +48,21 @@ def setup_cryptomatte():
 #############################################
 
 class CryptomatteTesting(object):
-    def get_all_unit_tests(self):
+    def get_all_unit_tests(self, test_filter=""):
         import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.get_all_unit_tests()
+        return cu_tests.get_all_unit_tests(test_filter=test_filter)
 
-    def get_all_nuke_tests(self):
+    def get_all_nuke_tests(self, test_filter=""):
         import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.get_all_nuke_tests()
+        return cu_tests.get_all_nuke_tests(test_filter=test_filter)
 
-    def run_unit_tests(self):
+    def run_unit_tests(self, test_filter=""):
         import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.run_unit_tests()
+        return cu_tests.run_unit_tests(test_filter=test_filter)
 
-    def run_nuke_tests(self):
+    def run_nuke_tests(self, test_filter=""):
         import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.run_nuke_tests()
+        return cu_tests.run_nuke_tests(test_filter=test_filter)
 
 tests = CryptomatteTesting()
 
