@@ -396,7 +396,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
     elif knob.name() == "pickerAdd":
         if node.knob("singleSelection").getValue():
             node.knob("matteList").setValue("")
-        ID_value = _get_knob_channel_value(node.knob("pickerAdd"), recursive_mode = "add")
+        ID_value = _get_knob_channel_value(node.knob("pickerAdd"), recursive_mode="add")
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
@@ -406,7 +406,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         _update_cryptomatte_gizmo(node, cinfo)
 
     elif knob.name() == "pickerRemove":
-        ID_value = _get_knob_channel_value(node.knob("pickerRemove"), recursive_mode = "remove")
+        ID_value = _get_knob_channel_value(node.knob("pickerRemove"), recursive_mode="remove")
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
@@ -864,7 +864,7 @@ def _id_from_matte_name(name):
     else:
         return mm3hash_float(name)
 
-def _get_knob_channel_value(knob, recursive_mode = None):
+def _get_knob_channel_value(knob, recursive_mode=None):
     try:
         bbox = knob.getValue()[4:]
         node = knob.node()
@@ -878,7 +878,6 @@ def _get_knob_channel_value(knob, recursive_mode = None):
         saw_bg = False
 
         for layer_knob in GIZMO_CHANNEL_KNOBS:
-
             layer = node.knob(layer_knob).getValue()
 
             if layer == "none":
