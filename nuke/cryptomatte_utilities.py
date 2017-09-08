@@ -989,6 +989,7 @@ def set_mattelist_from_set(gizmo, matte_items):
     matte_names_list = list(matte_items)
     matte_names_list.sort(key=lambda x: x.lower())
     matte_list_str = _encode_csv(matte_names_list)
+    matte_list_str = matte_list_str.replace("\\", "\\\\")
     gizmo.knob("matteList").setValue(matte_list_str)
 
 def _matteList_modify(gizmo, name, remove):
