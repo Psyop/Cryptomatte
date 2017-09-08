@@ -868,12 +868,15 @@ def _get_knob_channel_value(knob, recursive_mode=None):
     try:
         bbox = knob.getValue()[4:]
         node = knob.node()
+        upstream_node = node.input(0)
+        if not upstream_node:
+            return 0.0
 
-        if not recursive_mode is None:
+        if recursive_mode is None:
+            id_list = []
+        else:
             matte_list = get_mattelist_as_set(node)
             id_list = map(_id_from_matte_name, matte_list)
-        else:
-            id_list = []
 
         saw_bg = False
 
@@ -885,7 +888,7 @@ def _get_knob_channel_value(knob, recursive_mode=None):
 
             for sub_channel in ['.red', '.blue']:
                 channel = layer + sub_channel
-                selected_id = node.sample(channel, bbox[0], bbox[1])
+                selected_id = upstream_node.sample(channel, bbox[0], bbox[1])
                 
                 if recursive_mode == "add":
                     if selected_id == 0.0:
