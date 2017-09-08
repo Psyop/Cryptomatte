@@ -14,8 +14,8 @@ def get_all_unit_tests():
 
 
 def get_all_nuke_tests():
-    """ Returns the list of maya integration tests (Only run in Maya)"""
-    return [CryptomatteGizmoSetup]
+    """ Returns the list of Nuke integration tests"""
+    return [CSVParsingNuke, CryptomatteGizmoSetup]
 
 
 #############################################
@@ -91,6 +91,38 @@ class CryptoHashing(unittest.TestCase):
 global g_cancel_nuke_testing
 g_cancel_nuke_testing = False
 
+class CSVParsingNuke(unittest.TestCase):
+    """
+    Nuke removes escaped characters when you use getValue() on a string knob. 
+    Therefore, testing the round trip through the gizmo is slightly complicated. 
+    """
+    def setUp(self):
+        import nuke
+        self.gizmo = nuke.nodes.Cryptomatte()
+
+    def tearDown(self):
+        import nuke
+        nuke.delete(self.gizmo)
+
+    def round_trip_through_gizmo(self, csv, msg):
+        import cryptomatte_utilities as cu
+        # start from csv
+        self.gizmo.knob("matteList").setValue(csv.replace("\\", "\\\\"))
+
+        for i in range(3):
+            matte_set = cu.get_mattelist_as_set(self.gizmo)
+            self.gizmo.knob("matteList").setValue("")
+            cu.set_mattelist_from_set(self.gizmo, matte_set)
+        result_csv = self.gizmo.knob("matteList").getValue()
+        correct_set = set(cu._decode_csv(csv))
+        result_set = set(cu._decode_csv(result_csv))
+        self.assertEqual(correct_set, result_set, "%s: Came out as: %s" % (msg, result_csv))
+
+    def test_csv_through_gizmo(self):
+        self.round_trip_through_gizmo('"name containing a \\"quote\\"  "', "Round trip failed")
+
+    def test_big_csv_through_gizmo(self):
+        self.round_trip_through_gizmo(CSVParsing.csv_str, "Round trip failed")
 
 class CryptomatteGizmoSetup(unittest.TestCase):
     """ 
