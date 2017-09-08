@@ -68,6 +68,9 @@ class CSVParsing(unittest.TestCase):
 class CryptoHashing(unittest.TestCase):
     mm3hash_float_values = {
         "hello": 6.0705627102400005616e-17,
+        "cube": -4.08461912519e+15,
+        "sphere": 2.79018604383e+15,
+        "plane": 3.66557617593e-11,
         # utf-8 bytes for "plane" in Bulgarian
         "\xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0": -1.3192631212399999468e-25,
         # utf-8 bytes for "girl" in German
