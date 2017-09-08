@@ -802,51 +802,53 @@ def _build_extraction_expression(channel_list, IDs):
     return expression
 
 def _set_keyable_surface_expression(gizmo, cinfo):
-    cryptomatte_channels = cinfo.get_channels()
-    keyable_surface_mode = gizmo.knob('keyableSurfaceMode').value()
+    enabled = gizmo.knob('keyableSurfaceEnabled').getValue()
+    keyable_surface_mode = gizmo.knob('keyableSurfaceMode').value() if enabled else 'None'
 
-    keyable_surface_enabled = gizmo.knob('keyableSurfaceEnabled').getValue()
-    
-    if not keyable_surface_enabled:
-        keyable_surface_mode = 'None'
-    
     channel_pairs = []
-    for c in cryptomatte_channels:
-        channel_pairs.append([c + '.red', c + '.green'])
-        channel_pairs.append([c + '.blue', c + '.alpha'])
+    for c in cinfo.get_channels():
+        channel_pairs.append(('%s.red' % c, '%s.green' % c))
+        channel_pairs.append(('%s.blue' % c, '%s.alpha' % c))
 
     expressions = []
-        
-    if keyable_surface_mode in ['Edges']:
+    if keyable_surface_mode == 'Edges':
         expressions = [
             "",
             "",
             "",
-            "2.0 * {coverage_chan}".format(coverage_chan = channel_pairs[1][1])]
-    
-    elif keyable_surface_mode in ['Colors']:
+            "2.0 * %s" % channel_pairs[1][1],
+        ]
+    elif keyable_surface_mode == 'Colors':
         puzzle_layers = 2
 
-        # This all looks more complicated than it is.  In most languages, you would just reinterpret cast and bitshift.
-        shifts = [" * 256.0 % 1.0", "", " * 65536.0 % 1.0"]
+        # This all looks more complicated than it is.
+        # In most languages, you would just reinterpret cast and bitshift.
+        # 3 bitshifts for the 3 channels we're going to fill.
+        shifts = [
+            " * 256.0 % 1.0",
+            "",
+            " * 65536.0 % 1.0",
+        ]
 
-        # Include the one rogue exponent bit that makes it into the bitshift.  Doesn't seem to have a big performance impact, and stays closer to a real bitshift.
-        if True:
-            puzzle_bits = "(({id_chan} != 0.0) * (0.5 * ((exponent({id_chan}) + 126) % 2) + mantissa(abs({id_chan})) - 0.5){shift}) * {coverage_chan}"
-        else:
-            puzzle_bits = "(({id_chan} != 0.0) * (2.0 * mantissa(abs({id_chan})) - 1.0){shift}) * {coverage_chan}"
-        expressions = [" + ".join([puzzle_bits.format(shift=shift, id_chan=id_chan, coverage_chan=coverage_chan) for (id_chan, coverage_chan) in channel_pairs[:puzzle_layers]]) for shift in shifts]
+        # Include the one rogue exponent bit that makes it into the bitshift.
+        # Doesn't seem to have a big performance impact, and stays closer to a real bitshift.
+        puzzle_bits = ("(({id_chan} != 0.0) * (0.5 * ((exponent({id_chan}) + 126) % 2)"
+                       " + mantissa(abs({id_chan})) - 0.5){shift}) * {cov_chan}")
+
+        # Divide by normalization term:
+        normalization_term = " (.0001 + %s) " % "+".join(
+            cov_chan for _, cov_chan in channel_pairs[:puzzle_layers])
+
+        for shift in shifts:
+            puzzle = " + ".join(
+                puzzle_bits.format(shift=shift, id_chan=id_chan, cov_chan=cov_chan)
+                for (id_chan, cov_chan) in channel_pairs[:puzzle_layers])
+            expr = "0.25 * (%s / %s)" % (puzzle, normalization_term)
+            expressions.append(expr)
         expressions.append("")
-        
-        # Add normalization and match original Cryptomatte gizmo:
-        normalization = " / (.0001 + " + "+".join([coverage_chan for id_chan, coverage_chan in channel_pairs[:puzzle_layers]]) + ")"
-        for i in [0, 1, 2]:
-            expressions[i] = ".25 * (" + expressions[i] + normalization + ")"
 
-    elif keyable_surface_mode in ['None']:
-        expressions = [""] * 4
-    else:
-        expressions = [""] * 4
+    else:  # mode is none
+        expressions = ["", "", "", ""]
 
     for i in range(4):
         gizmo.knob('keyableSurfaceExpression' + str(i)).setValue(expressions[i])
@@ -865,6 +867,7 @@ def _id_from_matte_name(name):
         return mm3hash_float(name)
 
 def _get_knob_channel_value(knob, recursive_mode=None):
+    # todo(jonah): Why is this in a try/except? 
     try:
         bbox = knob.getValue()[4:]
         node = knob.node()
