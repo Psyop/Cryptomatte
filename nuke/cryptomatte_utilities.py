@@ -797,37 +797,41 @@ def _set_keyable_surface_expression(gizmo, cinfo):
             "2.0 * %s" % channel_pairs[1][1],
         ]
     elif keyable_surface_mode == 'Colors':
-        puzzle_layers = 2
+        """
+        Generates an expression like this: 
+        red = (
+          (mantissa(abs(c00.red)) * 1 % 0.25) * c00.green + 
+          (mantissa(abs(c00.blue)) * 1 % 0.25) * c00.alpha + 
+          (mantissa(abs(c01.red)) * 1 % 0.25) * c01.green + 
+          (mantissa(abs(c01.blue)) * 1 % 0.25) * c01.alpha
+        )
+        green = (
+          (mantissa(abs(c00.red)) * 4 % 0.25) * c00.green + 
+          (mantissa(abs(c00.blue)) * 4 % 0.25) * c00.alpha + 
+          (mantissa(abs(c01.red)) * 4 % 0.25) * c01.green + 
+          (mantissa(abs(c01.blue)) * 4 % 0.25) * c01.alpha
+        )
+        blue = (
+          (mantissa(abs(c00.red)) * 16 % 0.25) * c00.green + 
+          (mantissa(abs(c00.blue)) * 16 % 0.25) * c00.alpha + 
+          (mantissa(abs(c01.red)) * 16 % 0.25) * c01.green + 
+          (mantissa(abs(c01.blue)) * 16 % 0.25) * c01.alpha
+        )
+        """
 
-        # This all looks more complicated than it is.
-        # In most languages, you would just reinterpret cast and bitshift.
-        # 3 bitshifts for the 3 channels we're going to fill.
-        shifts = [
-            " * 256.0 % 1.0",
-            "",
-            " * 65536.0 % 1.0",
-        ]
+        puzzle_layers = 4
+        factors = [1, 16, 64]
+        puzzle_bits = "(mantissa(abs({id_chan})) * {factor} % 0.25) * {cov_chan}"
 
-        # Include the one rogue exponent bit that makes it into the bitshift.
-        # Doesn't seem to have a big performance impact, and stays closer to a real bitshift.
-        puzzle_bits = ("(({id_chan} != 0.0) * (0.5 * ((exponent({id_chan}) + 126) % 2)"
-                       " + mantissa(abs({id_chan})) - 0.5){shift}) * {cov_chan}")
-
-        # Divide by normalization term:
-        normalization_term = " (.0001 + %s) " % "+".join(
-            cov_chan for _, cov_chan in channel_pairs[:puzzle_layers])
-
-        for shift in shifts:
+        for factor in factors:
             puzzle = " + ".join(
-                puzzle_bits.format(shift=shift, id_chan=id_chan, cov_chan=cov_chan)
+                puzzle_bits.format(factor=factor, id_chan=id_chan, cov_chan=cov_chan)
                 for (id_chan, cov_chan) in channel_pairs[:puzzle_layers])
-            expr = "0.25 * (%s / %s)" % (puzzle, normalization_term)
+            expr = "(%s)" % puzzle
             expressions.append(expr)
         expressions.append("")
-
     else:  # mode is none
         expressions = ["", "", "", ""]
-
     for i in range(4):
         gizmo.knob('keyableSurfaceExpression' + str(i)).setValue(expressions[i])
     
