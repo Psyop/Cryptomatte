@@ -625,26 +625,17 @@ def _update_encyptomatte_setup_layers(gizmo):
         for i in range(len(GIZMO_ADD_CHANNEL_KNOBS)):
             gizmo.knob(GIZMO_ADD_CHANNEL_KNOBS[i]).setValue("none")
             gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue("none")
-        #gizmo.knob('manifestKey').setValue("")
         return
-
 
     all_layers = nuke.layers()
 
     for i in range(len(GIZMO_ADD_CHANNEL_KNOBS)):
-        
-        if i > 0:
-            this_layer = "{0}{1:02d}".format(crypto_layer, i - 1)
-        else:
-            this_layer = crypto_layer
-
+        this_layer = "{0}{1:02d}".format(crypto_layer, i)
         # Add
-        if i <= num_layers:
+        if i < num_layers:
             if not this_layer in all_layers:
-                if i == 0:
-                    nuke.Layer(this_layer, [this_layer + '.' + c for c in ['red', 'green', 'blue']])
-                else:
-                    nuke.Layer(this_layer, [this_layer + '.' + c for c in ['red', 'green', 'blue', 'alpha']])
+                channels = ["%s.%s" % (this_layer, c) for c in ['red', 'green', 'blue', 'alpha']]
+                nuke.Layer(this_layer, channels)
 
             gizmo.knob(GIZMO_ADD_CHANNEL_KNOBS[i]).setValue(this_layer)
             gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue("none")
@@ -655,11 +646,7 @@ def _update_encyptomatte_setup_layers(gizmo):
             else:
                 gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue("none")
 
-    #gizmo.knob('manifestKey').setValue(CRYPTOMATTE_METADATA_PREFIX + layer_hash(crypto_layer) + '/')
-
-
-def encryptomatte_add_manifest_id(deserialize = False):
-    
+def encryptomatte_add_manifest_id():
     node = nuke.thisNode()
     parent = nuke.thisParent()
     name = parent.knob('matteName').value()
@@ -667,23 +654,15 @@ def encryptomatte_add_manifest_id(deserialize = False):
     manifest_key = parent.knob('manifestKey').value()
     metadata = node.metadata()
     manifest = metadata.get(manifest_key + 'manifest', "{}")
-    
-    if deserialize:
-        import json
-        d = json.loads(manifest)
-        d[name] = hex_id
-        new_manifest = json.dumps(d)
-        return new_manifest
-    else:
-        last_item = '"{name}":"{id_hex}"'.format(name=name, id_hex=id_hex)
-        last_item += '}'
-        
-        last_bracket_pos = manifest.rfind('}')
-        existing_items = manifest[:last_bracket_pos].rstrip()
-        if not existing_items.endswith(',') and not existing_items.endswith('{'):
-            return existing_items + ',' + last_item
-        else:
-            return existing_items + last_item
+
+    # Add another item, with closing bracket
+    last_item = '"%s":"%s"}' % (name, id_hex)
+    last_bracket_pos = manifest.rfind('}')
+    existing_items = manifest[:last_bracket_pos].rstrip()
+    if not existing_items.endswith(',') and not existing_items.endswith('{'):
+        existing_items += ','
+    existing_items += last_item
+    return existing_items
 
 
 #############################################
@@ -762,7 +741,6 @@ def _set_expression(gizmo, cryptomatte_channels):
             ID_list.append(mm3hash_float(item))
 
     expression = _build_extraction_expression(cryptomatte_channels, ID_list)
-
     gizmo.knob("expression").setValue(expression)
 
 
