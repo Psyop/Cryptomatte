@@ -622,7 +622,7 @@ def _update_encyptomatte_setup_layers(gizmo):
     crypto_layer = gizmo.knob('cryptoLayer').value()
 
     if not setup_layers:
-        gizmo.knob('manifestKey').setValue("") # clear this
+        gizmo.knob('manifestKey').setValue("")
         for i in range(len(GIZMO_ADD_CHANNEL_KNOBS)):
             gizmo.knob(GIZMO_ADD_CHANNEL_KNOBS[i]).setValue("none")
             gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue("none")
