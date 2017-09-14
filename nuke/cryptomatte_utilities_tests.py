@@ -891,7 +891,6 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         encryptomatte = self.tempNode(
             "Encryptomatte", inputs=[self.gizmo, self.constant], matteName="test")
         cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
-        # encryptomatte.setInput(0, None)
         encryptomatte.knob("setupLayers").setValue(True);
         encryptomatte.knob("cryptoLayer").setValue("sdfsd");
         encryptomatte.knob("setupLayers").setValue(False);
