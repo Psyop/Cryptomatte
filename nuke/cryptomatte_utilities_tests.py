@@ -885,6 +885,19 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         self.assertEqual(roto_hash_720, decrypto_hash, ("Alpha did not survive round trip through "
                                                         "Encryptomatte and then Cryptomatte. "))
 
+    def test_encrypt_manifest(self):
+        """Gets it into a weird state where it has a manifest but no cryptomatte."""
+        import cryptomatte_utilities as cu
+        encryptomatte = self.tempNode(
+            "Encryptomatte", inputs=[self.gizmo, self.constant], matteName="test")
+        cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
+        # encryptomatte.setInput(0, None)
+        encryptomatte.knob("setupLayers").setValue(True);
+        encryptomatte.knob("cryptoLayer").setValue("sdfsd");
+        encryptomatte.knob("setupLayers").setValue(False);
+        cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
+
+
 
 #############################################
 # Ad hoc test running
