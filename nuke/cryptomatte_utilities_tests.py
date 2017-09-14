@@ -481,6 +481,17 @@ class CryptomatteGizmoSetup(unittest.TestCase):
             self.gizmo.knob("expression").getValue(), self.heroflower_expr,
             "Stop auto update did not work. ")
 
+    def test_keying_without_preview_channels(self):
+        """ 
+        Test that the gizmo can be set up and used properly without 
+        the preview channels being available. 
+        """
+        self.gizmo.setInput(0, self.read_material) # switch layer selection
+        remove = self.tempNode("Remove", inputs=[self.read_asset], channels="uCryptoAsset")
+        self.gizmo.setInput(0, remove)
+        self._test_keying_partial_black()
+        self.gizmo.knob("forceUpdate").execute()
+
     #############################################
     # Output checking
     #############################################
