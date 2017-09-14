@@ -485,33 +485,33 @@ class CryptomatteGizmoSetup(unittest.TestCase):
     # Output checking
     #############################################
 
-    def test_output_keyable_surface(self):
+    def test_output_preview(self):
         self.key_on_image(self.bunny_pkr)
         msg = "Selection did not light up properly. %s, %s"
         self.assertSampleEqual(
-            self.bunny_pkr, "Keyable surface did not light up", red=1.0, green=1.0, alpha=1.0)
+            self.bunny_pkr, "Preview image did not light up", red=1.0, green=1.0, alpha=1.0)
         self.assertSampleNotEqual(self.set_pkr, "Set pixels should be dark.", red=1.0, green=1.0)
         self.assertSampleEqual(self.set_pkr, "Set pixels should be unselected.", alpha=0.0)
 
-    def test_output_keyable_surface_disabled(self):
+    def test_output_preview_disabled(self):
         # stops lighting up after disabled, but alpha still correct
         self.key_on_image(self.bunny_pkr)
-        self.gizmo.knob("keyableSurfaceEnabled").setValue(False)
+        self.gizmo.knob("previewEnabled").setValue(False)
         self.assertSampleEqual(
             self.bunny_pkr,
-            "Keyable surface bunny pixels wrong when disabled",
+            "Preview image bunny pixels wrong when disabled",
             red=0.0,
             green=0.0,
             alpha=1.0)
         self.assertSampleEqual(
             self.set_pkr,
-            "Keyable surface set pixels wrong when disabled",
+            "Preview image set pixels wrong when disabled",
             red=0.0,
             green=0.0,
             alpha=0.0)
-        self.gizmo.knob("keyableSurfaceEnabled").setValue(True)
+        self.gizmo.knob("previewEnabled").setValue(True)
 
-    def test_output_keyable_surface_multi(self):
+    def test_output_preview_multi(self):
         # add an item, make sure it lights up too
         self.key_on_image(self.bunny_pkr, self.set_pkr)
         self.assertSampleEqual(
@@ -802,7 +802,7 @@ class CryptomatteGizmoSetup(unittest.TestCase):
 
         self.assertEqual(roto_hash, decrypto_hash, ("Alpha did not survive round trip through "
                                                     "Encryptomatte and then Cryptomatte. "))
-        self.assertNotEqual(keysurf_hash, mod_keysurf_hash, "Keyable surface did not change. ")
+        self.assertNotEqual(keysurf_hash, mod_keysurf_hash, "preview image did not change. ")
 
     def test_encrypt_bogus_manifest(self):
         import cryptomatte_utilities as cu
@@ -854,9 +854,9 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         The following assertions will pass, but fail in teardown as nothing else can be sampled. 
         """
         self.assertNotEqual(under_keysurf_hash, mod_keysurf_hash,
-                            "Under mode did not change keyable surface from over. ")
+                            "Under mode did not change preview image from over. ")
         self.assertNotEqual(under_keysurf_hash, keysurf_hash,
-                            "Under mode did not change keyable surface from original. ")
+                            "Under mode did not change preview image from original. ")
 
     def test_encrypt_fresh_roundtrip(self):
         constant1080 = self.tempNode("Constant", format="HD_1080")

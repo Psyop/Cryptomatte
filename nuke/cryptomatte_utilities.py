@@ -421,16 +421,16 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         node.knob("pickerRemove").setValue([0] * 8)
         node.knob("pickerAdd").setValue([0] * 8)
 
-    elif knob.name() in ["keyableSurfaceMode", "keyableSurfaceEnabled"]:
+    elif knob.name() in ["previewMode", "previewEnabled"]:
         cinfo = CryptomatteInfo(node)
-        _set_keyable_surface_expression(node, cinfo)
+        _set_preview_expression(node, cinfo)
 
     elif knob.name() == "forceUpdate":
         cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo, True)
 
 
-def encryptomatte_knob_changed_event(node = None, knob = None):
+def encryptomatte_knob_changed_event(node=None, knob=None):
     if knob.name() in ["matteName", "cryptoLayerLock"]:
         cinfo = CryptomatteInfo(node)
         _update_encryptomatte_gizmo(node, cinfo)
@@ -539,7 +539,7 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     _set_ui(gizmo)
     _set_channels(gizmo, cryptomatte_channels, cinfo.get_selection_name())
     _set_expression(gizmo, cryptomatte_channels)
-    _set_keyable_surface_expression(gizmo, cinfo)
+    _set_preview_expression(gizmo, cinfo)
     _set_crypto_layer_choice(gizmo, cinfo)
 
 
@@ -779,9 +779,9 @@ def _build_extraction_expression(channel_list, IDs):
 
     return expression
 
-def _set_keyable_surface_expression(gizmo, cinfo):
-    enabled = gizmo.knob('keyableSurfaceEnabled').getValue()
-    keyable_surface_mode = gizmo.knob('keyableSurfaceMode').value() if enabled else 'None'
+def _set_preview_expression(gizmo, cinfo):
+    enabled = gizmo.knob('previewEnabled').getValue()
+    preview_mode = gizmo.knob('previewMode').value() if enabled else 'None'
 
     channel_pairs = []
     for c in cinfo.get_channels():
@@ -789,14 +789,14 @@ def _set_keyable_surface_expression(gizmo, cinfo):
         channel_pairs.append(('%s.blue' % c, '%s.alpha' % c))
 
     expressions = []
-    if keyable_surface_mode == 'Edges':
+    if preview_mode == 'Edges':
         expressions = [
             "",
             "",
             "",
             "2.0 * %s" % channel_pairs[1][1],
         ]
-    elif keyable_surface_mode == 'Colors':
+    elif preview_mode == 'Colors':
         """
         Generates an expression like this: 
         red = (
@@ -833,7 +833,7 @@ def _set_keyable_surface_expression(gizmo, cinfo):
     else:  # mode is none
         expressions = ["", "", "", ""]
     for i in range(4):
-        gizmo.knob('keyableSurfaceExpression' + str(i)).setValue(expressions[i])
+        gizmo.knob('previewExpression' + str(i)).setValue(expressions[i])
     
     
 
