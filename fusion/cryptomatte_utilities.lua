@@ -16,6 +16,11 @@ METADATA_KEY_MANIF_FILE = "manif_file"
 METADATA_KEY_MANIFEST = "manifest"
 METADATA_KEY_NAME = "name"
 
+VALID_NON_CRYPTO_CHANNELS = {r=true, red=true, 
+                             g=true, green=true, 
+                             b=true, blue=true, 
+                             a=true, alpha=true}
+
 -- ===========================================================================
 -- third party modules
 -- ===========================================================================
@@ -90,7 +95,7 @@ function generate_mattes_from_rank(y)
     end
 end
 
-function create_matte_images(crypto_images, id_float_values)
+function create_mattes(crypto_images, id_float_values)
     local combined_matte = Image({{ IMG_Channel = "Alpha" }})
     combined_matte:Clear()
 
@@ -111,8 +116,59 @@ function create_matte_images(crypto_images, id_float_values)
         combined_matte = combined_matte:ChannelOpOf("Add", rank_matte, { V = "fg.V" })
     end
 
-    -- add combined matte to keyed image
     return combined_matte
+end
+
+function create_preview_image(rank_img_00, rank_img_01)
+    -- creates the preview image from the first two ranks
+    -- this function was at first attached to the module like functions at the end of this module
+    -- this did not work due to the "self" then taking the role of the module, instead of the Fuse
+    local output = Image({ IMG_Like = rank_img_00 })
+    output:Clear()
+    self:DoMultiProcess(nil, { output = output, rank_img_00 = rank_img_00, rank_img_01 = rank_img_01 }, output.Height, create_colors_image)
+    return output
+end
+
+function create_colors_image(y)
+    local global_p_c00 = Pixel()
+    local global_p_c01 = Pixel()
+
+    for x = 0, output.Width - 1 do
+        rank_img_00:GetPixel(x, y, global_p_c00)
+        rank_img_01:GetPixel(x, y, global_p_c01)
+        
+        m00_rg, _ = math.frexp(math.abs(global_p_c00.R))
+        m00_ba, _ = math.frexp(math.abs(global_p_c00.B))
+        m01_rg, _ = math.frexp(math.abs(global_p_c01.R))
+        m01_ba, _ = math.frexp(math.abs(global_p_c01.B))
+        
+        -- red
+        r_c00_rg = (m00_rg * 1 % 0.25) * global_p_c00.G
+        r_c00_ba = (m00_ba * 1 % 0.25) * global_p_c00.A
+        r_c01_rg = (m01_rg * 1 % 0.25) * global_p_c01.G
+        r_c01_ba = (m01_ba * 1 % 0.25) * global_p_c01.A
+        red = r_c00_rg + r_c00_ba + r_c01_rg + r_c01_ba
+
+        -- green
+        g_c00_rg = (m00_rg * 4 % 0.25) * global_p_c00.G
+        g_c00_ba = (m00_ba * 4 % 0.25) * global_p_c00.A
+        g_c01_rg = (m01_rg * 4 % 0.25) * global_p_c01.G
+        g_c01_ba = (m01_ba * 4 % 0.25) * global_p_c01.A
+        green = g_c00_rg + g_c00_ba + g_c01_rg + g_c01_ba
+
+        -- blue
+        b_c00_rg = (m00_rg * 16 % 0.25) * global_p_c00.G
+        b_c00_ba = (m00_ba * 16 % 0.25) * global_p_c00.A
+        b_c01_rg = (m01_rg * 16 % 0.25) * global_p_c01.G
+        b_c01_ba = (m01_ba * 16 % 0.25) * global_p_c01.A
+        blue = b_c00_rg + b_c00_ba + b_c01_rg + b_c01_ba
+
+        local local_p = Pixel()
+        local_p.R = red
+        local_p.G = green
+        local_p.B = blue
+        output:SetPixel(x, y, local_p)
+    end
 end
 
 -- ===========================================================================
@@ -287,8 +343,13 @@ function cryptomatte_utilities:get_all_channels_from_loader(cInfo, loader)
     local valid_channels = {}
     local loader_channel = loader.Clip1.OpenEXRFormat.RedName:GetAttrs().INPIDT_ComboControl_ID
     for i, channel in ipairs(loader_channel) do
-        -- only store the channels containg the cryptomatte name metadata value
+        -- store the channels containg the cryptomatte name metadata value
         if string.find(channel, cInfo.cryptomattes[cInfo.selection]["name"]) then
+            table.insert(valid_channels, channel)
+        end
+        
+        local _channel = channel:lower()
+        if VALID_NON_CRYPTO_CHANNELS[_channel] then
             table.insert(valid_channels, channel)
         end
     end
@@ -300,9 +361,16 @@ function cryptomatte_utilities:get_all_ranks_from_channels(channels)
     local ranks = {}
     for i, channel_slot_v in ipairs(channels) do
         local rank_name, channel = string.match(channel_slot_v, CHANNEL_REGEX)
+
+        if rank_name == nil and channel == nil then
+            rank_name = "default"
+            channel = channel_slot_v
+        end
+        
         if not is_key_in_table(rank_name, ranks) then
             ranks[rank_name] = {}
         end
+
         local _channel = channel:lower()
         if _channel == "r" or _channel == "red" then
             ranks[rank_name]["r"] = channel
@@ -317,15 +385,30 @@ function cryptomatte_utilities:get_all_ranks_from_channels(channels)
     return ranks
 end
 
-function cryptomatte_utilities:set_channel_slots(loader, ranks)
+function cryptomatte_utilities:set_channel_slots(loader, ranks, channels)
+    local skip_rgb = false
     for rank, channels in pairs(ranks) do
         local index = string.match(rank, "[0-9]+$")
         if not index then
-            -- no index, meaning default RGB crypto layer
-            loader.Clip1.OpenEXRFormat.RedName[0] = string.format("%s.%s", rank, channels["r"])
-            loader.Clip1.OpenEXRFormat.GreenName[0] = string.format("%s.%s", rank, channels["g"])
-            loader.Clip1.OpenEXRFormat.BlueName[0] = string.format("%s.%s", rank, channels["b"])
-            loader.Clip1.OpenEXRFormat.AlphaName[0] = CHANNEL_KEY_NO_MATCH
+            if not skip_rgb then
+                -- set channels to default rank.channel format
+                local r = string.format("%s.%s", rank, channels["r"])
+                local g = string.format("%s.%s", rank, channels["g"])
+                local b = string.format("%s.%s", rank, channels["b"])
+
+                if rank == "default" then
+                    skip_rgb = true
+                    -- don't format channel name with rank prefix, keep source channel name
+                    r = channels["r"]
+                    g = channels["g"]
+                    b = channels["b"]
+                end
+
+                loader.Clip1.OpenEXRFormat.RedName[0] = r 
+                loader.Clip1.OpenEXRFormat.GreenName[0] = g
+                loader.Clip1.OpenEXRFormat.BlueName[0] = b
+                loader.Clip1.OpenEXRFormat.AlphaName[0] = CHANNEL_KEY_NO_MATCH
+            end
         else
             index = tonumber(index)
             if index == 0 then
@@ -364,7 +447,7 @@ function cryptomatte_utilities:create_cryptomatte_info(metadata, selected_layer_
     return cInfo
 end
 
-function cryptomatte_utilities:rebuild_matte(cInfo, matte_names, crypto_images)
+function cryptomatte_utilities:create_matte_image(cInfo, matte_names, crypto_images)
     -- build a set from the ids of the given matte names
     local ids = {}
     local name_to_id = cInfo.cryptomattes[cInfo.selection]["name_to_id"]
@@ -378,9 +461,15 @@ function cryptomatte_utilities:rebuild_matte(cInfo, matte_names, crypto_images)
     -- create the combined matte image
     local combined_matte = nil
     if ids then
-        combined_matte = create_matte_images(crypto_images, ids)
+        combined_matte = create_mattes(crypto_images, ids)
     end
     return combined_matte
+end
+
+function cryptomatte_utilities:create_preview_image(rank_img_00, rank_img_01)
+    -- creates the preview image
+    local output = create_preview_image(rank_img_00, rank_img_01)
+    return output
 end
 
 -- return module

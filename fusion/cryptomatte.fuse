@@ -73,7 +73,7 @@ function Create()
     create_separator()
 
     -- view modes
-    CbKeyableSurface = self:AddInput("Keyable Surface", "KeyableSurface", {
+    CbPreview = self:AddInput("Keyable Surface", "KeyableSurface", {
         LINKID_DataType = "Number",
         INPID_InputControl = "CheckboxControl",
         INP_Integer = true,
@@ -237,44 +237,6 @@ function create_separator()
     })
 end
 
-function create_keyable_image(cryptomatte, cryptomatte00)
-    -- shuffle_0
-    -- BG: Crypto00
-    -- FG: nil
-    local shuffle_0 = cryptomatte00:ChannelOpOf("Copy", nil, { R = "bg.R", G = 0.0, B = 0.0, A = "bg.G" })
-
-    -- shuffle_1
-    -- BG: Crypto00
-    -- FG: nil
-    local shuffle_1 = cryptomatte00:ChannelOpOf("Copy", nil, { R = "bg.R", G = "bg.G", B = "bg.B", A = 0.0 })
-
-    -- shuffle_in_keyable
-    -- BG: shuffle_0
-    -- FG: cryptomatte
-    local shuffle_in_keyable = shuffle_0:ChannelOpOf("Copy", cryptomatte, { R = "fg.B", G = "fg.G", B = "bg.R", A = "bg.A" })
-
-    -- shuffle_copy_2
-    -- BG: shuffle_1
-    -- FG: shuffle_in_keyable
-    local shuffle_copy_2 = shuffle_1:ChannelOpOf("Copy", shuffle_in_keyable, { R = "fg.R", G = "fg.G", B = "fg.B", A = "bg.A" })
-
-    -- visual_feedback_shuffle
-    -- BG: shuffle_copy_2
-    -- FG: nil
-    local visual_feedback_shuffle = shuffle_copy_2:ChannelOpOf("Copy", nil, { R = "bg.A", G = "bg.A", B = 0.0, A = 0.0 })
-
-    -- gain_r_g
-    -- BG: shuffle_copy_2
-    -- FG: nil
-    local gain_r_g = shuffle_copy_2:ChannelOpOf("Multiply", nil, { R = 0.25, G = 0.25, B = 1.0, A = 0.0 })
-
-    -- visual_feedback_merge
-    -- BG: visual_feedback_shuffle
-    -- FG: gain_r_g
-    local visual_feedback_merge = visual_feedback_shuffle:ChannelOpOf("Add", gain_r_g, { R = "fg.R", G = "fg.G", B = "fg.B", A = "fg.A" })
-    return visual_feedback_merge
-end
-
 function get_all_rank_images(input_image)
     --[[
     http://www.steakunderwater.com/VFXPedia/96.0.243.189/index0d66.html?title=Eyeon:Script/Reference/Applications/Fuse/Classes/Image/ChannelOpOf
@@ -306,12 +268,11 @@ function get_all_rank_images(input_image)
         world position channels
     DisparityX, DisparityY
     --]]
-    local crypto_image_std = input_image:ChannelOpOf("Copy", nil, { R = "bg.R", G = "bg.G", B = "bg.B", A = "bg.A" })
     local crypto_image_00 = input_image:ChannelOpOf("Copy", nil, { R = "bg.Z", G = "bg.Coverage", B = "bg.U", A = "bg.V" })
     local crypto_image_01 = input_image:ChannelOpOf("Copy", nil, { R = "bg.NX", G = "bg.NY", B = "bg.NZ", A = "bg.VectX" })
     local crypto_image_02 = input_image:ChannelOpOf("Copy", nil, { R = "bg.VectY", G = "bg.BackVectX", B = "bg.BackVectY", A = "bg.PositionX" })
     local crypto_image_03 = input_image:ChannelOpOf("Copy", nil, { R = "bg.PositionY", G = "bg.PositionZ", B = "bg.DisparityY", A = "bg.DisparityX" })
-    return { crypto_image_std, crypto_image_00, crypto_image_01, crypto_image_02, crypto_image_03}
+    return { crypto_image_00, crypto_image_01, crypto_image_02, crypto_image_03}
 end
 
 function get_selected_layer()
@@ -447,24 +408,26 @@ function remove_matte(cInfo, id_float_value, matte_selection_str)
     set_matte_list(new_matte_list)
 end
 
-function set_name_checker(output_image)
-    -- get screen pixel at locator position
-    local screen_pos = LocatorNameChecker:GetSource(0)
-    local pixel = get_screen_pixel(output_image, screen_pos.X, screen_pos.Y)
-
-    -- get matte name matching id float value
-    local id_float_value = pixel.B
+function set_name_checker(crypto_images)
     local text_to_set = ""
-    if id_float_value == 0.0 then
-        text_to_set = "Background (Value is 0.0)"
-    else
-        text_to_set = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
-        if not text_to_set then
-            return
+    -- only run code when locator is visible
+    local locator_visible = LocatorNameChecker:GetAttr("PC_Visible")
+    if locator_visible then 
+        -- get screen pixel at locator position
+        local screen_pos = LocatorNameChecker:GetSource(0)
+        local id_float_value = get_id_float_value(screen_pos, crypto_images)
+
+        -- get matte name matching id float value
+        if id_float_value == 0.0 then
+            text_to_set = "Background (Value is 0.0)"
+        else
+            text_to_set = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
+            if not text_to_set then
+                return
+            end
+            text_to_set = "\"" .. text_to_set .. "\""
         end
-        text_to_set = "\"" .. text_to_set .. "\""
     end
-    
     -- set the keyed name if different then before
     local keyed_name = TextKeyedName:GetSource(0).Value
     if text_to_set ~= keyed_name then
@@ -473,28 +436,44 @@ function set_name_checker(output_image)
 end
 
 function get_view_mode()
-    -- returns the selected view mode if the keyable surface is checked
+    -- returns the selected view mode if the preview checbkbox is checked
     -- else return default view mode "None"
     local view_mode = VIEW_MODES[3]
-    local keyable_checked = CbKeyableSurface:GetSource(0).Value
-    if keyable_checked == 1  then
+    local preview_checked = CbPreview:GetSource(0).Value
+    if preview_checked == 1  then
         local selected_view_mode_index = ComboViewMode:GetSource(0).Value
         view_mode = VIEW_MODES[selected_view_mode_index + 1]
     end
     return view_mode
 end
 
-function apply_view_mode(mode, input_image, keyable_image, matte)
-    local output_image = Image({})
-    output_image:Clear()
+function apply_view_mode(mode, input_image, crypto_images)
+    local output_image
     if mode == VIEW_MODE_EDGES then
-        output_image = input_image:ChannelOpOf("Add", matte, { R = "fg.V", G = "fg.V"})
+        output_image = input_image:ChannelOpOf("Add", input_image, { R = "fg.V", G = "fg.V"})
     elseif mode == VIEW_MODE_COLORS then
-        output_image = keyable_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", B = "fg.A"})
+        output_image = cryptoutils:create_preview_image(crypto_images[1], crypto_images[2])
     elseif mode == VIEW_MODE_NONE then
-        output_image = input_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", B = "fg.A"})
+        output_image = input_image:CopyOf()
     end
     return output_image
+end
+
+function get_id_float_value(screen_pos, crypto_images)
+    -- get the pixel at the given location for all the given crypto images (ranks)
+    -- if an R, G, B or A channel value is different than zero, the id float value was found
+    local id_float_value = nil
+    for _, image in ipairs(crypto_images) do
+        local pixel = get_screen_pixel(image, screen_pos.X, screen_pos.Y)
+        for _, channel in ipairs({pixel.R, pixel.G, pixel.B, pixel.A}) do
+            if channel ~= 0.0 then
+                id_float_value = channel
+                break
+            end
+        end
+        if id_float_value ~= nil then break end
+    end
+    return id_float_value
 end
 
 -- ===========================================================================
@@ -507,12 +486,10 @@ function OnConnected(inp, old, new)
 end
 
 function Process(req)
-    local t_start = os.clock()
-
     -- get input image
     local input_image = InImage:GetValue(req)
     local metadata = input_image.Metadata
-    
+
     -- get current selected layer
     local layer_name = get_selected_layer()
 
@@ -527,7 +504,7 @@ function Process(req)
     set_layer_selection_display(cInfo)
 
     -- get loader connected to fuse
-     local connect_triggered = CallbackConnect:GetValue(req).Value
+    local connect_triggered = CallbackConnect:GetValue(req).Value
     if connect_triggered == 1 then
         local fusion = Fusion()
         local comp = fusion.CurrentComp
@@ -545,12 +522,15 @@ function Process(req)
         end
     end
     
-    -- create keyable image & matte only mono channel image
+    -- get all crypto images
     local crypto_images = get_all_rank_images(input_image)
-    local keyable_image = create_keyable_image(crypto_images[1], crypto_images[2])
-    
+
+    -- apply matte to image depending on view mode
+    local view_mode = get_view_mode()
+    local output_image = apply_view_mode(view_mode, input_image, crypto_images)
+
     -- set the name checker
-    set_name_checker(keyable_image)
+    set_name_checker(crypto_images)
 
     -- add mattes callback
     -- remove mattes callback
@@ -558,10 +538,9 @@ function Process(req)
     local remove_triggered = CallbackBtnRemove:GetValue(req).Value
     local matte_selection_str = get_matte_list_input()
     if add_triggered == 1 or remove_triggered == 1 then
-        -- get the id float value (blue channel of the pixel on matte locator position)
-        local position = Locator:GetSource(0)
-        local pixel = get_screen_pixel(keyable_image, position.X, position.Y)
-        local id_float_value = pixel.B
+        -- get the id float value from the pixel at locator coordinates
+        local screen_pos = Locator:GetSource(0)
+        local id_float_value = get_id_float_value(screen_pos, crypto_images)
 
         if add_triggered == 1 then
             add_matte(cInfo, id_float_value, matte_selection_str)
@@ -574,38 +553,39 @@ function Process(req)
             CallbackBtnRemove:SetSource(Number(0), 0, 0)
         end
     end
+    
     -- clear matte callback
     local clear_triggered = CallbackBtnClear:GetValue(req).Value
     if clear_triggered == 1 then
+        -- clear the cached state of the matte list
+        matte_selection_str = ""
         -- clear the other ui elements
         TextMatteList:SetSource(Text(""), 0, 0)
         CbMatteOnly:SetSource(Number(0), 0, 0)
+        CbPreview:SetSource(Number(0), 0, 0)
         -- reset the callback
         CallbackBtnClear:SetSource(Number(0), 0, 0)
     end
 
-    -- rebuild matte
+    -- create matte
     local matte_names = get_mattes_from_selection(cInfo, matte_selection_str)
-    local matte = cryptoutils:rebuild_matte(cInfo, matte_names, crypto_images)
-
-    -- apply matte to image depending on view mode
-    local view_mode = get_view_mode()
-    local output_image = apply_view_mode(view_mode, input_image, keyable_image, matte)
-
-    -- set the matte as the alpha of the output image
-    output_image = output_image:ChannelOpOf("Copy", matte, { A = "fg.A" })
-
-    -- show final matte or standard visual feedback
+    local matte = cryptoutils:create_matte_image(cInfo, matte_names, crypto_images)
+    
+    -- add matte
+    output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", B = "fg.A"})
+    output_image = output_image:ChannelOpOf("Copy", matte, { A = "fg.A"})
+    
+    -- matte only callback
     local matte_only = CbMatteOnly:GetValue(req).Value
     if matte_only == 1 then
         -- create mono channel alpha image from output image
         local matte_only_image = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
+        matte_only_image:Clear()
         matte_only_image = matte_only_image:ChannelOpOf("Copy", output_image, { A = "fg.A" })
         OutImage:Set(req, matte_only_image)
     else
         OutImage:Set(req, output_image)
     end
-    print(string.format("est %.6f", os.clock() - t_start))
 end
 
 function NotifyChanged(inp, param, time)
