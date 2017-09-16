@@ -18,9 +18,9 @@ Gizmo {
 
  addUserKnob {26 ""}
 
- addUserKnob {6 keyableSurfaceEnabled l "Keyable Surface" +STARTLINE}
- keyableSurfaceEnabled true
- addUserKnob {4 keyableSurfaceMode l "" t "Choose how Cryptomatte will visualize keyable regions." -STARTLINE M {Edges Colors None ""}}
+ addUserKnob {6 previewEnabled l "Preview" +STARTLINE}
+ previewEnabled true
+ addUserKnob {4 previewMode l "" t "Choose how Cryptomatte will visualize keyable regions." -STARTLINE M {Colors Edges None ""}}
  
  addUserKnob {6 matteOnly l "Matte Only" t "Extracted matte is copied to RGB channels as well. This disables keying. " +STARTLINE}
  addUserKnob {6 singleSelection l "Single Selection" t "Picker only selects matte at a time, rather than selecting a list. " -STARTLINE}
@@ -51,20 +51,20 @@ Gizmo {
  addUserKnob {26 "" +HIDDEN}
 
  addUserKnob {22 decryptomatte l "Decryptomatte (Replace with Expression)" 
- t "Replaces this gizmo with an expression node that does the extraction. This will replicate the matte extraction, but not the keyable surface generation. "
+ t "Replaces this gizmo with an expression node that does the extraction. This will replicate the matte extraction, but not the preview modes. "
  T "try: \n   import cryptomatte_utilities as cu\n   cu.decryptomatte_button(nuke.thisNode())\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run a Cryptomatte script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())" +STARTLINE}
  
  addUserKnob {22 unloadManifest l "Unload Manifest (Extract all Mattes)" 
  t  "Unload Manifest will create a separate gizmo for every named matte in the Cryptomatte manifest. This can potentially be thousands of nodes, though if the number is high a warning will be displayed before creating them. " T "try: \n   import cryptomatte_utilities as cu\n   cu.unload_manifest(nuke.thisNode())\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run a Cryptomatte script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())" +STARTLINE}
 
  addUserKnob {22 forceUpdateAll l "Force Update All (Update all Gizmos)" 
- t "'Force Update All' will run 'Force Update' on all Cryptomatte gizmos in the Nuke script. 'Force Update' orders the gizmos to re-configure themselves based on available metadata, Cryptomatte depth, and the matte list. This updates all aspects of thier operation, from the keyable surface to the extraction expression. Usually these updates occur automatically on certain actions, such as 'keying' the image, changing layer selection, or reconnecting images. However if changes occur upstream of the gizmos that require manually invoked updates, 'Force Update' and 'Force Update All' may be used. "
+ t "'Force Update All' will run 'Force Update' on all Cryptomatte gizmos in the Nuke script. 'Force Update' orders the gizmos to re-configure themselves based on available metadata, Cryptomatte depth, and the matte list. This updates all aspects of thier operation, from the preview modes to the extraction expression. Usually these updates occur automatically on certain actions, such as 'keying' the image, changing layer selection, or reconnecting images. However if changes occur upstream of the gizmos that require manually invoked updates, 'Force Update' and 'Force Update All' may be used. "
  T "try: \n   import cryptomatte_utilities as cu\n   cu.update_all_cryptomatte_gizmos()\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())" +STARTLINE}
 
- addUserKnob {41 keyableSurfaceExpression0 l INVISIBLE +INVISIBLE T Expression_keyableSurface.expr0}
- addUserKnob {41 keyableSurfaceExpression1 l INVISIBLE +INVISIBLE T Expression_keyableSurface.expr1}
- addUserKnob {41 keyableSurfaceExpression2 l INVISIBLE +INVISIBLE T Expression_keyableSurface.expr2}
- addUserKnob {41 keyableSurfaceExpression3 l INVISIBLE +INVISIBLE T Expression_keyableSurface.expr3}
+ addUserKnob {41 previewExpression0 l INVISIBLE +INVISIBLE T Expression_preview.expr0}
+ addUserKnob {41 previewExpression1 l INVISIBLE +INVISIBLE T Expression_preview.expr1}
+ addUserKnob {41 previewExpression2 l INVISIBLE +INVISIBLE T Expression_preview.expr2}
+ addUserKnob {41 previewExpression3 l INVISIBLE +INVISIBLE T Expression_preview.expr3}
 
  addUserKnob {1 previewChannel +HIDDEN}
  previewChannel none
@@ -209,7 +209,7 @@ push $N13c4b800
   ypos -394
  }
  Expression {
-  name Expression_keyableSurface
+  name Expression_preview
   xpos -1127
   ypos -368
  }
@@ -248,8 +248,8 @@ push $N12b00c00
 push $N12b00800
  Switch {
   inputs 2
-  which {{parent.keyableSurfaceEnabled}}
-  name Switch_keyableSurface
+  which {{parent.previewEnabled}}
+  name Switch_preview
   xpos -1127
   ypos -197
  }

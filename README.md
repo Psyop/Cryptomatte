@@ -62,10 +62,10 @@ Decoders:
   * No longer use Color knob's built in picker
   * Fixed keying problems sometimes caused by GPU-enabled viewers
   * Can pick mattes while viewing downstream node (or looking at the RGB/beauty)
-  * Enables new "Keyable Surface" options
-* Nuke - "Keyable Surface" option provides 3 modes of visual feedback
-  * "Edges" allows viewing input RGBA with borders around keyable regions
+  * Enables new "Preview" (AKA: "Keyable Surface") options
+* Nuke - "Preview" option provides 3 modes of visual feedback
   * "Colors" is an improved version of the old style random colors
+  * "Edges" allows viewing input RGBA with borders around keyable regions
   * "None" allows viewing of input RGBA without borders, but with a visible highlight on selected areas
   * Colors now generated dynamically, removing need for preview channels
 * Nuke - Enhancements for multi-channel inline workflow
@@ -163,7 +163,7 @@ Decoders:
 
 For more information on installing Nuke plugins, see: https://www.thefoundry.co.uk/products/nuke/developers/70/pythondevguide/installing_plugins.html
 
-To test the functionality, you can try loading one of the sample images supplied. Load the sample images into Nuke, select one of them, and tab-create the gizmo. Viewing the output of the gizmo should show you a 'keyable surface'. Use the color knob, "Picker Add" to eye-dropper colors on the image to create your mattes.
+To test the functionality, you can try loading one of the sample images supplied. Load the sample images into Nuke, select one of them, and tab-create the gizmo. Viewing the output of the gizmo should show you a preview of the available mattes. Use the color knob, "Picker Add" to eye-dropper colors on the image to create your mattes.
 
 ## Nuke Usage
 
@@ -173,7 +173,7 @@ To get started:
 
 1. Load a Cryptomatte exr file, such as the sample images, using a Read node. 
 2. Select it, and tab create a Cryptomatte gizmo. 
-3. View the output of the gizmo. You should see a "keyable surface" (pictured). 
+3. View the output of the gizmo. You should see a preview image (pictured). 
 4. Use the eyedropper with the 'Picker Add' knob to select objects. They should light up in RGB, and output the matte in Alpha. With the eyedropper, make sure you use control-click and not alt-control click. 
 
 ### Cryptomatte Gizmo
@@ -183,7 +183,7 @@ To get started:
 Psyop Cryptomatte Tab:
 * Picker Add: This adds "keyed" objects to the matte selection, meant to be used with Nuke's eyedropper. 
 * Picker Remove: This removes "keyed" objects from the matte selection, meant to be used with Nuke's eyedropper. 
-* Keyable Surface: Controls whether or not previews of the matte boundaries are drawn. A pulldown controls how they are drawn. 
+* Preview: Controls whether or not previews of the matte boundaries are drawn. A pulldown controls how they are drawn. 
   * "Edges" allows viewing input RGBA with borders around keyable regions
   * "Colors" is random colors per matte
   * "None" allows viewing of input RGBA without borders, but with a visible highlight on selected areas

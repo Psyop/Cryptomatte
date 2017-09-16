@@ -14,8 +14,8 @@ def get_all_unit_tests():
 
 
 def get_all_nuke_tests():
-    """ Returns the list of maya integration tests (Only run in Maya)"""
-    return [CryptomatteGizmoSetup]
+    """ Returns the list of Nuke integration tests"""
+    return [CSVParsingNuke, CryptomatteGizmoSetup]
 
 
 #############################################
@@ -68,6 +68,9 @@ class CSVParsing(unittest.TestCase):
 class CryptoHashing(unittest.TestCase):
     mm3hash_float_values = {
         "hello": 6.0705627102400005616e-17,
+        "cube": -4.08461912519e+15,
+        "sphere": 2.79018604383e+15,
+        "plane": 3.66557617593e-11,
         # utf-8 bytes for "plane" in Bulgarian
         "\xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0": -1.3192631212399999468e-25,
         # utf-8 bytes for "girl" in German
@@ -88,6 +91,38 @@ class CryptoHashing(unittest.TestCase):
 global g_cancel_nuke_testing
 g_cancel_nuke_testing = False
 
+class CSVParsingNuke(unittest.TestCase):
+    """
+    Nuke removes escaped characters when you use getValue() on a string knob. 
+    Therefore, testing the round trip through the gizmo is slightly complicated. 
+    """
+    def setUp(self):
+        import nuke
+        self.gizmo = nuke.nodes.Cryptomatte()
+
+    def tearDown(self):
+        import nuke
+        nuke.delete(self.gizmo)
+
+    def round_trip_through_gizmo(self, csv, msg):
+        import cryptomatte_utilities as cu
+        # start from csv
+        self.gizmo.knob("matteList").setValue(csv.replace("\\", "\\\\"))
+
+        for i in range(3):
+            matte_set = cu.get_mattelist_as_set(self.gizmo)
+            self.gizmo.knob("matteList").setValue("")
+            cu.set_mattelist_from_set(self.gizmo, matte_set)
+        result_csv = self.gizmo.knob("matteList").getValue()
+        correct_set = set(cu._decode_csv(csv))
+        result_set = set(cu._decode_csv(result_csv))
+        self.assertEqual(correct_set, result_set, "%s: Came out as: %s" % (msg, result_csv))
+
+    def test_csv_through_gizmo(self):
+        self.round_trip_through_gizmo('"name containing a \\"quote\\"  "', "Round trip failed")
+
+    def test_big_csv_through_gizmo(self):
+        self.round_trip_through_gizmo(CSVParsing.csv_str, "Round trip failed")
 
 class CryptomatteGizmoSetup(unittest.TestCase):
     """ 
@@ -368,6 +403,11 @@ class CryptomatteGizmoSetup(unittest.TestCase):
             self.gizmo.knob("expression").getValue(), self.heroflower_expr,
             "Expression did not update on setting matte list. ")
 
+    def test_keying_with_removechannels(self):
+        self.gizmo.knob("RemoveChannels").setValue(True)
+        self.key_on_image(self.bunny_pkr)
+        self.assertMatteList("bunny", "Could not key on image after Remove Channels was enabled.")
+
     def test_keying_blank_matteList(self):
         self._test_keying_partial_black()
         self.gizmo.knob("matteList").setValue("")
@@ -441,37 +481,48 @@ class CryptomatteGizmoSetup(unittest.TestCase):
             self.gizmo.knob("expression").getValue(), self.heroflower_expr,
             "Stop auto update did not work. ")
 
+    def test_keying_without_preview_channels(self):
+        """ 
+        Test that the gizmo can be set up and used properly without 
+        the preview channels being available. 
+        """
+        self.gizmo.setInput(0, self.read_material) # switch layer selection
+        remove = self.tempNode("Remove", inputs=[self.read_asset], channels="uCryptoAsset")
+        self.gizmo.setInput(0, remove)
+        self._test_keying_partial_black()
+        self.gizmo.knob("forceUpdate").execute()
+
     #############################################
     # Output checking
     #############################################
 
-    def test_output_keyable_surface(self):
+    def test_output_preview(self):
         self.key_on_image(self.bunny_pkr)
         msg = "Selection did not light up properly. %s, %s"
         self.assertSampleEqual(
-            self.bunny_pkr, "Keyable surface did not light up", red=1.0, green=1.0, alpha=1.0)
+            self.bunny_pkr, "Preview image did not light up", red=1.0, green=1.0, alpha=1.0)
         self.assertSampleNotEqual(self.set_pkr, "Set pixels should be dark.", red=1.0, green=1.0)
         self.assertSampleEqual(self.set_pkr, "Set pixels should be unselected.", alpha=0.0)
 
-    def test_output_keyable_surface_disabled(self):
+    def test_output_preview_disabled(self):
         # stops lighting up after disabled, but alpha still correct
         self.key_on_image(self.bunny_pkr)
-        self.gizmo.knob("keyableSurfaceEnabled").setValue(False)
+        self.gizmo.knob("previewEnabled").setValue(False)
         self.assertSampleEqual(
             self.bunny_pkr,
-            "Keyable surface bunny pixels wrong when disabled",
+            "Preview image bunny pixels wrong when disabled",
             red=0.0,
             green=0.0,
             alpha=1.0)
         self.assertSampleEqual(
             self.set_pkr,
-            "Keyable surface set pixels wrong when disabled",
+            "Preview image set pixels wrong when disabled",
             red=0.0,
             green=0.0,
             alpha=0.0)
-        self.gizmo.knob("keyableSurfaceEnabled").setValue(True)
+        self.gizmo.knob("previewEnabled").setValue(True)
 
-    def test_output_keyable_surface_multi(self):
+    def test_output_preview_multi(self):
         # add an item, make sure it lights up too
         self.key_on_image(self.bunny_pkr, self.set_pkr)
         self.assertSampleEqual(
@@ -762,7 +813,7 @@ class CryptomatteGizmoSetup(unittest.TestCase):
 
         self.assertEqual(roto_hash, decrypto_hash, ("Alpha did not survive round trip through "
                                                     "Encryptomatte and then Cryptomatte. "))
-        self.assertNotEqual(keysurf_hash, mod_keysurf_hash, "Keyable surface did not change. ")
+        self.assertNotEqual(keysurf_hash, mod_keysurf_hash, "preview image did not change. ")
 
     def test_encrypt_bogus_manifest(self):
         import cryptomatte_utilities as cu
@@ -814,9 +865,9 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         The following assertions will pass, but fail in teardown as nothing else can be sampled. 
         """
         self.assertNotEqual(under_keysurf_hash, mod_keysurf_hash,
-                            "Under mode did not change keyable surface from over. ")
+                            "Under mode did not change preview image from over. ")
         self.assertNotEqual(under_keysurf_hash, keysurf_hash,
-                            "Under mode did not change keyable surface from original. ")
+                            "Under mode did not change preview image from original. ")
 
     def test_encrypt_fresh_roundtrip(self):
         constant1080 = self.tempNode("Constant", format="HD_1080")
@@ -845,29 +896,47 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         self.assertEqual(roto_hash_720, decrypto_hash, ("Alpha did not survive round trip through "
                                                         "Encryptomatte and then Cryptomatte. "))
 
+    def test_encrypt_manifest(self):
+        """Gets it into a weird state where it has a manifest but no cryptomatte."""
+        import cryptomatte_utilities as cu
+        encryptomatte = self.tempNode(
+            "Encryptomatte", inputs=[self.gizmo, self.constant], matteName="test")
+        cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
+        encryptomatte.knob("setupLayers").setValue(True);
+        encryptomatte.knob("cryptoLayer").setValue("sdfsd");
+        encryptomatte.knob("setupLayers").setValue(False);
+        cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
+
+
 
 #############################################
 # Ad hoc test running
 #############################################
 
 
-def run_unit_tests():
+def run_unit_tests(test_filter=""):
     """ Utility function for manually running tests unit tests.
     Returns unittest results if there are failures, otherwise None """
 
-    return run_tests(get_all_unit_tests())
+    return run_tests(get_all_unit_tests(), test_filter=test_filter)
 
 
-def run_nuke_tests():
+def run_nuke_tests(test_filter=""):
     """ Utility function for manually running tests inside Nuke
     Returns unittest results if there are failures, otherwise None """
 
-    return run_tests(get_all_unit_tests() + get_all_nuke_tests())
+    return run_tests(get_all_unit_tests() + get_all_nuke_tests(), test_filter=test_filter)
 
 
-def run_tests(test_cases):
-    """ Utility function for manually running tests inside Nuke. 
-    Returns results if there are failures, otherwise None """
+def run_tests(test_cases, test_filter=""):
+    """ Utility function for manually running tests. 
+    Returns results if there are failures, otherwise None 
+
+    test_filter will be matched fnmatch style (* wildcards) to either the name of the TestCase 
+    class or test method. 
+
+    """
+    import fnmatch
 
     def find_test_method(traceback):
         """ Finds first "test*" function in traceback called. """
@@ -879,14 +948,25 @@ def run_tests(test_cases):
     suite = unittest.TestSuite()
     for case in test_cases:
         suite.addTests(unittest.TestLoader().loadTestsFromTestCase(case))
+
+    if test_filter:
+        filtered_suite = unittest.TestSuite()
+        for test in suite:
+            if any(fnmatch.fnmatch(x, test_filter) for x in test.id().split(".")):
+                filtered_suite.addTest(test)
+        if not any(True for _ in filtered_suite):
+            raise RuntimeError("Filter %s selected no tests. " % test_filter)
+        suite = filtered_suite
+
     suite.run(result)
+    print "---------"
     for test_instance, traceback in result.failures:
-        print "%s Failed: " % type(test_instance).__name__, find_test_method(traceback)
+        print "Failed: %s.%s" % (type(test_instance).__name__, find_test_method(traceback))
         print
         print traceback
         print "---------"
     for test_instance, traceback in result.errors:
-        print "%s Error: " % type(test_instance).__name__, find_test_method(traceback)
+        print "Error: %s.%s" % (type(test_instance).__name__, find_test_method(traceback))
         print
         print traceback
         print "---------"
