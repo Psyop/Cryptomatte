@@ -66,23 +66,23 @@ Gizmo {
  addUserKnob {41 previewExpression2 l INVISIBLE +INVISIBLE T Expression_preview.expr2}
  addUserKnob {41 previewExpression3 l INVISIBLE +INVISIBLE T Expression_preview.expr3}
 
- addUserKnob {1 previewChannel +HIDDEN}
+ addUserKnob {11 previewChannel +HIDDEN}
  previewChannel none
- addUserKnob {1 in00 +HIDDEN}
+ addUserKnob {11 in00 +HIDDEN}
  in00 none
- addUserKnob {1 in01 +HIDDEN}
+ addUserKnob {11 in01 +HIDDEN}
  in01 none
- addUserKnob {1 in02 +HIDDEN}
+ addUserKnob {11 in02 +HIDDEN}
  in02 none
- addUserKnob {1 in03 +HIDDEN}
+ addUserKnob {11 in03 +HIDDEN}
  in03 none
- addUserKnob {1 in04 +HIDDEN}
+ addUserKnob {11 in04 +HIDDEN}
  in04 none
- addUserKnob {1 in05 +HIDDEN}
+ addUserKnob {11 in05 +HIDDEN}
  in05 none
- addUserKnob {1 in06 +HIDDEN}
+ addUserKnob {11 in06 +HIDDEN}
  in06 none
- addUserKnob {1 in07 +HIDDEN}
+ addUserKnob {11 in07 +HIDDEN}
  in07 none
  addUserKnob {26 "" +HIDDEN}
 
