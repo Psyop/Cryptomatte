@@ -706,8 +706,8 @@ class CryptomatteGizmoSetup(unittest.TestCase):
     def test_crypto_channel_knobs_type(self, node=None):
         import cryptomatte_utilities as cu
         for channel in cu.GIZMO_CHANNEL_KNOBS:
-            self.assertIn(
-                self.gizmo.knob(channel).Class(), {"Channel_Knob", "ChannelMask_Knob"},
+            self.assertTrue(
+                self.gizmo.knob(channel).Class() in set(["Channel_Knob", "ChannelMask_Knob"]),
                 "Input knob was not a channel knob, which causes failed renders "
                 "due to expression errors on load. (%s)" % self.gizmo.knob(channel).Class())
 
@@ -715,8 +715,8 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         import cryptomatte_utilities as cu
         encrypt = self.tempNode("Encryptomatte")
         for channel in cu.GIZMO_REMOVE_CHANNEL_KNOBS + cu.GIZMO_ADD_CHANNEL_KNOBS:
-            self.assertIn(
-                encrypt.knob(channel).Class(), {"Channel_Knob", "ChannelMask_Knob"},
+            self.assertTrue(
+                encrypt.knob(channel).Class() in set(["Channel_Knob", "ChannelMask_Knob"]),
                 "Input knob was not a channel knob, which causes failed renders "
                 "due to expression errors on load. (%s)" % encrypt.knob(channel).Class())
 
