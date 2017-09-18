@@ -465,6 +465,7 @@ def update_cryptomatte_gizmo(node, force=False):
 def clear_cryptomatte_gizmo(node):
     """Relies on knob changed callbacks to update gizmo after values change."""
     node.knob("matteList").setValue("")
+    node.knob("expression").setValue("")
 
 
 def update_all_cryptomatte_gizmos():
