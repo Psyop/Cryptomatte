@@ -400,7 +400,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
-        keyed_object = _resolve_gizmo_keyed_object(node, cinfo, True, ID_value=ID_value)
+        keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
         node.knob("pickerRemove").setValue([0] * 8)
         _matteList_modify(node, keyed_object, False)
         _update_cryptomatte_gizmo(node, cinfo)
@@ -410,7 +410,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
-        keyed_object = _resolve_gizmo_keyed_object(node, cinfo, True, ID_value=ID_value)
+        keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
         node.knob("pickerAdd").setValue([0] * 8)
         _matteList_modify(node, keyed_object, True)
         _update_cryptomatte_gizmo(node, cinfo)  
@@ -423,6 +423,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
 
     elif knob.name() in ["previewMode", "previewEnabled"]:
         cinfo = CryptomatteInfo(node)
+        _update_cryptomatte_gizmo(node, cinfo)
         _set_preview_expression(node, cinfo)
 
     elif knob.name() == "forceUpdate":
@@ -910,12 +911,6 @@ def _get_knob_channel_value(knob, recursive_mode=None):
     except:
         return 0.0
 
-def _resolve_gizmo_keyed_object(gizmo, cinfo, force=False, ID_value=0.0):
-    if _cancel_update(gizmo, force) or ID_value == 0.0:
-        return None
-    else:
-        name = cinfo.id_to_name(ID_value)
-        return name or "<%s>" % ID_value
 
 
 #############################################
