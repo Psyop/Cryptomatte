@@ -91,11 +91,13 @@ class CryptoHashing(unittest.TestCase):
 global g_cancel_nuke_testing
 g_cancel_nuke_testing = False
 
+
 class CSVParsingNuke(unittest.TestCase):
     """
     Nuke removes escaped characters when you use getValue() on a string knob. 
     Therefore, testing the round trip through the gizmo is slightly complicated. 
     """
+
     def setUp(self):
         import nuke
         self.gizmo = nuke.nodes.Cryptomatte()
@@ -123,6 +125,7 @@ class CSVParsingNuke(unittest.TestCase):
 
     def test_big_csv_through_gizmo(self):
         self.round_trip_through_gizmo(CSVParsing.csv_str, "Round trip failed")
+
 
 class CryptomatteGizmoSetup(unittest.TestCase):
     """ 
@@ -486,7 +489,7 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         Test that the gizmo can be set up and used properly without 
         the preview channels being available. 
         """
-        self.gizmo.setInput(0, self.read_material) # switch layer selection
+        self.gizmo.setInput(0, self.read_material)  # switch layer selection
         remove = self.tempNode("Remove", inputs=[self.read_asset], channels="uCryptoAsset")
         self.gizmo.setInput(0, remove)
         self._test_keying_partial_black()
