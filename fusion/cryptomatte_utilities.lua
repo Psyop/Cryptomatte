@@ -6,10 +6,10 @@ cryptomatte_utilities = {}
 -- ===========================================================================
 CJSON_LOADED = false
 METADATA_PREFIX = "cryptomatte/"
-METADATA_REGEX = "%a+/([a-z0-9]+)/(.+)"
-MATTE_LIST_REGEX = "([^,]+),?%s*"
 CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
-CHANNEL_REGEX = "(.*)[.]([a-zA-Z]+)"
+REGEX_CHANNEL = "(.*)[.]([a-zA-Z]+)"
+REGEX_RANK_CHANNEL = "(.+)[.](.+)"
+REGEX_METADATA = "%a+/([a-z0-9]+)/(.+)"
 
 METADATA_KEY_FILENAME = "Filename"
 METADATA_KEY_MANIF_FILE = "manif_file"
@@ -89,7 +89,6 @@ function generate_mattes_from_rank(y)
                 local_p.B = 0.0
                 local_p.A = global_p.A
             end
-            local_p.V = global_p.V * 2.0
             Out:SetPixel(x, y, local_p)
         end
     end
@@ -99,7 +98,7 @@ function create_mattes(crypto_images, id_float_values)
     local combined_matte = Image({{ IMG_Channel = "Alpha" }})
     combined_matte:Clear()
 
-    for i, image in ipairs(crypto_images) do
+    for _, image in pairs(crypto_images) do
         local rank_matte = Image({ IMG_Like = image })
         rank_matte:Clear()
 
@@ -113,7 +112,6 @@ function create_mattes(crypto_images, id_float_values)
 
         -- add mono result to main output
         combined_matte = combined_matte:ChannelOpOf("Add", i_matte, { A = "fg.A" })
-        combined_matte = combined_matte:ChannelOpOf("Add", rank_matte, { V = "fg.V" })
     end
 
     return combined_matte
@@ -210,7 +208,7 @@ function CryptomatteInfo:extract_cryptomatte_metadata(metadata, selected_layer_n
     for k, v in pairs(metadata) do
         if string_starts_with(k, METADATA_PREFIX) then
             -- e.g. cryptomatte/0/name/uCryptoObject
-            local metadata_id, partial_key = string.match(k, METADATA_REGEX)
+            local metadata_id, partial_key = string.match(k, REGEX_METADATA)
             
             -- store cryptomatte data by metadata layver id
             if not is_key_in_table(metadata_id, cryptomattes) then
@@ -311,135 +309,102 @@ function CryptomatteInfo:parse_manifest()
     self.cryptomattes[self.selection]["names"] = all_names
 end
 
+function exr_read_channels(exr, partnum, crypto_layer)
+    -- retrieve all exr channels filtering on given layer name
+    local channel_names = {}
+    local channels = exr:GetChannels(partnum)
+    for i, channel in ipairs(channels) do
+        local channel_name = channel["Name"]
+        if string.find(channel_name, crypto_layer) then
+            table.insert(channel_names, channel_name)
+        end
+    end
+    return channel_names
+end
+
+function get_channels_by_index(exr_channels) 
+    -- gets all the cryptomatte required channels by rank index and short channel name (r, g, b, a)
+    local by_index = {}
+    for i, channel in ipairs(exr_channels) do
+        -- get rank and channel name from channel
+        local rank, name = string.match(channel, REGEX_RANK_CHANNEL)
+        
+        if rank ~= nil and name ~= nil then
+            -- get index from rank
+            local index = string.match(rank, "[0-9]+$")
+
+            if index ~= nil then
+                -- first tonumber to avoid leading numbers, then tostring again to ensure string keys
+                index = tostring(tonumber(index))
+
+                if not is_key_in_table(index, by_index) then
+                    by_index[index] = {}
+                end
+                
+                -- store the rank channels under respective short form
+                local _channel = string.lower(name)
+                if _channel == "r" or _channel == "red" then
+                    by_index[index]["r"] = channel
+                elseif _channel == "g" or _channel == "green" then
+                    by_index[index]["g"] = channel
+                elseif _channel == "b" or _channel == "blue" then
+                    by_index[index]["b"] = channel
+                elseif _channel == "a" or _channel == "alpha" then
+                    by_index[index]["a"] = channel
+                end
+            end
+        end
+    end
+    return by_index
+end
+
+function exr_read_channel_parts(exr, input_image, cryptomatte_channels, partnum)
+    -- creates an image from the given cryptomatte channels by rank
+    local cryptomatte_images = {}
+    for index, channels in pairs(cryptomatte_channels) do
+        -- dispw = exr:DisplayWindow(partnum)
+        -- dataw = exr:DataWindow(partnum)
+        -- local ox, oy = dispw.left, dispw.bottom
+        -- local w, h = dispw.right - dispw.left, dispw.top - dispw.bottom
+        -- imgw = ImgRectI(dataw)
+        -- imgw:Offset(-ox, -oy)
+        -- image = Image({
+        --     IMG_Width = w,
+        --     IMG_Height = h,
+        --     IMG_Depth = IMDP_128bitFloat,
+        --     IMG_DataWindow = imgw,
+        --     IMG_NoData = req:IsPreCalc(),
+        --     IMG_YScale = 1.0/exr:PixelAspectRatio(partnum),
+        -- })
+
+        local image = Image({
+            IMG_Width = input_image.Width, 
+            IMG_Height = input_image.Height,
+            IMG_Depth = input_image.Depth
+        })
+        -- image:Clear()
+
+        -- read part with given index
+        exr:Part(partnum)
+        
+        -- read rank RGBA channels
+        exr:Channel(channels["r"], ANY_TYPE, 1, CHAN_RED)
+        exr:Channel(channels["g"], ANY_TYPE, 1, CHAN_GREEN)
+        exr:Channel(channels["b"], ANY_TYPE, 1, CHAN_BLUE)
+        exr:Channel(channels["a"], ANY_TYPE, 1, CHAN_ALPHA)
+        
+        -- fill the given image with previously read information
+        exr:ReadPart(partnum, {image})
+        
+        -- store the image as value to the rank index in string format as key
+        cryptomatte_images[tostring(index)] = image 
+    end
+    return cryptomatte_images
+end
+
 -- ===========================================================================
 -- module
 -- ===========================================================================
-function cryptomatte_utilities:get_input_loader(tool)
-    -- check if given tool is a loader
-    if tool.ID == "Loader" then
-        return tool
-    end
-    -- if tool was no loader, get first main input to check for loader
-    local input = tool:FindMainInput(1)
-    if input == nil then
-        input = tool.Input
-    end
-    local connected_output = input:GetConnectedOutput()
-    if not connected_output then
-        return
-    end
-    local input_tool = connected_output:GetTool()
-    if input_tool.ID == "Loader" then
-        -- if connected tool is a loader, return the connected tool
-        return input_tool
-    else
-        -- call function recursively on the connected tool to parse it's input
-        -- for a loader
-        return cryptomatte_utilities:get_input_loader(input_tool)
-    end
-end
-
-function cryptomatte_utilities:get_all_channels_from_loader(cInfo, loader)
-    local valid_channels = {}
-    local loader_channel = loader.Clip1.OpenEXRFormat.RedName:GetAttrs().INPIDT_ComboControl_ID
-    for i, channel in ipairs(loader_channel) do
-        -- store the channels containg the cryptomatte name metadata value
-        if string.find(channel, cInfo.cryptomattes[cInfo.selection]["name"]) then
-            table.insert(valid_channels, channel)
-        end
-        
-        local _channel = channel:lower()
-        if VALID_NON_CRYPTO_CHANNELS[_channel] then
-            table.insert(valid_channels, channel)
-        end
-    end
-    return valid_channels
-end
-
-function cryptomatte_utilities:get_all_ranks_from_channels(channels)
-    -- extract all channel data from connected loader
-    local ranks = {}
-    for i, channel_slot_v in ipairs(channels) do
-        local rank_name, channel = string.match(channel_slot_v, CHANNEL_REGEX)
-
-        if rank_name == nil and channel == nil then
-            rank_name = "default"
-            channel = channel_slot_v
-        end
-        
-        if not is_key_in_table(rank_name, ranks) then
-            ranks[rank_name] = {}
-        end
-
-        local _channel = channel:lower()
-        if _channel == "r" or _channel == "red" then
-            ranks[rank_name]["r"] = channel
-        elseif _channel == "g" or _channel == "green" then
-            ranks[rank_name]["g"] = channel
-        elseif _channel == "b" or _channel == "blue" then
-            ranks[rank_name]["b"] = channel
-        elseif _channel == "a" or _channel == "alpha" then
-            ranks[rank_name]["a"] = channel
-        end
-    end
-    return ranks
-end
-
-function cryptomatte_utilities:set_channel_slots(loader, ranks, channels)
-    local skip_rgb = false
-    for rank, channels in pairs(ranks) do
-        local index = string.match(rank, "[0-9]+$")
-        if not index then
-            if not skip_rgb then
-                -- set channels to default rank.channel format
-                local r = string.format("%s.%s", rank, channels["r"])
-                local g = string.format("%s.%s", rank, channels["g"])
-                local b = string.format("%s.%s", rank, channels["b"])
-
-                if rank == "default" then
-                    skip_rgb = true
-                    -- don't format channel name with rank prefix, keep source channel name
-                    r = channels["r"]
-                    g = channels["g"]
-                    b = channels["b"]
-                end
-
-                loader.Clip1.OpenEXRFormat.RedName[0] = r 
-                loader.Clip1.OpenEXRFormat.GreenName[0] = g
-                loader.Clip1.OpenEXRFormat.BlueName[0] = b
-                loader.Clip1.OpenEXRFormat.AlphaName[0] = CHANNEL_KEY_NO_MATCH
-            end
-        else
-            index = tonumber(index)
-            if index == 0 then
-                loader.Clip1.OpenEXRFormat.ZName[0] = string.format("%s.%s", rank, channels["r"])
-                loader.Clip1.OpenEXRFormat.CovName[0] = string.format("%s.%s", rank, channels["g"])
-                loader.Clip1.OpenEXRFormat.ObjIDName[0] = CHANNEL_KEY_NO_MATCH
-                loader.Clip1.OpenEXRFormat.MatIDName[0] = CHANNEL_KEY_NO_MATCH
-                loader.Clip1.OpenEXRFormat.UName[0] = string.format("%s.%s", rank, channels["b"])
-                loader.Clip1.OpenEXRFormat.VName[0] = string.format("%s.%s", rank, channels["a"])
-            elseif index == 1 then
-                loader.Clip1.OpenEXRFormat.XNormName[0] = string.format("%s.%s", rank, channels["r"])
-                loader.Clip1.OpenEXRFormat.YNormName[0] = string.format("%s.%s", rank, channels["g"])
-                loader.Clip1.OpenEXRFormat.ZNormName[0] = string.format("%s.%s", rank, channels["b"])
-                loader.Clip1.OpenEXRFormat.XVelName[0] = string.format("%s.%s", rank, channels["a"])
-            elseif index == 2 then
-                loader.Clip1.OpenEXRFormat.YVelName[0] = string.format("%s.%s", rank, channels["r"])
-                loader.Clip1.OpenEXRFormat.XRevVelName[0] = string.format("%s.%s", rank, channels["g"])
-                loader.Clip1.OpenEXRFormat.YRevVelName[0] = string.format("%s.%s", rank, channels["b"])
-                loader.Clip1.OpenEXRFormat.XPosName[0] = string.format("%s.%s", rank, channels["a"])
-            elseif index == 3 then
-                loader.Clip1.OpenEXRFormat.YPosName[0] = string.format("%s.%s", rank, channels["r"])
-                loader.Clip1.OpenEXRFormat.ZPosName[0] = string.format("%s.%s", rank, channels["g"])
-                loader.Clip1.OpenEXRFormat.XDispName[0] = string.format("%s.%s", rank, channels["b"])
-                loader.Clip1.OpenEXRFormat.YDispName[0] = string.format("%s.%s", rank, channels["a"])
-            else
-                error("cryptomatte does not support EXR images with 4 or more ranks")
-            end
-        end
-    end
-end
-
 function cryptomatte_utilities:create_cryptomatte_info(metadata, selected_layer_name)
     -- create cryptomatte info and populate cryptomattes data from given metadata 
     cInfo = CryptomatteInfo() 
@@ -470,6 +435,37 @@ function cryptomatte_utilities:create_preview_image(rank_img_00, rank_img_01)
     -- creates the preview image
     local output = create_preview_image(rank_img_00, rank_img_01)
     return output
+end
+
+function cryptomatte_utilities:get_all_rank_images(cInfo, layer_name, input_image)
+    local partnum = 1
+    local crypto_images = {}
+    
+    -- create EXRIO pointer
+    local exr = EXRIO()
+
+    -- read the input exr
+    exr:ReadOpen(cInfo.exr_path, -1)
+
+    if exr:ReadHeader() then
+        -- get the channel names
+        local exr_channel_names = exr_read_channels(exr, partnum, layer_name)
+        -- filter channels and rearrange data by rank index
+        local cryptomatte_channels = get_channels_by_index(exr_channel_names)
+        -- create image by rank
+        crypto_images = exr_read_channel_parts(exr, input_image, cryptomatte_channels, partnum)
+    end
+
+    -- close the context manager
+    exr:Close()
+    
+    -- print last EXRIO related error
+    local exrio_error = exr:GetLastError()
+    if exrio_error ~= "" then
+        print(string.format("ERROR: %s", exrio_error))
+    end
+
+    return crypto_images
 end
 
 -- return module

@@ -16,6 +16,7 @@ FUSE_NAME = "Cryptomatte"
 SEPARATOR = string.rep("_", 9999)
 SEPARATOR_INDEX = 0
 SHOW_CALLBACKS = false
+REGEX_MATTE_LIST = "([^,]+),?%s*"
 
 VIEW_MODE_EDGES = "Edges"
 VIEW_MODE_COLORS = "Colors"
@@ -142,14 +143,6 @@ function Create()
         TEC_ReadOnly = true,
         INP_DoNotifyChanged = false
     })
-    BtnUpdateLoader = self:AddInput("Update Loader", "UpdateLoader", {
-        LINKS_Name = "Update Loader",
-        LINKID_DataType = "Number",
-        INPID_InputControl = "ButtonControl",
-        INP_Integer = false,
-        ICD_Width = 0.5,
-        INP_DoNotifyChanged = true
-    })
 
     -- advanced tab
     -- name checker
@@ -237,44 +230,6 @@ function create_separator()
     })
 end
 
-function get_all_rank_images(input_image)
-    --[[
-    http://www.steakunderwater.com/VFXPedia/96.0.243.189/index0d66.html?title=Eyeon:Script/Reference/Applications/Fuse/Classes/Image/ChannelOpOf
-    case doesn't matter
-
-    --R, G, B, A
-        Red, Green, Blue and Alpha channels
-    Z
-        Z Buffer Channel
-    Coverage
-        Z buffer coverage channel
-    U, V
-        U and V co-ordinates channels
-    NX, NY, NZ
-        XYZ normals channels
-    BgR, BgG, BgB, BgA
-        The Background Red, Green and Blue channels
-    ObjectID, MaterialID
-        The ObjectID and MaterialID channels
-    VectX, VectY
-        The X and Y motion vector channels
-    BackVectX, BackVectY
-        Background X and Y motion vectors
-    HLS.H, HLS.L, HLS.S
-        Hue, Lightness and Saturation channels
-    YUV.Y, YUV.U, YUV.V
-        YUV colorspace channels
-    PositionX, PositionY, PositionZ
-        world position channels
-    DisparityX, DisparityY
-    --]]
-    local crypto_image_00 = input_image:ChannelOpOf("Copy", nil, { R = "bg.Z", G = "bg.Coverage", B = "bg.U", A = "bg.V" })
-    local crypto_image_01 = input_image:ChannelOpOf("Copy", nil, { R = "bg.NX", G = "bg.NY", B = "bg.NZ", A = "bg.VectX" })
-    local crypto_image_02 = input_image:ChannelOpOf("Copy", nil, { R = "bg.VectY", G = "bg.BackVectX", B = "bg.BackVectY", A = "bg.PositionX" })
-    local crypto_image_03 = input_image:ChannelOpOf("Copy", nil, { R = "bg.PositionY", G = "bg.PositionZ", B = "bg.DisparityY", A = "bg.DisparityX" })
-    return { crypto_image_00, crypto_image_01, crypto_image_02, crypto_image_03}
-end
-
 function get_selected_layer()
     -- returns the text inside the crypto layer line edir
     local selected_layer = TextCryptoLayer:GetSource(0).Value
@@ -344,7 +299,7 @@ function get_mattes_from_selection(cInfo, matte_selection_str)
     local manifest_matte_names = cInfo.cryptomattes[cInfo.selection]["names"]
 
     -- convert the matte input string to an array
-    local matte_name_array = convert_str_to_array(matte_selection_str, MATTE_LIST_REGEX)
+    local matte_name_array = convert_str_to_array(matte_selection_str, REGEX_MATTE_LIST)
 
     -- cross match matte names and store matches inside a set
     for _, matte in ipairs(matte_name_array) do
@@ -450,9 +405,9 @@ end
 function apply_view_mode(mode, input_image, crypto_images)
     local output_image
     if mode == VIEW_MODE_EDGES then
-        output_image = input_image:ChannelOpOf("Add", input_image, { R = "fg.V", G = "fg.V"})
+        output_image = input_image:ChannelOpOf("Add", crypto_images["0"], { R = "fg.A", G = "fg.A"})
     elseif mode == VIEW_MODE_COLORS then
-        output_image = cryptoutils:create_preview_image(crypto_images[1], crypto_images[2])
+        output_image = cryptoutils:create_preview_image(crypto_images["0"], crypto_images["1"])
     elseif mode == VIEW_MODE_NONE then
         output_image = input_image:CopyOf()
     end
@@ -463,7 +418,7 @@ function get_id_float_value(screen_pos, crypto_images)
     -- get the pixel at the given location for all the given crypto images (ranks)
     -- if an R, G, B or A channel value is different than zero, the id float value was found
     local id_float_value = nil
-    for _, image in ipairs(crypto_images) do
+    for index, image in pairs(crypto_images) do
         local pixel = get_screen_pixel(image, screen_pos.X, screen_pos.Y)
         for _, channel in ipairs({pixel.R, pixel.G, pixel.B, pixel.A}) do
             if channel ~= 0.0 then
@@ -503,27 +458,8 @@ function Process(req)
     set_layer_selection_slider(cInfo)
     set_layer_selection_display(cInfo)
 
-    -- get loader connected to fuse
-    local connect_triggered = CallbackConnect:GetValue(req).Value
-    if connect_triggered == 1 then
-        local fusion = Fusion()
-        local comp = fusion.CurrentComp
-        if comp then
-            local tool = comp:FindTool(self.Name)
-            local loader = cryptoutils:get_input_loader(tool)
-            -- get all channels listed in the loader's first channel slot
-            local all_channels = cryptoutils:get_all_channels_from_loader(cInfo, loader)
-            -- get all unique ranks from the channel list
-            local ranks = cryptoutils:get_all_ranks_from_channels(all_channels)
-            -- fill in all the remaining slots correctly
-            cryptoutils:set_channel_slots(loader, ranks)
-            -- reset callback
-            CallbackConnect:SetSource(Number(0), 0, 0)
-        end
-    end
-    
     -- get all crypto images
-    local crypto_images = get_all_rank_images(input_image)
+    local crypto_images = cryptoutils:get_all_rank_images(cInfo, layer_name, input_image)
 
     -- apply matte to image depending on view mode
     local view_mode = get_view_mode()
@@ -601,8 +537,6 @@ function NotifyChanged(inp, param, time)
             LocatorNameChecker:SetAttrs({ PC_Visible = true })
         elseif inp == BtnHide then
             LocatorNameChecker:SetAttrs({ PC_Visible = false })
-        elseif inp == BtnUpdateLoader then
-            CallbackConnect:SetSource(Number(1), 0, 0)
         end
     end
 end
