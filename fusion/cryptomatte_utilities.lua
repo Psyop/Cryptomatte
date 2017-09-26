@@ -257,6 +257,7 @@ function CryptomatteInfo:parse_manifest()
     local manifest
     local manifest_str = ""
     local all_names = {}
+    local all_ids = {}
 
     local sidecar_path = self.cryptomattes[self.selection][METADATA_KEY_MANIF_FILE]
     if sidecar_path ~= nil then
@@ -300,13 +301,16 @@ function CryptomatteInfo:parse_manifest()
 
         from_names[name_str] = id_float
         from_ids[id_float] = name_str
+        
         all_names[name_str] = true
+        all_ids[id_float] = true
     end
 
     -- create name to id from hexadecimal value of names
     self.cryptomattes[self.selection]["name_to_id"] = from_names
     self.cryptomattes[self.selection]["id_to_name"] = from_ids
     self.cryptomattes[self.selection]["names"] = all_names
+    self.cryptomattes[self.selection]["ids"] = all_ids
 end
 
 function exr_read_channels(exr, partnum, crypto_layer)

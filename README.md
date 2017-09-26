@@ -77,10 +77,15 @@ Decoders:
   * Mixed selections of names and raw IDs now work correctly for all cases
   * Encryptomatte retains its layer selection properly
 * Nuke - Added unit tests and integration tests. 
-* Fusion - Added layer selection slider with layer name display
-* Fusion - Added support for EXR's up to 8 ranks
-* Fusion - Added cryptomatte_utilities.lua module
-* Fusion - Can pick mattes while viewing downstream node
+* Fusion
+  * Added cryptomatte_utilities.lua module
+  * Added layer selection slider with layer name display
+  * Added "Preview" (AKA "Keyable Surface") options
+  * Colors now generated dynamically, removing need for preview channels
+  * Implemented EXRIO to read exr channel data
+  * Removed "Update Loader" button
+  * Removed loader channel slots workaround
+  * No longer limited to 8 ranks
 
 1.2.0 (Beta 4):
 

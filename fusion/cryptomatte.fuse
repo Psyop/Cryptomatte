@@ -1,7 +1,7 @@
 --[[
-Requires   : Fusion 8
-UI         : Kristof Indeherberge  [xmnr0x23@gmail.com]
-Code       : Cedric Duriau         [duriau.cedric@live.be]
+Requires   : Fusion 9.0.1
+Created by : Cedric Duriau         [duriau.cedric@live.be]
+             Kristof Indeherberge  [xmnr0x23@gmail.com]
 --]]
 
 -- ===========================================================================
@@ -23,7 +23,7 @@ VIEW_MODE_COLORS = "Colors"
 VIEW_MODE_NONE = "None"
 VIEW_MODES = {VIEW_MODE_EDGES, VIEW_MODE_COLORS, VIEW_MODE_NONE}
 
--- ===========================================================================
+-- ================================ ===========================================
 -- fuse
 -- ===========================================================================
 FuRegisterClass(FUSE_NAME, CT_Tool, {
@@ -363,14 +363,14 @@ function remove_matte(cInfo, id_float_value, matte_selection_str)
     set_matte_list(new_matte_list)
 end
 
-function set_name_checker(crypto_images)
+function set_name_checker(cInfo, crypto_images)
     local text_to_set = ""
     -- only run code when locator is visible
     local locator_visible = LocatorNameChecker:GetAttr("PC_Visible")
     if locator_visible then 
         -- get screen pixel at locator position
         local screen_pos = LocatorNameChecker:GetSource(0)
-        local id_float_value = get_id_float_value(screen_pos, crypto_images)
+        local id_float_value = get_id_float_value(cInfo, screen_pos, crypto_images)
 
         -- get matte name matching id float value
         if id_float_value == 0.0 then
@@ -404,6 +404,7 @@ end
 
 function apply_view_mode(mode, input_image, crypto_images)
     local output_image
+
     if mode == VIEW_MODE_EDGES then
         output_image = input_image:ChannelOpOf("Add", crypto_images["0"], { R = "fg.A", G = "fg.A"})
     elseif mode == VIEW_MODE_COLORS then
@@ -411,18 +412,19 @@ function apply_view_mode(mode, input_image, crypto_images)
     elseif mode == VIEW_MODE_NONE then
         output_image = input_image:CopyOf()
     end
+
     return output_image
 end
 
-function get_id_float_value(screen_pos, crypto_images)
+function get_id_float_value(cInfo, screen_pos, crypto_images)
     -- get the pixel at the given location for all the given crypto images (ranks)
     -- if an R, G, B or A channel value is different than zero, the id float value was found
     local id_float_value = nil
     for index, image in pairs(crypto_images) do
         local pixel = get_screen_pixel(image, screen_pos.X, screen_pos.Y)
-        for _, channel in ipairs({pixel.R, pixel.G, pixel.B, pixel.A}) do
-            if channel ~= 0.0 then
-                id_float_value = channel
+        for _, val in ipairs({pixel.R, pixel.G, pixel.B, pixel.A}) do
+            if val ~= 0.0 and cInfo.cryptomattes[cInfo.selection]["ids"][val] then
+                id_float_value = val
                 break
             end
         end
@@ -466,7 +468,7 @@ function Process(req)
     local output_image = apply_view_mode(view_mode, input_image, crypto_images)
 
     -- set the name checker
-    set_name_checker(crypto_images)
+    set_name_checker(cInfo, crypto_images)
 
     -- add mattes callback
     -- remove mattes callback
@@ -476,7 +478,7 @@ function Process(req)
     if add_triggered == 1 or remove_triggered == 1 then
         -- get the id float value from the pixel at locator coordinates
         local screen_pos = Locator:GetSource(0)
-        local id_float_value = get_id_float_value(screen_pos, crypto_images)
+        local id_float_value = get_id_float_value(cInfo, screen_pos, crypto_images)
 
         if add_triggered == 1 then
             add_matte(cInfo, id_float_value, matte_selection_str)
@@ -516,7 +518,7 @@ function Process(req)
     if matte_only == 1 then
         -- create mono channel alpha image from output image
         local matte_only_image = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
-        matte_only_image:Clear()
+        -- matte_only_image:Clear()
         matte_only_image = matte_only_image:ChannelOpOf("Copy", output_image, { A = "fg.A" })
         OutImage:Set(req, matte_only_image)
     else
