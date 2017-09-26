@@ -91,11 +91,13 @@ class CryptoHashing(unittest.TestCase):
 global g_cancel_nuke_testing
 g_cancel_nuke_testing = False
 
+
 class CSVParsingNuke(unittest.TestCase):
     """
     Nuke removes escaped characters when you use getValue() on a string knob. 
     Therefore, testing the round trip through the gizmo is slightly complicated. 
     """
+
     def setUp(self):
         import nuke
         self.gizmo = nuke.nodes.Cryptomatte()
@@ -123,6 +125,7 @@ class CSVParsingNuke(unittest.TestCase):
 
     def test_big_csv_through_gizmo(self):
         self.round_trip_through_gizmo(CSVParsing.csv_str, "Round trip failed")
+
 
 class CryptomatteGizmoSetup(unittest.TestCase):
     """ 
@@ -486,7 +489,7 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         Test that the gizmo can be set up and used properly without 
         the preview channels being available. 
         """
-        self.gizmo.setInput(0, self.read_material) # switch layer selection
+        self.gizmo.setInput(0, self.read_material)  # switch layer selection
         remove = self.tempNode("Remove", inputs=[self.read_asset], channels="uCryptoAsset")
         self.gizmo.setInput(0, remove)
         self._test_keying_partial_black()
@@ -697,6 +700,27 @@ class CryptomatteGizmoSetup(unittest.TestCase):
                          "Channels not removed properly after decrypto.")
 
     #############################################
+    # Gizmo integrity
+    #############################################
+
+    def test_crypto_channel_knobs_type(self, node=None):
+        import cryptomatte_utilities as cu
+        for channel in cu.GIZMO_CHANNEL_KNOBS:
+            self.assertTrue(
+                self.gizmo.knob(channel).Class() in set(["Channel_Knob", "ChannelMask_Knob"]),
+                "Input knob was not a channel knob, which causes failed renders "
+                "due to expression errors on load. (%s)" % self.gizmo.knob(channel).Class())
+
+    def test_encrypt_channel_knobs_type(self, node=None):
+        import cryptomatte_utilities as cu
+        encrypt = self.tempNode("Encryptomatte")
+        for channel in cu.GIZMO_REMOVE_CHANNEL_KNOBS + cu.GIZMO_ADD_CHANNEL_KNOBS:
+            self.assertTrue(
+                encrypt.knob(channel).Class() in set(["Channel_Knob", "ChannelMask_Knob"]),
+                "Input knob was not a channel knob, which causes failed renders "
+                "due to expression errors on load. (%s)" % encrypt.knob(channel).Class())
+
+    #############################################
     # Encryptomatte
     #############################################
     # todo(jfriedman): test stop_auto_update, auto filling in "matte name"
@@ -902,11 +926,10 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         encryptomatte = self.tempNode(
             "Encryptomatte", inputs=[self.gizmo, self.constant], matteName="test")
         cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
-        encryptomatte.knob("setupLayers").setValue(True);
-        encryptomatte.knob("cryptoLayer").setValue("sdfsd");
-        encryptomatte.knob("setupLayers").setValue(False);
+        encryptomatte.knob("setupLayers").setValue(True)
+        encryptomatte.knob("cryptoLayer").setValue("sdfsd")
+        encryptomatte.knob("setupLayers").setValue(False)
         cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
-
 
 
 #############################################

@@ -400,7 +400,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
-        keyed_object = _resolve_gizmo_keyed_object(node, cinfo, True, ID_value=ID_value)
+        keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
         node.knob("pickerRemove").setValue([0] * 8)
         _matteList_modify(node, keyed_object, False)
         _update_cryptomatte_gizmo(node, cinfo)
@@ -410,7 +410,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
-        keyed_object = _resolve_gizmo_keyed_object(node, cinfo, True, ID_value=ID_value)
+        keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
         node.knob("pickerAdd").setValue([0] * 8)
         _matteList_modify(node, keyed_object, True)
         _update_cryptomatte_gizmo(node, cinfo)  
@@ -423,6 +423,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
 
     elif knob.name() in ["previewMode", "previewEnabled"]:
         cinfo = CryptomatteInfo(node)
+        _update_cryptomatte_gizmo(node, cinfo)
         _set_preview_expression(node, cinfo)
 
     elif knob.name() == "forceUpdate":
@@ -464,6 +465,7 @@ def update_cryptomatte_gizmo(node, force=False):
 def clear_cryptomatte_gizmo(node):
     """Relies on knob changed callbacks to update gizmo after values change."""
     node.knob("matteList").setValue("")
+    node.knob("expression").setValue("")
 
 
 def update_all_cryptomatte_gizmos():
@@ -623,14 +625,16 @@ def _update_encyptomatte_setup_layers(gizmo):
 
     if not setup_layers:
         gizmo.knob('manifestKey').setValue("")
-        for i in range(len(GIZMO_ADD_CHANNEL_KNOBS)):
-            gizmo.knob(GIZMO_ADD_CHANNEL_KNOBS[i]).setValue("none")
-            gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue("none")
+        for ch_add, ch_remove in zip(GIZMO_ADD_CHANNEL_KNOBS, GIZMO_REMOVE_CHANNEL_KNOBS):
+            gizmo.knob(ch_add).setValue("none")
+            gizmo.knob(ch_remove).setValue("none")
         return
 
     all_layers = nuke.layers()
 
-    for i in range(len(GIZMO_ADD_CHANNEL_KNOBS)):
+    num_ch = len(GIZMO_ADD_CHANNEL_KNOBS)
+    for i, ch_add, ch_remove in zip(
+            range(num_ch), GIZMO_ADD_CHANNEL_KNOBS, GIZMO_REMOVE_CHANNEL_KNOBS):
         this_layer = "{0}{1:02d}".format(crypto_layer, i)
         # Add
         if i < num_layers:
@@ -638,14 +642,14 @@ def _update_encyptomatte_setup_layers(gizmo):
                 channels = ["%s.%s" % (this_layer, c) for c in ['red', 'green', 'blue', 'alpha']]
                 nuke.Layer(this_layer, channels)
 
-            gizmo.knob(GIZMO_ADD_CHANNEL_KNOBS[i]).setValue(this_layer)
-            gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue("none")
+            gizmo.knob(ch_add).setValue(this_layer)
+            gizmo.knob(ch_remove).setValue("none")
         else:
-            gizmo.knob(GIZMO_ADD_CHANNEL_KNOBS[i]).setValue("none")
+            gizmo.knob(ch_add).setValue("none")
             if i <= input_layers:
-                gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue(this_layer)
+                gizmo.knob(ch_remove).setValue(this_layer)
             else:
-                gizmo.knob(GIZMO_REMOVE_CHANNEL_KNOBS[i]).setValue("none")
+                gizmo.knob(ch_remove).setValue("none")
 
 def encryptomatte_add_manifest_id():
     node = nuke.thisNode()
@@ -867,7 +871,7 @@ def _get_knob_channel_value(knob, recursive_mode=None):
         saw_bg = False
 
         for layer_knob in GIZMO_CHANNEL_KNOBS:
-            layer = node.knob(layer_knob).getValue()
+            layer = node.knob(layer_knob).value()
 
             if layer == "none":
                 return 0.0
@@ -908,12 +912,6 @@ def _get_knob_channel_value(knob, recursive_mode=None):
     except:
         return 0.0
 
-def _resolve_gizmo_keyed_object(gizmo, cinfo, force=False, ID_value=0.0):
-    if _cancel_update(gizmo, force) or ID_value == 0.0:
-        return None
-    else:
-        name = cinfo.id_to_name(ID_value)
-        return name or "<%s>" % ID_value
 
 
 #############################################
