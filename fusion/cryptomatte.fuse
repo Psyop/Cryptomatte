@@ -1,5 +1,6 @@
 --[[
-Requires   : Fusion 9.0.1
+Requires   : Fusion 9.0.1 +
+Optional   : cjson
 Created by : Cedric Duriau         [duriau.cedric@live.be]
              Kristof Indeherberge  [xmnr0x23@gmail.com]
 --]]
@@ -47,7 +48,7 @@ function Create()
         LINKID_DataType = "Image",
         LINK_Main = 1
     })
-    
+
     -- locator & picking
     Locator = self:AddInput("Locator", "Locator", {
         LINKID_DataType = "Point",
@@ -93,7 +94,7 @@ function Create()
         { CCS_AddString = VIEW_MODES[3] },
         CC_LabelPosition = "Vertical",
         INP_DoNotifyChanged = true
-	})
+    })
     CbMatteOnly = self:AddInput("Matte Only", "MatteOnly", {
         LINKID_DataType = "Number",
         INPID_InputControl = "CheckboxControl",
@@ -127,9 +128,9 @@ function Create()
 
     -- layer selection
     SliderCryptoLayer = self:AddInput("Crypto Layer Selection", "CryptoLayerSlider", {
-        LINKID_DataType = "Number", 
-        INPID_InputControl = "SliderControl", 
-        IC_Steps = 1, 
+        LINKID_DataType = "Number",
+        INPID_InputControl = "SliderControl",
+        IC_Steps = 1,
         INP_Integer = true,
         INP_MinAllowed = 1,
         INP_MaxAllowed = 100,
@@ -182,7 +183,7 @@ function Create()
     -- GUI callbacks
     SeparatorCallbacks = create_separator()
     SeparatorCallbacks:SetAttrs({IC_Visible = SHOW_CALLBACKS})
-    
+
     -- callback connect
     CallbackConnect = self:AddInput("Connect Callback", "ConnectCallback", {
         LINKID_DataType = "Number",
@@ -201,14 +202,6 @@ function Create()
     })
     -- callback remove
     CallbackBtnRemove = self:AddInput("Remove Callback", "RemoveCallback", {
-        LINKID_DataType = "Number",
-        INPID_InputControl = "CheckboxControl",
-        INP_Integer = true,
-        INP_Default = 0.0,
-        IC_Visible = SHOW_CALLBACKS
-    })
-    -- callback clear
-    CallbackBtnClear = self:AddInput("Clear Callback", "ClearCallback", {
         LINKID_DataType = "Number",
         INPID_InputControl = "CheckboxControl",
         INP_Integer = true,
@@ -267,9 +260,9 @@ end
 function set_slider_attributes(slider, min, max)
     -- sets the attributes of the given slider with given min and max to be able to
     -- dynamically change the slider's range correctly
-    slider:SetAttrs({ INP_MinAllowed = min, 
+    slider:SetAttrs({ INP_MinAllowed = min,
                       INP_MaxAllowed = max,
-                      INP_MinScale = min, 
+                      INP_MinScale = min,
                       INP_MaxScale = max})
 end
 
@@ -315,7 +308,7 @@ function update_matte_list(cInfo, matte_name, remove, matte_selection_str)
 
     -- get valid matte names cross matches from manifest
     local matte_set = get_mattes_from_selection(cInfo, matte_selection_str)
-    
+
     -- check if the matte to add/remove is present in the set
     local matte_present = matte_set[matte_name]
 
@@ -337,7 +330,7 @@ function update_matte_list(cInfo, matte_name, remove, matte_selection_str)
         matte_name = "\"" .. matte_name .. "\""
         table.insert(new_content, matte_name)
     end
-    
+
     -- concatenate the set into a string
     -- string concat .. operator allocates more memory than table.concat
     local new_content_str = table.concat(new_content, ", ")
@@ -367,7 +360,7 @@ function set_name_checker(cInfo, crypto_images)
     local text_to_set = ""
     -- only run code when locator is visible
     local locator_visible = LocatorNameChecker:GetAttr("PC_Visible")
-    if locator_visible then 
+    if locator_visible then
         -- get screen pixel at locator position
         local screen_pos = LocatorNameChecker:GetSource(0)
         local id_float_value = get_id_float_value(cInfo, screen_pos, crypto_images)
@@ -406,7 +399,9 @@ function apply_view_mode(mode, input_image, crypto_images)
     local output_image
 
     if mode == VIEW_MODE_EDGES then
-        output_image = input_image:ChannelOpOf("Add", crypto_images["0"], { R = "fg.A", G = "fg.A"})
+        local coverage = crypto_images["0"]:CopyOf()
+        coverage:Gain(1.0, 1.0, 1.0, 2.0)
+        output_image = input_image:ChannelOpOf("Add", coverage, { R = "fg.A", G = "fg.A"})
     elseif mode == VIEW_MODE_COLORS then
         output_image = cryptoutils:create_preview_image(crypto_images["0"], crypto_images["1"])
     elseif mode == VIEW_MODE_NONE then
@@ -455,17 +450,13 @@ function Process(req)
 
     -- refresh the manifest
     cInfo:parse_manifest()
-    
+
     -- populate layer selection
     set_layer_selection_slider(cInfo)
     set_layer_selection_display(cInfo)
 
     -- get all crypto images
     local crypto_images = cryptoutils:get_all_rank_images(cInfo, layer_name, input_image)
-
-    -- apply matte to image depending on view mode
-    local view_mode = get_view_mode()
-    local output_image = apply_view_mode(view_mode, input_image, crypto_images)
 
     -- set the name checker
     set_name_checker(cInfo, crypto_images)
@@ -491,34 +482,25 @@ function Process(req)
             CallbackBtnRemove:SetSource(Number(0), 0, 0)
         end
     end
-    
-    -- clear matte callback
-    local clear_triggered = CallbackBtnClear:GetValue(req).Value
-    if clear_triggered == 1 then
-        -- clear the cached state of the matte list
-        matte_selection_str = ""
-        -- clear the other ui elements
-        TextMatteList:SetSource(Text(""), 0, 0)
-        CbMatteOnly:SetSource(Number(0), 0, 0)
-        CbPreview:SetSource(Number(0), 0, 0)
-        -- reset the callback
-        CallbackBtnClear:SetSource(Number(0), 0, 0)
-    end
 
     -- create matte
     local matte_names = get_mattes_from_selection(cInfo, matte_selection_str)
     local matte = cryptoutils:create_matte_image(cInfo, matte_names, crypto_images)
-    
+
+    -- create output image depending on view mode
+    local view_mode = get_view_mode()
+    local output_image = apply_view_mode(view_mode, input_image, crypto_images)
+
     -- add matte
     output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", B = "fg.A"})
     output_image = output_image:ChannelOpOf("Copy", matte, { A = "fg.A"})
-    
+
     -- matte only callback
     local matte_only = CbMatteOnly:GetValue(req).Value
     if matte_only == 1 then
         -- create mono channel alpha image from output image
         local matte_only_image = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
-        -- matte_only_image:Clear()
+        matte_only_image:Clear()
         matte_only_image = matte_only_image:ChannelOpOf("Copy", output_image, { A = "fg.A" })
         OutImage:Set(req, matte_only_image)
     else
@@ -529,12 +511,17 @@ end
 function NotifyChanged(inp, param, time)
     -- trigger callbacks
     if param and param.Value == 1 then
-        if inp == BtnAdd then 
+        if inp == BtnAdd then
             CallbackBtnAdd:SetSource(Number(1), 0, 0)
         elseif inp == BtnRemove then
             CallbackBtnRemove:SetSource(Number(1), 0, 0)
         elseif inp == BtnClear then
-            CallbackBtnClear:SetSource(Number(1), 0, 0)
+            -- clear matte list input
+            TextMatteList:SetSource(Text(""), 0, 0)
+            -- uncheck matte only
+            CbMatteOnly:SetSource(Number(0), 0, 0)
+            -- uncheck preview
+            CbPreview:SetSource(Number(0), 0, 0)
         elseif inp == BtnShow then
             LocatorNameChecker:SetAttrs({ PC_Visible = true })
         elseif inp == BtnHide then
