@@ -79,6 +79,7 @@ Decoders:
 * Nuke - Added unit tests and integration tests. 
 * Fusion
   * Added cryptomatte_utilities.lua module
+  * Removed simplejson.lua module, using builtin dkjson module
   * Added layer selection slider with layer name display
   * Added "Preview" (AKA "Keyable Surface") options
   * Colors now generated dynamically, removing need for preview channels
@@ -86,6 +87,9 @@ Decoders:
   * Removed "Update Loader" button
   * Removed loader channel slots workaround
   * No longer limited to 8 ranks
+  * Improved matte only previewing
+  * Optimized multi threaded functions
+  * Added docstrings
 
 1.2.0 (Beta 4):
 

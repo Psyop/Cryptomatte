@@ -54,8 +54,7 @@ function Create()
         LINKID_DataType = "Point",
         INPID_InputControl = "OffsetControl",
         INPID_PreviewControl = "CrosshairControl",
-        ICS_Name = "Matte Locator",
-        INP_DoNotifyChanged = true
+        ICS_Name = "Matte Locator"
     })
     BtnAdd = self:AddInput("Add", "Add", {
         LINKID_DataType = "Number",
@@ -80,8 +79,7 @@ function Create()
         INPID_InputControl = "CheckboxControl",
         INP_Integer = true,
         INP_Default = 0.0,
-        ICD_Width = 1 / 2,
-        INP_DoNotifyChanged = true
+        ICD_Width = 1 / 2
     })
     ComboViewMode = self:AddInput("", "ViewMode", {
         LINKID_DataType = "Number",
@@ -92,8 +90,7 @@ function Create()
         { CCS_AddString = VIEW_MODES[1] },
         { CCS_AddString = VIEW_MODES[2] },
         { CCS_AddString = VIEW_MODES[3] },
-        CC_LabelPosition = "Vertical",
-        INP_DoNotifyChanged = true
+        CC_LabelPosition = "Vertical"
     })
     CbMatteOnly = self:AddInput("Matte Only", "MatteOnly", {
         LINKID_DataType = "Number",
@@ -112,7 +109,6 @@ function Create()
         INPID_InputControl = "TextEditControl",
         TEC_Lines = 1,
         TEC_Wrap = false,
-        INP_DoNotifyChanged = false,
         TEC_DeferSetInputs = true
     })
     BtnClear = self:AddInput("Clear", "Clear", {
@@ -133,16 +129,14 @@ function Create()
         IC_Steps = 1,
         INP_Integer = true,
         INP_MinAllowed = 1,
-        INP_MaxAllowed = 100,
-        INP_DoNotifyChanged = true
+        INP_MaxAllowed = 100
     })
     TextCryptoLayer = self:AddInput("Crypto Layer", "CryptoLayer", {
         LINKS_Name = "",
         LINKID_DataType = "Text",
         INPID_InputControl = "TextEditControl",
         TEC_Lines = 1,
-        TEC_ReadOnly = true,
-        INP_DoNotifyChanged = false
+        TEC_ReadOnly = true
     })
 
     -- advanced tab
@@ -152,7 +146,6 @@ function Create()
         INPID_InputControl = "OffsetControl",
         INPID_PreviewControl = "CrosshairControl",
         ICS_Name = "Name Checker Locator",
-        INP_DoNotifyChanged = true,
         ICS_ControlPage = "Advanced",
         PC_Visible = false
     })
@@ -176,8 +169,7 @@ function Create()
         INPID_InputControl = "TextEditControl",
         TEC_Lines = 1,
         TEC_Wrap = false,
-        TEC_ReadOnly = true,
-        INP_DoNotifyChanged = false
+        TEC_ReadOnly = true
     })
 
     -- GUI callbacks
@@ -214,6 +206,7 @@ end
 -- utils
 -- ===========================================================================
 function create_separator()
+    -- creates a separator GUI object
     SEPARATOR_INDEX = SEPARATOR_INDEX + 1
     return self:AddInput(SEPARATOR, string.format("Separator%s", SEPARATOR_INDEX), {
         LINKID_DataType = "Text",
@@ -337,26 +330,33 @@ function update_matte_list(cInfo, matte_name, remove, matte_selection_str)
     return new_content_str
 end
 
-function set_matte_list(matte_list_str)
-    -- sets the given matte list string into the matte list line edit
-    TextMatteList:SetSource(Text(matte_list_str), 0, 0)
-end
-
 function add_matte(cInfo, id_float_value, matte_selection_str)
+    -- gets the matte name for given id float value and adds it to the matte selection string if necessary
+    
+    -- get matte name of id float value
     local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
     if not matte_name then return end
+
+    -- create an updated version of the matte list str
     local new_matte_list = update_matte_list(cInfo, matte_name, false, matte_selection_str)
-    set_matte_list(new_matte_list)
+    TextMatteList:SetSource(Text(new_matte_list), 0, 0)
 end
 
 function remove_matte(cInfo, id_float_value, matte_selection_str)
+    -- gets the matte name for given id float value and removes it to the matte selection string if necessary
+
+    -- get matte name of id float value
     local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
     if not matte_name then return end
+
+    -- create an updated version of the matte list str
     local new_matte_list = update_matte_list(cInfo, matte_name, true, matte_selection_str)
-    set_matte_list(new_matte_list)
+    TextMatteList:SetSource(Text(new_matte_list), 0, 0)
 end
 
 function set_name_checker(cInfo, crypto_images)
+    -- activates the name checker if the locator control is visible
+
     local text_to_set = ""
     -- only run code when locator is visible
     local locator_visible = LocatorNameChecker:GetAttr("PC_Visible")
@@ -396,18 +396,22 @@ function get_view_mode()
 end
 
 function apply_view_mode(mode, input_image, crypto_images)
+    -- apply the given view mode to generate an output image
     local output_image
-
     if mode == VIEW_MODE_EDGES then
+        -- edge mode
+        -- output.R + rank_00.A * 2 
+        -- output.G + rank_00.A * 2
         local coverage = crypto_images["0"]:CopyOf()
         coverage:Gain(1.0, 1.0, 1.0, 2.0)
         output_image = input_image:ChannelOpOf("Add", coverage, { R = "fg.A", G = "fg.A"})
     elseif mode == VIEW_MODE_COLORS then
+        -- colors mode generates an "ID" colored image based on an algorithm using the first two ranks
         output_image = cryptoutils:create_preview_image(crypto_images["0"], crypto_images["1"])
     elseif mode == VIEW_MODE_NONE then
+        -- pass input copy as output
         output_image = input_image:CopyOf()
     end
-
     return output_image
 end
 
@@ -431,12 +435,6 @@ end
 -- ===========================================================================
 -- main
 -- ===========================================================================
-function OnConnected(inp, old, new)
-    if inp == InImage and new ~= nil then
-        CallbackConnect:SetSource(Number(1), 0, 0)
-    end
-end
-
 function Process(req)
     -- get input image
     local input_image = InImage:GetValue(req)
@@ -483,26 +481,25 @@ function Process(req)
         end
     end
 
-    -- create matte
-    local matte_names = get_mattes_from_selection(cInfo, matte_selection_str)
-    local matte = cryptoutils:create_matte_image(cInfo, matte_names, crypto_images)
-
     -- create output image depending on view mode
     local view_mode = get_view_mode()
     local output_image = apply_view_mode(view_mode, input_image, crypto_images)
 
+    -- create matte
+    local matte_names = get_mattes_from_selection(cInfo, matte_selection_str)
+    local matte = cryptoutils:create_matte_image(cInfo, matte_names, crypto_images, output_image)
+
     -- add matte
-    output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", B = "fg.A"})
-    output_image = output_image:ChannelOpOf("Copy", matte, { A = "fg.A"})
+    if matte ~= nil then
+        output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A", B = "fg.A"})
+        output_image = output_image:ChannelOpOf("Copy", matte, { A = "fg.A"})
+    end
 
     -- matte only callback
     local matte_only = CbMatteOnly:GetValue(req).Value
     if matte_only == 1 then
-        -- create mono channel alpha image from output image
-        local matte_only_image = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
-        matte_only_image:Clear()
-        matte_only_image = matte_only_image:ChannelOpOf("Copy", output_image, { A = "fg.A" })
-        OutImage:Set(req, matte_only_image)
+        -- output mono channel alpha image
+        OutImage:Set(req, matte)
     else
         OutImage:Set(req, output_image)
     end

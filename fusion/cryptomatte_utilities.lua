@@ -83,17 +83,20 @@ function generate_mattes_from_rank(y)
 
     for x = 0, In.Width - 1 do
         pixptr_in:GetNextPixel(global_p)
+        
+        local_p.R = 0.0
+        local_p.G = 0.0
+        local_p.B = 0.0
+        local_p.A = 0.0
 
         local r_in_array = id_float_values[global_p.R]
         local b_in_array = id_float_values[global_p.B]
 
         if r_in_array or b_in_array then
             if r_in_array then
-                local_p.R = 0.0
                 local_p.G = global_p.G
             end
             if b_in_array then
-                local_p.B = 0.0
                 local_p.A = global_p.A
             end
             pixptr_out:SetNextPixel(local_p)
@@ -158,12 +161,13 @@ function create_colors_image(y)
     end
 end
 
-function create_mattes(crypto_images, id_float_values)
-    local combined_matte = Image({{ IMG_Channel = "Alpha" }})
+function create_mattes(crypto_images, id_float_values, output_image)
+    -- local combined_matte = Image({{ IMG_Channel = "Alpha" }})
+    local combined_matte = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
     combined_matte:Clear()
 
     for _, image in pairs(crypto_images) do
-        local rank_matte = Image({ IMG_Like = image })
+        local rank_matte = image:CopyOf()
         rank_matte:Clear()
 
         -- process pixels to retrieve the pixels matching the id float value
@@ -432,7 +436,7 @@ function cryptomatte_utilities:create_cryptomatte_info(metadata, selected_layer_
     return cInfo
 end
 
-function cryptomatte_utilities:create_matte_image(cInfo, matte_names, crypto_images)
+function cryptomatte_utilities:create_matte_image(cInfo, matte_names, crypto_images, output_image)
     -- build a set from the ids of the given matte names
     local ids = {}
     local name_to_id = cInfo.cryptomattes[cInfo.selection]["name_to_id"]
@@ -446,7 +450,7 @@ function cryptomatte_utilities:create_matte_image(cInfo, matte_names, crypto_ima
     -- create the combined matte image
     local combined_matte = nil
     if ids then
-        combined_matte = create_mattes(crypto_images, ids)
+        combined_matte = create_mattes(crypto_images, ids, output_image)
     end
     return combined_matte
 end
