@@ -52,6 +52,7 @@ Decoders:
 * Cedric Duriau
 * Kristof Indeherberge
 * Vladimir Koylazov
+* Peter Loveday
 
 ## Release Notes
 

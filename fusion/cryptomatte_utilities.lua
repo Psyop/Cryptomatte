@@ -41,10 +41,12 @@ local struct = require("struct")
 -- utils
 -- ===========================================================================
 function string_starts_with(str, start)
+    -- check if the given string stars with the given start substring
     return string.sub(str, 1, string.len(start)) == start
 end
 
 function is_key_in_table(key, table)
+    -- checks if the given key is in the given table
     for k, v in pairs(table) do
         if key == k then
             return true
@@ -54,6 +56,7 @@ function is_key_in_table(key, table)
 end
 
 function is_item_in_array(item, arr)
+    -- checks if the given item is in the given array
     local item_present = false
     for i, value in ipairs(arr) do
         if value == item then
@@ -64,12 +67,25 @@ function is_item_in_array(item, arr)
     return item_present
 end
 
-function resolve_manifest_path(exr_path, sidecar_path)
+function build_manifest_path(exr_path, sidecar_path)
+    -- builds the manifest path from the directory of the given exr path
+    -- and joins it with the given relative sidecar path
     local exr_dir = exr_path:match("(.*/)")
     return exr_dir .. sidecar_path
 end
 
+function get_screen_pixel(img, x, y)
+    -- get the pixel at given location of given image
+    local p = Pixel()
+    local pixel_x = math.floor(img.Width / (1 / x))
+    local pixel_y = math.floor(img.Height / (1 / y))
+    img:GetPixel(pixel_x, pixel_y, p)
+    return p
+end
+
 function generate_mattes_from_rank_init()
+    -- init function used to run before the scanline function "generate_mattes_from_rank"
+    -- creates pixel pointer objects instead of creating pixel object for every coordinat to improve peformance
     global_p = Pixel()
     local_p = Pixel()
 
@@ -78,61 +94,76 @@ function generate_mattes_from_rank_init()
 end
 
 function generate_mattes_from_rank(y)
+    -- scanline function used to generates matte from every cryptomatte rank
+    -- goto position X=0,Y=y pixel location
     pixptr_in:GotoXY(0, y)
     pixptr_out:GotoXY(0, y)
 
     for x = 0, In.Width - 1 do
+        -- goto correct X pos
         pixptr_in:GetNextPixel(global_p)
         
+        -- reset pixel RGBA values
         local_p.R = 0.0
         local_p.G = 0.0
         local_p.B = 0.0
         local_p.A = 0.0
 
+        -- check if id float value occurs in R or B channel value
         local r_in_array = id_float_values[global_p.R]
         local b_in_array = id_float_values[global_p.B]
-
         if r_in_array or b_in_array then
+            -- rank pair match R counterpart is G
             if r_in_array then
                 local_p.G = global_p.G
             end
+            -- rank pair match B counterpart is A
             if b_in_array then
                 local_p.A = global_p.A
             end
+            -- set output pixel pointer to match
             pixptr_out:SetNextPixel(local_p)
         else
+            -- continue if no match was found
             pixptr_out:NextPixel()
         end
     end
 end
 
 function create_colors_image_init()
-    -- initializer function that gets called before the scanline function
-    -- creates pixel pointers to avoid creating pixel object for every x,y coordinate
+    -- initializer function that gets called before the scanline function "create_colors_image_init"
+    -- creates pixel pointer objects instead of creating pixel object for every coordinat to improve peformance
     global_p_c00 = Pixel()
     global_p_c01 = Pixel()
     local_p = Pixel()
 
+    -- rank 00
     pixptr_00 = PixPtr(rank_img_00, global_p_c00)
+    -- rank 01
     pixptr_01 = PixPtr(rank_img_01, global_p_c01)
     pixptr_out = PixPtr(output, local_p)
 end
 
 function create_colors_image(y)
+    -- scanline function used to generates matte from every cryptomatte rank
+    -- goto position X=0,Y=y pixel location
     pixptr_00:GotoXY(0, y)
     pixptr_01:GotoXY(0, y)
     pixptr_out:GotoXY(0, y)
 
     for x = 0, output.Width - 1 do
+         -- goto correct X pos
         pixptr_00:GetNextPixel(global_p_c00)
         pixptr_01:GetNextPixel(global_p_c01)
 
-        -- get mantissa
+        -- get mantissa of R and B channels of both rank 0 and 1
         m00_rg, _ = math.frexp(math.abs(global_p_c00.R))
         m00_ba, _ = math.frexp(math.abs(global_p_c00.B))
         m01_rg, _ = math.frexp(math.abs(global_p_c01.R))
         m01_ba, _ = math.frexp(math.abs(global_p_c01.B))
 
+        -- calculate RGB channel values for final id colored image
+        
         -- red
         r_c00_rg = (m00_rg * 1 % 0.25) * global_p_c00.G
         r_c00_ba = (m00_ba * 1 % 0.25) * global_p_c00.A
@@ -154,9 +185,12 @@ function create_colors_image(y)
         b_c01_ba = (m01_ba * 16 % 0.25) * global_p_c01.A
         blue = b_c00_rg + b_c00_ba + b_c01_rg + b_c01_ba
 
+        -- store calculated R,G and B values
         local_p.R = red
         local_p.G = green
         local_p.B = blue
+
+        -- set output pixel pointer
         pixptr_out:SetNextPixel(local_p)
     end
 end
@@ -288,7 +322,7 @@ function CryptomatteInfo:parse_manifest()
     local sidecar_path = self.cryptomattes[self.selection][METADATA_KEY_MANIF_FILE]
     if sidecar_path ~= nil then
         -- open the sidecar file in read mode
-        local path = resolve_manifest_path(self.exr_path, sidecar_path)
+        local path = build_manifest_path(self.exr_path, sidecar_path)
         local fp = io.open(path, "r")
         if fp == nil then
             print(string.format('ERROR: following path does not exist: %s', path))
@@ -387,30 +421,16 @@ end
 function exr_read_channel_parts(exr, input_image, cryptomatte_channels, partnum)
     -- creates an image from the given cryptomatte channels by rank
     local cryptomatte_images = {}
+    
     -- read part with given index
     exr:Part(partnum)
     for index, channels in pairs(cryptomatte_channels) do
-        -- dispw = exr:DisplayWindow(partnum)
-        -- dataw = exr:DataWindow(partnum)
-        -- local ox, oy = dispw.left, dispw.bottom
-        -- local w, h = dispw.right - dispw.left, dispw.top - dispw.bottom
-        -- imgw = ImgRectI(dataw)
-        -- imgw:Offset(-ox, -oy)
-        -- image = Image({
-        --     IMG_Width = w,
-        --     IMG_Height = h,
-        --     IMG_Depth = IMDP_128bitFloat,
-        --     IMG_DataWindow = imgw,
-        --     IMG_NoData = req:IsPreCalc(),
-        --     IMG_YScale = 1.0/exr:PixelAspectRatio(partnum),
-        -- })
-
+        -- create placeholder image
         local image = Image({
             IMG_Width = input_image.Width,
             IMG_Height = input_image.Height,
             IMG_Depth = input_image.Depth
         })
-        -- image:Clear()
 
         -- read rank RGBA channels
         exr:Channel(channels["r"], ANY_TYPE, image, CHAN_RED)
@@ -421,8 +441,10 @@ function exr_read_channel_parts(exr, input_image, cryptomatte_channels, partnum)
         -- store the image as value to the rank index in string format as key
         cryptomatte_images[tostring(index)] = image
     end
-    -- fill the given image with previously read information
-    exr:ReadPart(partnum, {image})
+    if cryptomatte_images ~= {} then
+        -- fill the given image with previously read information
+        exr:ReadPart(partnum, cryptomatte_images)
+    end
     return cryptomatte_images
 end
 
@@ -434,6 +456,23 @@ function cryptomatte_utilities:create_cryptomatte_info(metadata, selected_layer_
     cInfo = CryptomatteInfo()
     cInfo:extract_cryptomatte_metadata(metadata, selected_layer_name)
     return cInfo
+end
+
+function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, crypto_images)
+    -- get the pixel at the given location for all the given crypto images (ranks)
+    -- if an R, G, B or A channel value is different than zero, the id float value was found
+    local id_float_value = nil
+    for index, image in pairs(crypto_images) do
+        local pixel = get_screen_pixel(image, screen_pos.X, screen_pos.Y)
+        for _, val in ipairs({pixel.R, pixel.G, pixel.B, pixel.A}) do
+            if val ~= 0.0 and cInfo.cryptomattes[cInfo.selection]["ids"][val] then
+                id_float_value = val
+                break
+            end
+        end
+        if id_float_value ~= nil then break end
+    end
+    return id_float_value
 end
 
 function cryptomatte_utilities:create_matte_image(cInfo, matte_names, crypto_images, output_image)

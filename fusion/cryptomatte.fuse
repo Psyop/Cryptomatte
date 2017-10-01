@@ -259,15 +259,6 @@ function set_slider_attributes(slider, min, max)
                       INP_MaxScale = max})
 end
 
-function get_screen_pixel(img, x, y)
-    -- get the pixel at given location of given image
-    local p = Pixel()
-    local pixel_x = math.floor(img.Width / (1 / x))
-    local pixel_y = math.floor(img.Height / (1 / y))
-    img:GetPixel(pixel_x, pixel_y, p)
-    return p
-end
-
 function convert_str_to_array(str, pattern)
     -- convert matte selection list in str format to set
     local matte_names = {}
@@ -363,7 +354,7 @@ function set_name_checker(cInfo, crypto_images)
     if locator_visible then
         -- get screen pixel at locator position
         local screen_pos = LocatorNameChecker:GetSource(0)
-        local id_float_value = get_id_float_value(cInfo, screen_pos, crypto_images)
+        local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, crypto_images)
 
         -- get matte name matching id float value
         if id_float_value == 0.0 then
@@ -415,23 +406,6 @@ function apply_view_mode(mode, input_image, crypto_images)
     return output_image
 end
 
-function get_id_float_value(cInfo, screen_pos, crypto_images)
-    -- get the pixel at the given location for all the given crypto images (ranks)
-    -- if an R, G, B or A channel value is different than zero, the id float value was found
-    local id_float_value = nil
-    for index, image in pairs(crypto_images) do
-        local pixel = get_screen_pixel(image, screen_pos.X, screen_pos.Y)
-        for _, val in ipairs({pixel.R, pixel.G, pixel.B, pixel.A}) do
-            if val ~= 0.0 and cInfo.cryptomattes[cInfo.selection]["ids"][val] then
-                id_float_value = val
-                break
-            end
-        end
-        if id_float_value ~= nil then break end
-    end
-    return id_float_value
-end
-
 -- ===========================================================================
 -- main
 -- ===========================================================================
@@ -453,6 +427,9 @@ function Process(req)
     set_layer_selection_slider(cInfo)
     set_layer_selection_display(cInfo)
 
+    -- get updated selected layer
+    layer_name = get_selected_layer()
+
     -- get all crypto images
     local crypto_images = cryptoutils:get_all_rank_images(cInfo, layer_name, input_image)
 
@@ -467,7 +444,7 @@ function Process(req)
     if add_triggered == 1 or remove_triggered == 1 then
         -- get the id float value from the pixel at locator coordinates
         local screen_pos = Locator:GetSource(0)
-        local id_float_value = get_id_float_value(cInfo, screen_pos, crypto_images)
+        local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, crypto_images)
 
         if add_triggered == 1 then
             add_matte(cInfo, id_float_value, matte_selection_str)
