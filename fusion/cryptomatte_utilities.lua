@@ -458,12 +458,15 @@ function cryptomatte_utilities:create_cryptomatte_info(metadata, selected_layer_
     return cInfo
 end
 
-function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, crypto_images)
+function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, crypto_images, input_image)
     -- get the pixel at the given location for all the given crypto images (ranks)
     -- if an R, G, B or A channel value is different than zero, the id float value was found
     local id_float_value = nil
+
     for index, image in pairs(crypto_images) do
         local pixel = get_screen_pixel(image, screen_pos.X, screen_pos.Y)
+
+        -- matte value
         for _, val in ipairs({pixel.R, pixel.G, pixel.B, pixel.A}) do
             if val ~= 0.0 and cInfo.cryptomattes[cInfo.selection]["ids"][val] then
                 id_float_value = val
@@ -472,6 +475,15 @@ function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, crypto_imag
         end
         if id_float_value ~= nil then break end
     end
+    
+    if id_float_value == nil then
+        -- check if the background is being parsed (RGB=0,0,0)
+        local pixel = get_screen_pixel(input_image, screen_pos.X, screen_pos.Y)
+        if pixel.R == 0.0 and pixel.G == 0.0 and pixel.B == 0.0 then
+            id_float_value = 0.0
+        end
+    end
+
     return id_float_value
 end
 

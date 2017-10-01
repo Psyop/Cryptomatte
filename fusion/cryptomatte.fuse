@@ -1,5 +1,5 @@
 --[[
-Requires   : Fusion 9.0.1 +
+Requires   : Fusion 9.0.1+
 Optional   : cjson
 Created by : Cedric Duriau         [duriau.cedric@live.be]
              Kristof Indeherberge  [xmnr0x23@gmail.com]
@@ -273,16 +273,14 @@ end
 function get_mattes_from_selection(cInfo, matte_selection_str)
     -- cross matches the mattes given in the matte list line edit and the manifest mattes
     local mattes = {}
-    local manifest_matte_names = cInfo.cryptomattes[cInfo.selection]["names"]
+    -- local manifest_matte_names = cInfo.cryptomattes[cInfo.selection]["names"]
 
     -- convert the matte input string to an array
     local matte_name_array = convert_str_to_array(matte_selection_str, REGEX_MATTE_LIST)
 
-    -- cross match matte names and store matches inside a set
+    -- convert array to set
     for _, matte in ipairs(matte_name_array) do
-        if manifest_matte_names[matte] then
-            mattes[matte] = true
-        end
+        mattes[matte] = true
     end
     return mattes
 end
@@ -345,7 +343,7 @@ function remove_matte(cInfo, id_float_value, matte_selection_str)
     TextMatteList:SetSource(Text(new_matte_list), 0, 0)
 end
 
-function set_name_checker(cInfo, crypto_images)
+function set_name_checker(cInfo, crypto_images, input_image)
     -- activates the name checker if the locator control is visible
 
     local text_to_set = ""
@@ -354,7 +352,7 @@ function set_name_checker(cInfo, crypto_images)
     if locator_visible then
         -- get screen pixel at locator position
         local screen_pos = LocatorNameChecker:GetSource(0)
-        local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, crypto_images)
+        local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, crypto_images, input_image)
 
         -- get matte name matching id float value
         if id_float_value == 0.0 then
@@ -434,7 +432,7 @@ function Process(req)
     local crypto_images = cryptoutils:get_all_rank_images(cInfo, layer_name, input_image)
 
     -- set the name checker
-    set_name_checker(cInfo, crypto_images)
+    set_name_checker(cInfo, crypto_images, input_image)
 
     -- add mattes callback
     -- remove mattes callback
@@ -444,7 +442,7 @@ function Process(req)
     if add_triggered == 1 or remove_triggered == 1 then
         -- get the id float value from the pixel at locator coordinates
         local screen_pos = Locator:GetSource(0)
-        local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, crypto_images)
+        local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, crypto_images, input_image)
 
         if add_triggered == 1 then
             add_matte(cInfo, id_float_value, matte_selection_str)
