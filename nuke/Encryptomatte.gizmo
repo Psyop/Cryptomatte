@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2014, 2015, 2016 Psyop Media Company, LLC
+#  Copyright (c) 2014, 2015, 2016, 2017 Psyop Media Company, LLC
 #  See license.txt
 #
 version 7.0 v1
@@ -17,7 +17,7 @@ Gizmo {
  addUserKnob {1 cryptoLayer l "Layer Selection" t "If there are multiple cryptomattes, this is how you select the layer."}
  addUserKnob {6 cryptoLayerLock l "Lock Layer Selection" t "Stops the automatic update of the layer selection." -STARTLINE}
  addUserKnob {22 forceUpdate l "Force Update" t "Updates the Gizmo based on which channels are available in the input. \n\nThis happens automatically when input changes, when loading the nuke script, or when a new gizmo is created. This is how it deals with differently named channels in the different Cryptomatte layers, and different depths that it's possible to render at. " T "try: \n   import cryptomatte_utilities as cu\n   cu.update_encryptomatte_gizmo(nuke.thisNode(), True)\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run Encryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. Please check that the Cryptomatte python plugin is loaded. \n\nError Traceback: \n\n%s''' % traceback.format_exc())" +STARTLINE}
- addUserKnob {6 stopAutoUpdate t "Stops the automatic update of this copy of the Gizmo." -STARTLINE}
+ addUserKnob {6 stopAutoUpdate l "Stop Auto Update" t "Stops the automatic update of this copy of the Gizmo." -STARTLINE}
  addUserKnob {41 alphaExpression l INVISIBLE +INVISIBLE T Expression_alpha.expr3}
  addUserKnob {1 manifestKey l INVISIBLE +INVISIBLE}
  addUserKnob {3 cryptoLayers l Layers t "Number of cryptomatte layers to use."}
