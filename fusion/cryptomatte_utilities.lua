@@ -163,7 +163,6 @@ function create_colors_image(y)
         m01_ba, _ = math.frexp(math.abs(global_p_c01.B))
 
         -- calculate RGB channel values for final id colored image
-        
         -- red
         r_c00_rg = (m00_rg * 1 % 0.25) * global_p_c00.G
         r_c00_ba = (m00_ba * 1 % 0.25) * global_p_c00.A
@@ -196,7 +195,6 @@ function create_colors_image(y)
 end
 
 function create_mattes(crypto_images, id_float_values, output_image)
-    -- local combined_matte = Image({{ IMG_Channel = "Alpha" }})
     local combined_matte = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
     combined_matte:Clear()
 
@@ -219,11 +217,11 @@ function create_mattes(crypto_images, id_float_values, output_image)
     return combined_matte
 end
 
-function create_preview_image(rank_img_00, rank_img_01)
+function create_preview_image(input_image, rank_img_00, rank_img_01)
     -- creates the preview image from the first two ranks
     -- this function was at first attached to the module like functions at the end of this module
     -- this did not work due to the "self" then taking the role of the module, instead of the Fuse
-    local output = Image({ IMG_Like = rank_img_00 })
+    local output = input_image:CopyOf()
     output:Clear()
     self:DoMultiProcess(create_colors_image_init, { output = output, rank_img_00 = rank_img_00, rank_img_01 = rank_img_01 }, output.Height, create_colors_image)
     return output
@@ -245,9 +243,12 @@ function CryptomatteInfo:new()
     local self = setmetatable({}, CryptomatteInfo)
 
     -- members
+    self.nr_of_metadata_layers = nil
+    self.cryptomattes = nil
+    self.index_to_layer_name = nil
+    self.layer_name_to_index = nil
     self.selection = nil
     self.exr_path = nil
-    self.cryptomattes = nil
 
     return self
 end
@@ -462,8 +463,16 @@ function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, crypto_imag
     -- get the pixel at the given location for all the given crypto images (ranks)
     -- if an R, G, B or A channel value is different than zero, the id float value was found
     local id_float_value = nil
+    
+    -- sort keys
+    local keys = {}
+    for k in pairs(crypto_images) do 
+        table.insert(keys, tonumber(k)) 
+    end
+    table.sort(keys)
 
-    for index, image in pairs(crypto_images) do
+    for _, index in ipairs(keys) do
+        local image = crypto_images[tostring(index)]
         local pixel = get_screen_pixel(image, screen_pos.X, screen_pos.Y)
 
         -- matte value
@@ -506,9 +515,9 @@ function cryptomatte_utilities:create_matte_image(cInfo, matte_names, crypto_ima
     return combined_matte
 end
 
-function cryptomatte_utilities:create_preview_image(rank_img_00, rank_img_01)
+function cryptomatte_utilities:create_preview_image(input_image, rank_img_00, rank_img_01)
     -- creates the preview image
-    local output = create_preview_image(rank_img_00, rank_img_01)
+    local output = create_preview_image(input_image, rank_img_00, rank_img_01)
     return output
 end
 

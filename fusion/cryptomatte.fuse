@@ -271,13 +271,9 @@ function convert_str_to_array(str, pattern)
 end
 
 function get_mattes_from_selection(cInfo, matte_selection_str)
-    -- cross matches the mattes given in the matte list line edit and the manifest mattes
+    -- returns the a set of mattes from the matte list input string
     local mattes = {}
-    -- local manifest_matte_names = cInfo.cryptomattes[cInfo.selection]["names"]
-
-    -- convert the matte input string to an array
     local matte_name_array = convert_str_to_array(matte_selection_str, REGEX_MATTE_LIST)
-
     -- convert array to set
     for _, matte in ipairs(matte_name_array) do
         mattes[matte] = true
@@ -287,7 +283,6 @@ end
 
 function update_matte_list(cInfo, matte_name, remove, matte_selection_str)
     -- updates the matte list line edit text with given data
-
     -- get valid matte names cross matches from manifest
     local matte_set = get_mattes_from_selection(cInfo, matte_selection_str)
 
@@ -404,7 +399,7 @@ function apply_view_mode(mode, input_image, crypto_images)
         output_image = input_image:ChannelOpOf("Add", coverage, { G = "fg.A", B = "fg.A" })
     elseif mode == VIEW_MODE_COLORS then
         -- colors mode generates an "ID" colored image based on an algorithm using the first two ranks
-        output_image = cryptoutils:create_preview_image(crypto_images["0"], crypto_images["1"])
+        output_image = cryptoutils:create_preview_image(input_image, crypto_images["0"], crypto_images["1"])
     elseif mode == VIEW_MODE_NONE then
         -- pass input copy as output
         output_image = input_image:CopyOf()
