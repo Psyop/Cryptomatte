@@ -20,7 +20,8 @@ GIZMO_ADD_CHANNEL_KNOBS = [
     "add04", "add05", "add06", "add07"
 ]
 
-CRYPTOMATTE_METADATA_PREFIX = "exr/cryptomatte/"
+CRYPTO_METADATA_LEGAL_PREFIX = ["exr/cryptomatte/", "cryptomatte/"]
+CRYPTO_METADATA_DEFAULT_PREFIX = CRYPTO_METADATA_LEGAL_PREFIX[0]
 
 import nuke
 import struct
@@ -144,20 +145,22 @@ class CryptomatteInfo(object):
 
         exr_metadata_dict = node_in.metadata() or {}
 
-        #prefix = "exr/cryptomatte/"
         default_selection = None
         
         for key, value in exr_metadata_dict.iteritems():
             if key == "input/filename":
                 self.filename = value
-            if not key.startswith(CRYPTOMATTE_METADATA_PREFIX): 
-                continue
-            numbered_key = key[len(CRYPTOMATTE_METADATA_PREFIX):] # ex: "exr/cryptomatte/ae93ba3/name" --> "ae93ba3/name"
-            metadata_id = numbered_key.split("/")[0]  # ex: "ae93ba3/name" --> ae93ba3
-            partial_key = numbered_key.split("/")[1]  # ex: "ae93ba3/name" --> "name"
-            if metadata_id not in self.cryptomattes:
-                self.cryptomattes[metadata_id] = {}
-            self.cryptomattes[metadata_id][partial_key] = value
+            for prefix in CRYPTO_METADATA_LEGAL_PREFIX:
+                if not key.startswith(prefix):
+                    continue
+                numbered_key = key[len(prefix):] # ex: "exr/cryptomatte/ae93ba3/name" --> "ae93ba3/name"
+                metadata_id = numbered_key.split("/")[0]  # ex: "ae93ba3/name" --> ae93ba3
+                partial_key = numbered_key.split("/")[1]  # ex: "ae93ba3/name" --> "name"
+                if metadata_id not in self.cryptomattes:
+                    self.cryptomattes[metadata_id] = {}
+                self.cryptomattes[metadata_id][partial_key] = value
+                self.cryptomattes[metadata_id]['md_prefix'] = prefix
+                break
 
         if self.cryptomattes:
             default_selection = sorted(self.cryptomattes.keys(), key=lambda x: self.cryptomattes[x]['name'])[0]
@@ -199,7 +202,7 @@ class CryptomatteInfo(object):
         return False
 
     def get_selection_metadata_key(self, key):
-        return CRYPTOMATTE_METADATA_PREFIX + self.selection + "/" + key
+        return self.cryptomattes[self.selection]["md_prefix"] + self.selection + "/" + key
 
     def get_cryptomatte_names(self):
         """ gets the names of the cryptomattes contained the file, which
@@ -590,7 +593,7 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
         else:
             gizmo.knob('inputCryptoLayers').setValue(0)
             gizmo.knob('manifestKey').setValue(
-                CRYPTOMATTE_METADATA_PREFIX + layer_hash(crypto_layer) + '/')
+                CRYPTO_METADATA_DEFAULT_PREFIX + layer_hash(crypto_layer) + '/')
             gizmo.knob('newLayer').setValue(True)
 
         cryptomatte_channels = [

@@ -389,13 +389,13 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         self.key_on_image(self.black_pkr)
         self.assertMatteList("", "Something selected on black. ")
 
-    def _test_keying_partial_black(self):
+    def _test_keying_partial_black(self, msg=""):
         # used as setup for other tests
         self.key_on_image(self.floweredge_pkr)
-        self.assertMatteList("heroflower", "Hero flower not selected on partial pixels. ")
+        self.assertMatteList("heroflower", msg or "Hero flower not selected on partial pixels. ")
         self.assertEqual(
             self.gizmo.knob("expression").getValue(), self.heroflower_expr,
-            "Hero flower expression was wrong. ")
+            msg or "Hero flower expression was wrong. ")
 
     def test_keying_partial_black(self):
         self._test_keying_partial_black()
@@ -494,6 +494,23 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         self.gizmo.setInput(0, remove)
         self._test_keying_partial_black()
         self.gizmo.knob("forceUpdate").execute()
+
+    def test_keying_without_prefix(self):
+        """ 
+        If the image is loaded without the exr/ prefix, things should keep working. 
+        """
+        exception = None
+        try:
+            self.read_asset.knob("noprefix").setValue(True)
+            self.gizmo.knob("forceUpdate").execute()
+            self._test_keying_partial_black("Keying failed once read-node prefix was disabled.")
+        except Exception, e:
+            exception = e
+
+        self.read_asset.knob("noprefix").setValue(False)
+        if exception:
+            raise exception
+
 
     #############################################
     # Output checking
