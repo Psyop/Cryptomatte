@@ -56,6 +56,24 @@ Decoders:
 
 ## Release Notes
 
+1.2.0 (Beta 6):
+
+* Fusion
+  * Added cryptomatte_utilities.lua module
+  * Removed simplejson.lua module, using builtin dkjson module
+  * Added layer selection slider with layer name display
+  * Added "Preview" (AKA "Keyable Surface") options
+  * Colors now generated dynamically, removing need for preview channels
+  * Implemented EXRIO to read exr channel data
+  * Removed "Update Loader" button
+  * Removed loader channel slots workaround
+  * No longer limited to 8 ranks
+  * Improved matte only previewing
+  * Optimized multi threaded functions
+  * Added docstrings
+* Nuke
+  * Gizmo now works when read nodes have "do not attach prefix" enabled.
+
 1.2.0 (Beta 5):
 
 * Nuke - Added layer selection pulldown
@@ -78,19 +96,6 @@ Decoders:
   * Mixed selections of names and raw IDs now work correctly for all cases
   * Encryptomatte retains its layer selection properly
 * Nuke - Added unit tests and integration tests. 
-* Fusion
-  * Added cryptomatte_utilities.lua module
-  * Removed simplejson.lua module, using builtin dkjson module
-  * Added layer selection slider with layer name display
-  * Added "Preview" (AKA "Keyable Surface") options
-  * Colors now generated dynamically, removing need for preview channels
-  * Implemented EXRIO to read exr channel data
-  * Removed "Update Loader" button
-  * Removed loader channel slots workaround
-  * No longer limited to 8 ranks
-  * Improved matte only previewing
-  * Optimized multi threaded functions
-  * Added docstrings
 
 1.2.0 (Beta 4):
 
