@@ -397,8 +397,8 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         self.key_on_image(self.floweredge_pkr)
         self.assertMatteList("heroflower", msg or "Hero flower not selected on partial pixels. ")
         self.assertEqual(
-            self.gizmo.knob("expression").getValue(), self.heroflower_expr,
-            msg or "Hero flower expression was wrong. ")
+            self.gizmo.knob("expression").getValue(), self.heroflower_expr, msg or
+            "Hero flower expression was wrong. ")
 
     def test_keying_partial_black(self):
         self._test_keying_partial_black()
@@ -513,7 +513,6 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         self.read_asset.knob("noprefix").setValue(False)
         if exception:
             raise exception
-
 
     #############################################
     # Output checking
@@ -862,7 +861,7 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         self.assertNotEqual(keysurf_hash, mod_keysurf_hash, "preview image did not change. ")
 
         cinfo = cu.CryptomatteInfo(second_cryptomatte)
-        names_to_IDs = cinfo.parse_manifest();
+        names_to_IDs = cinfo.parse_manifest()
         self.assertTrue("set" in names_to_IDs, "Manifest doesn't contain original manifest")
         self.assertTrue("triangle" in names_to_IDs, "Manifest doesn't contain new members")
 
@@ -874,8 +873,8 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         second_cryptomatte.knob("matteList").setValue("")
         self.key_on_gizmo(second_cryptomatte, self.triangle_pkr, self.set_pkr)
         mlist = second_cryptomatte.knob("matteList").getValue()
-        self.assertEqual(mlist, "set, triangle", 
-            "Encrypto-modified manifest not properly keyable. {0}".format(mlist))
+        self.assertEqual(mlist, "set, triangle",
+                         "Encrypto-modified manifest not properly keyable. {0}".format(mlist))
 
     def test_encrypt_roundtrip_without_prefix(self):
         self.read_asset.knob("noprefix").setValue(True)
