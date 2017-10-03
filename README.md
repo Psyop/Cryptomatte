@@ -279,5 +279,5 @@ os.environ["CRYPTOMATTE_TESTING_SAMPLES"] = "" #  < specify sample_images dir he
 ## Fusion Installation
 
 1. Download the entire Cryptomatte GitHub repository using the green “Clone or download” button. Select “Download Zip” and then extract the contents.
-2. Copy the fusion/cryptomatte.fuse file into one of the directories mentioned in Fusion's Path Map for Fuses.
-3. Create a "lua" directory in the install root of Fusion and paste all the fusion/*.lua modules in this directory.
+2. Locate your Fusion installation folder, create a subfolder called “lua” and put the three lua scripts (cryptomatte_utilities.lua, lmurmurhash3.lua and struct.lua) into that folder.
+3. Copy the fusion/cryptomatte.fuse file into the "Fuses" subfolder in the Fusion installation folder (or another directory in Fusion's Path Map for Fuses). 
