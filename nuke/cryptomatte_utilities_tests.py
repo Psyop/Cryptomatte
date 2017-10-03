@@ -250,15 +250,18 @@ class CryptomatteGizmoSetup(unittest.TestCase):
     #############################################
 
     def key_on_image(self, *args):
+        self.key_on_image(self.gizmo, *args)
+
+    def key_on_gizmo(self, gizmo, *args):
 
         def pickerCoords(coord):
             return [0.0, 0.0, 0.0, 0.0, coord[0], coord[1], 0.0, 0.0]
 
         for action, coordinates in args:
             if action == "add":
-                self.gizmo.knob("pickerAdd").setValue(pickerCoords(coordinates))
+                gizmo.knob("pickerAdd").setValue(pickerCoords(coordinates))
             elif action == "remove":
-                self.gizmo.knob("pickerRemove").setValue(pickerCoords(coordinates))
+                gizmo.knob("pickerRemove").setValue(pickerCoords(coordinates))
 
     def _sample_gizmo_assert(self, pkr, msg, inverse, **kwargs):
         for channel, value in kwargs.iteritems():
@@ -840,6 +843,8 @@ class CryptomatteGizmoSetup(unittest.TestCase):
             self.assertFalse("%s.red" % layer in channels, "%s in channels" % layer)
 
     def test_encrypt_roundtrip(self):
+        import cryptomatte_utilities as cu
+        
         roto = self._setup_rotomask()
         keysurf_hash = self._scansample(self.gizmo, None, "blue", num_scanlines=16)
         roto_hash = self._scansample(roto, None, "alpha", num_scanlines=16)
@@ -855,6 +860,33 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         self.assertEqual(roto_hash, decrypto_hash, ("Alpha did not survive round trip through "
                                                     "Encryptomatte and then Cryptomatte. "))
         self.assertNotEqual(keysurf_hash, mod_keysurf_hash, "preview image did not change. ")
+
+        cinfo = cu.CryptomatteInfo(second_cryptomatte)
+        names_to_IDs = cinfo.parse_manifest();
+        self.assertTrue("set" in names_to_IDs, "Manifest doesn't contain original manifest")
+        self.assertTrue("triangle" in names_to_IDs, "Manifest doesn't contain new members")
+
+        global g_cryptomatte_manf_from_names
+        global g_cryptomatte_manf_from_IDs
+        g_cryptomatte_manf_from_names = {}
+        g_cryptomatte_manf_from_IDs = {}
+
+        second_cryptomatte.knob("matteList").setValue("")
+        self.key_on_gizmo(self.triangle_pkr, second_cryptomatte, self.set_pkr)
+        mlist = second_cryptomatte.knob("matteList").getValue()
+        self.assertEqual(mlist, "set, triangle", 
+            "Encrypto-modified manifest not properly keyable. {}".format(mlist))
+
+    def test_encrypt_roundtrip_nopreifx(self):
+        self.read_asset.knob("noprefix").setValue(True)
+        exception = None;
+        try:
+            self.test_encrypt_roundtrip()
+        except Exception, e:
+            exception = e
+        self.read_asset.knob("noprefix").setValue(False)
+        if exception:
+            raise exception
 
     def test_encrypt_bogus_manifest(self):
         import cryptomatte_utilities as cu
