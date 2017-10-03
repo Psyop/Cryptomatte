@@ -875,7 +875,7 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         self.key_on_gizmo(second_cryptomatte, self.triangle_pkr, self.set_pkr)
         mlist = second_cryptomatte.knob("matteList").getValue()
         self.assertEqual(mlist, "set, triangle", 
-            "Encrypto-modified manifest not properly keyable. {}".format(mlist))
+            "Encrypto-modified manifest not properly keyable. {0}".format(mlist))
 
     def test_encrypt_roundtrip_without_prefix(self):
         self.read_asset.knob("noprefix").setValue(True)
