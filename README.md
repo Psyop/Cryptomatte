@@ -61,8 +61,9 @@ Decoders:
 This a major upgrade to the Fusion plugin, by Cédric Duriau. 
 
 * Fusion - Minimum Fusion version is now 9.0.1. 
-  * Redesigned around new Fusion 9.0.1 features, allowing the fuse to load EXRs directly via the new EXRIO module. 
-  * For older versions, please use an older release (see GitHub releases). 
+  * Redesigned around new Fusion 9.0.1 features
+  * Fuse now loads EXRs directly via the EXRIO module
+  * For older versions, please use an older release (see GitHub releases)
 * Fusion - Added layer selection slider with layer name display
 * Fusion - Added "Preview" (AKA "Keyable Surface") options
   * Colors now generated dynamically, removing need for preview channels
