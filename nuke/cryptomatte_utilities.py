@@ -81,22 +81,12 @@ except ImportError:
 
 def mm3hash_float(name):
     hash_32 = mmh3.hash(name)
-    if hash_32 < 0:
-        hash_32 = (-hash_32 - 1) ^ 0xFFFFFFFF
-
-    mantissa = hash_32 & ((1 << 23) - 1)
-    exp = (hash_32 >> 23) & ((1 << 8) - 1)
-    exp = max(exp, 1)
-    exp = min(exp, 254)
-    exp =  exp << 23
-    sign = (hash_32 >> 31)
-    float_bits = exp | mantissa
-    packed = struct.pack('=I', float_bits)
-    packed = '\0' * (4 - len(packed)) + packed     # packed must be exactly 4 long
-    if sign == 1:
-        return -struct.unpack('=f', packed)[0]
-    elif sign == 0:
-        return struct.unpack('=f', packed)[0]
+    exp = hash_32 >> 23 & 255 
+    if (exp == 0) or (exp == 255):
+        hash_32 ^= 1 << 23 
+      
+    packed = struct.pack('<L', hash_32 & 0xffffffff)
+    return struct.unpack('<f', packed)[0]
 
 
 def single_precision(float_in):
@@ -360,7 +350,6 @@ def print_hash_info(name):
         hash_32 = (-hash_32 - 1) ^ 0xFFFFFFFF
     print "Hash value (unsigned):", hash_32
     print "Float converted:", mm3hash_float(name)
-
 
 
 #############################################
