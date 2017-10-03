@@ -38,7 +38,7 @@ Encoders:
 Decoders:
 
 * Nuke 7+, by Jonah Friedman, Andy Jones. In this repo.
-* Fusion: by Cedric Duriau and Kristof Indeherberge at Grid. In this repo.
+* Fusion: by Cédric Duriau and Kristof Indeherberge at Grid. In this repo.
 
 ## Acknowledgements 
 
@@ -49,7 +49,7 @@ Decoders:
 * Solid Angle
 * All the members of the Cryptomatte Committee
 * Benoit Leveau
-* Cedric Duriau
+* Cédric Duriau
 * Kristof Indeherberge
 * Vladimir Koylazov
 * Peter Loveday
@@ -58,19 +58,25 @@ Decoders:
 
 1.2.0 (Beta 6):
 
-* Fusion
+This a major upgrade to the Fusion plugin, by Cédric Duriau. 
+
+* Fusion - Minimum Fusion version is now 9.0.1. 
+  * Redesigned around new Fusion 9.0.1 features, allowing the fuse to load EXRs directly via the new EXRIO module. 
+  * For older versions, please use an older release (see GitHub releases). 
+* Fusion - Added layer selection slider with layer name display
+* Fusion - Added "Preview" (AKA "Keyable Surface") options
+  * Colors now generated dynamically, removing need for preview channels
+* Fusion - Bug fixes and enhancements
+  * Improved "matte only" previewing
+  * Performance improvements - Optimized multi threaded functions
+  * No longer limited to 8 cryptomatte ranks
+  * Implemented EXRIO to read exr channel data
+* Fusion - Code improvements
   * Added cryptomatte_utilities.lua module
   * Removed simplejson.lua module, using builtin dkjson module
-  * Added layer selection slider with layer name display
-  * Added "Preview" (AKA "Keyable Surface") options
-  * Colors now generated dynamically, removing need for preview channels
-  * Implemented EXRIO to read exr channel data
-  * Removed "Update Loader" button
   * Removed loader channel slots workaround
-  * No longer limited to 8 ranks
-  * Improved matte only previewing
-  * Optimized multi threaded functions
   * Added docstrings
+  * Removed "Update Loader" button
 * Nuke
   * Gizmo now works when read nodes have "do not attach prefix" enabled.
 
@@ -129,12 +135,12 @@ Decoders:
 
 1.1.3:
 
-* Adds beta version of Fusion support, also by Cedric Duriau and Kristof Indeherberge at Grid. 
+* Adds beta version of Fusion support, also by Cédric Duriau and Kristof Indeherberge at Grid. 
   * Major tool connection workflow improvement. No longer requires multiple loaders to work, instead populates single loader channel slots when viewed. 
 
 1.1.2:
 
-* Adds alpha version of Fusion support, created by Cedric Duriau and Kristof Indeherberge at Grid. 
+* Adds alpha version of Fusion support, created by Cédric Duriau and Kristof Indeherberge at Grid. 
 
 1.1.1:
 
