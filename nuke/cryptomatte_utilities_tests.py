@@ -250,7 +250,7 @@ class CryptomatteGizmoSetup(unittest.TestCase):
     #############################################
 
     def key_on_image(self, *args):
-        self.key_on_image(self.gizmo, *args)
+        self.key_on_gizmo(self.gizmo, *args)
 
     def key_on_gizmo(self, gizmo, *args):
 
@@ -844,7 +844,7 @@ class CryptomatteGizmoSetup(unittest.TestCase):
 
     def test_encrypt_roundtrip(self):
         import cryptomatte_utilities as cu
-        
+
         roto = self._setup_rotomask()
         keysurf_hash = self._scansample(self.gizmo, None, "blue", num_scanlines=16)
         roto_hash = self._scansample(roto, None, "alpha", num_scanlines=16)
@@ -872,14 +872,14 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         g_cryptomatte_manf_from_IDs = {}
 
         second_cryptomatte.knob("matteList").setValue("")
-        self.key_on_gizmo(self.triangle_pkr, second_cryptomatte, self.set_pkr)
+        self.key_on_gizmo(second_cryptomatte, self.triangle_pkr, self.set_pkr)
         mlist = second_cryptomatte.knob("matteList").getValue()
         self.assertEqual(mlist, "set, triangle", 
             "Encrypto-modified manifest not properly keyable. {}".format(mlist))
 
-    def test_encrypt_roundtrip_nopreifx(self):
+    def test_encrypt_roundtrip_without_prefix(self):
         self.read_asset.knob("noprefix").setValue(True)
-        exception = None;
+        exception = None
         try:
             self.test_encrypt_roundtrip()
         except Exception, e:
