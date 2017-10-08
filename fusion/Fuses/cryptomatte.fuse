@@ -1,8 +1,11 @@
 --[[
 Requires   : Fusion 9.0.1+
 Optional   : cjson
-Created by : Cedric Duriau         [duriau.cedric@live.be]
+Created by : Cédric Duriau         [duriau.cedric@live.be]
              Kristof Indeherberge  [xmnr0x23@gmail.com]
+
+Matte "Toggle" Button by: Andrew Hazelden [andrew@andrewhazelden.com]
+
 --]]
 
 -- ===========================================================================
@@ -61,14 +64,21 @@ function Create()
         INPID_InputControl = "ButtonControl",
         INP_External = false,
         INP_DoNotifyChanged = true,
-        ICD_Width = 0.5
+        ICD_Width = 0.33
     })
     BtnRemove = self:AddInput("Remove", "Remove", {
         LINKID_DataType = "Number",
         INPID_InputControl = "ButtonControl",
         INP_External = false,
         INP_DoNotifyChanged = true,
-        ICD_Width = 0.5
+        ICD_Width = 0.33
+    })
+    BtnToggle= self:AddInput("Toggle", "Toggle", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "ButtonControl",
+        INP_External = false,
+        INP_DoNotifyChanged = true,
+        ICD_Width = 0.34
     })
 
     create_separator()
@@ -200,6 +210,14 @@ function Create()
         INP_Default = 0.0,
         IC_Visible = SHOW_CALLBACKS
     })
+    -- callback toggle
+    CallbackBtnToggle = self:AddInput("Toggle Callback", "ToggleCallback", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Integer = true,
+        INP_Default = 0.0,
+        IC_Visible = SHOW_CALLBACKS
+    })
 end
 
 -- ===========================================================================
@@ -281,7 +299,7 @@ function get_mattes_from_selection(cInfo, matte_selection_str)
     return mattes
 end
 
-function update_matte_list(cInfo, matte_name, remove, matte_selection_str)
+function update_matte_list(cInfo, matte_name, remove, toggle, matte_selection_str)
     -- updates the matte list line edit text with given data
     -- get valid matte names cross matches from manifest
     local matte_set = get_mattes_from_selection(cInfo, matte_selection_str)
@@ -289,7 +307,14 @@ function update_matte_list(cInfo, matte_name, remove, matte_selection_str)
     -- check if the matte to add/remove is present in the set
     local matte_present = matte_set[matte_name]
 
-    if remove then
+    if toggle then
+      -- toggle (add or remove) the matte from the set
+      if not matte_present then
+          matte_set[matte_name] = true
+      else
+          matte_set[matte_name] = nil
+      end
+    elseif remove then
         -- remove matte from set
         if matte_present then
             matte_set[matte_name] = nil
@@ -318,6 +343,20 @@ function update_matte_list(cInfo, matte_name, remove, matte_selection_str)
     return new_content_str
 end
 
+function toggle_matte(cInfo, id_float_value, matte_selection_str)
+    -- gets the matte name for given id float value and toggles it to add/remove the matte selection string if necessary
+    
+    -- get matte name of id float value
+    local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
+    if not matte_name then return end
+
+    -- create an updated version of the matte list str
+    local new_matte_list = update_matte_list(cInfo, matte_name, false, true, matte_selection_str)
+    if new_matte_list ~= nil then
+        TextMatteList:SetSource(Text(new_matte_list), 0, 0)
+    end
+end
+
 function add_matte(cInfo, id_float_value, matte_selection_str)
     -- gets the matte name for given id float value and adds it to the matte selection string if necessary
     
@@ -326,21 +365,21 @@ function add_matte(cInfo, id_float_value, matte_selection_str)
     if not matte_name then return end
 
     -- create an updated version of the matte list str
-    local new_matte_list = update_matte_list(cInfo, matte_name, false, matte_selection_str)
+    local new_matte_list = update_matte_list(cInfo, matte_name, false, false, matte_selection_str)
     if new_matte_list ~= nil then
         TextMatteList:SetSource(Text(new_matte_list), 0, 0)
     end
 end
 
 function remove_matte(cInfo, id_float_value, matte_selection_str)
-    -- gets the matte name for given id float value and removes it to the matte selection string if necessary
+    -- gets the matte name for given id float value and removes it from the matte selection string if necessary
 
     -- get matte name of id float value
     local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
     if not matte_name then return end
 
     -- create an updated version of the matte list str
-    local new_matte_list = update_matte_list(cInfo, matte_name, true, matte_selection_str)
+    local new_matte_list = update_matte_list(cInfo, matte_name, true, false, matte_selection_str)
     if new_matte_list ~= nil then
         TextMatteList:SetSource(Text(new_matte_list), 0, 0)
     end
@@ -441,12 +480,18 @@ function Process(req)
     -- remove mattes callback
     local add_triggered = CallbackBtnAdd:GetValue(req).Value
     local remove_triggered = CallbackBtnRemove:GetValue(req).Value
+    local toggle_triggered = CallbackBtnToggle:GetValue(req).Value
     local matte_selection_str = get_matte_list_input()
-    if add_triggered == 1 or remove_triggered == 1 then
+    if add_triggered == 1 or remove_triggered == 1 or toggle_triggered == 1 then
         -- get the id float value from the pixel at locator coordinates
         local screen_pos = Locator:GetSource(0)
         local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, crypto_images, input_image)
 
+        if toggle_triggered == 1 then
+            toggle_matte(cInfo, id_float_value, matte_selection_str)
+            -- reset the callback
+            CallbackBtnToggle:SetSource(Number(0), 0, 0)
+        end
         if add_triggered == 1 then
             add_matte(cInfo, id_float_value, matte_selection_str)
             -- reset the callback
@@ -490,6 +535,8 @@ function NotifyChanged(inp, param, time)
             CallbackBtnAdd:SetSource(Number(1), 0, 0)
         elseif inp == BtnRemove then
             CallbackBtnRemove:SetSource(Number(1), 0, 0)
+        elseif inp == BtnToggle then
+            CallbackBtnToggle:SetSource(Number(1), 0, 0)
         elseif inp == BtnClear then
             -- clear matte list input
             TextMatteList:SetSource(Text(""), 0, 0)

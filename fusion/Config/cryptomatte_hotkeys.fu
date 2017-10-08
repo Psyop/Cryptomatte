@@ -1,0 +1,41 @@
+--[[--
+# Cryptomatte for Fusion Hotkeys #
+
+## Overview ##
+
+This file is a Fusion 9.0.1+ based hotkey file that adds an entry for running the Cryptomatte "Toggle" action.
+
+Pressing the "Shift + A" hotkey in the Fusion viewer window will toggle the active Cryptomatte "Matte Locator" selection state to switch between the "Add" and "Remove" modes.
+
+## Installation ##
+
+To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. Then restart Fusion for the new hotkey entry to become active.
+
+--]]--
+
+
+{
+    Action {
+        ID = "CryptomatteToggle",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Toggle",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    if obj:Comp().ActiveTool then
+                        if obj:Comp().ActiveTool:GetID() == 'Fuse.Cryptomatte' then
+                            print('[' .. obj:Comp().ActiveTool.Name .. '] Toggle')
+                            obj:Comp().ActiveTool.Toggle = 1
+                        end
+                    end
+                ]=],
+            },
+        },
+    },
+
+    Hotkeys {
+        Target = "GLView",
+        
+        SHIFT_A = "CryptomatteToggle{}",
+    },
+}
