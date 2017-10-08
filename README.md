@@ -38,7 +38,7 @@ Encoders:
 Decoders:
 
 * Nuke 7+, by Jonah Friedman, Andy Jones. In this repo.
-* Fusion: by Cédric Duriau and Kristof Indeherberge at Grid. In this repo.
+* Fusion: by C&eacute;dric Duriau and Kristof Indeherberge at Grid. In this repo.
 
 ## Acknowledgements 
 
@@ -49,16 +49,21 @@ Decoders:
 * Solid Angle
 * All the members of the Cryptomatte Committee
 * Benoit Leveau
-* Cédric Duriau
+* C&eacute;dric Duriau
 * Kristof Indeherberge
 * Vladimir Koylazov
 * Peter Loveday
 
 ## Release Notes
 
+1.2.0 (Beta 7):
+
+* Fusion
+  * Added a new Matte "Toggle" button to quickly invert the state of a matte entry in the "Matte List" field
+
 1.2.0 (Beta 6):
 
-This a major upgrade to the Fusion plugin, by Cédric Duriau. 
+This a major upgrade to the Fusion plugin, by C&eacute;dric Duriau. 
 
 * Fusion - Minimum Fusion version is now 9.0.1. 
   * Redesigned around new Fusion 9.0.1 features
@@ -136,12 +141,12 @@ This a major upgrade to the Fusion plugin, by Cédric Duriau.
 
 1.1.3:
 
-* Adds beta version of Fusion support, also by Cédric Duriau and Kristof Indeherberge at Grid. 
+* Adds beta version of Fusion support, also by C&eacute;dric Duriau and Kristof Indeherberge at Grid. 
   * Major tool connection workflow improvement. No longer requires multiple loaders to work, instead populates single loader channel slots when viewed. 
 
 1.1.2:
 
-* Adds alpha version of Fusion support, created by Cédric Duriau and Kristof Indeherberge at Grid. 
+* Adds alpha version of Fusion support, created by C&eacute;dric Duriau and Kristof Indeherberge at Grid. 
 
 1.1.1:
 
@@ -278,6 +283,35 @@ os.environ["CRYPTOMATTE_TESTING_SAMPLES"] = "" #  < specify sample_images dir he
 
 ## Fusion Installation
 
-1. Download the entire Cryptomatte GitHub repository using the green “Clone or download” button. Select “Download Zip” and then extract the contents.
-2. Locate your Fusion installation folder, create a subfolder called “lua” and put the three lua scripts (cryptomatte_utilities.lua, lmurmurhash3.lua and struct.lua) into that folder.
-3. Copy the fusion/cryptomatte.fuse file into the "Fuses" subfolder in the Fusion installation folder (or another directory in Fusion's Path Map for Fuses). 
+1. Download the entire Cryptomatte GitHub repository using the green "Clone or download" button. Select "Download Zip" and then extract the contents.
+2. Locate your Fusion installation folder, create a subfolder called "lua" and put the three "fusion/Lua Module/" based scripts (cryptomatte_utilities.lua, lmurmurhash3.lua and struct.lua) into that folder. The Lua modules can also be added to a folder that is listed in your LUA_PATH based environment variable.
+3. Copy the fusion/Fuses/cryptomatte.fuse file into the "Fuses" subfolder in the Fusion installation folder, or place it in the Fusion user preferences based "Fuses:/" PathMap directory.
+4. Copy the fusion/Config/cryptomatte_hotkeys.fu file into the Fusion user preferences based "Config:/" PathMap directory.
+
+### Fusion Usage:
+
+![Cryptomatte for Fusion](/docs/fusionScreenshot.png)
+
+The Cryptomatte Fuse works in Fusion (Free) and Fusion Studio. The Fuse allows you to create matte selections using a Cryptomatte "Matte Locator" control that is positioned using the Fusion Viewer window.
+
+To get started:
+
+1. Add a Cryptomatte exr file to your composite, such as the sample images, using a Loader node. 
+2. Select it and use the Select Tool window (Shift + Spacebar) to add a new Cryptomatte node to your composite.
+3. Select the Cryptomatte node in the Flow area and display the output in a Viewer window.
+4. Position the Cryptomatte "Matte Locator" control in the Viewer window over an object in the frame. 
+5. Press the "Add" button in the Cryptomatte Tools view to add a new matte entry to the Matte List.
+
+### Cryptomatte Fuse
+
+![Cryptomatte for Fusion Tools View](/docs/fusionToolsView.png)
+
+### Troubleshooting
+
+#### Mixed Bit Depths in a Multi-Channel EXR
+
+You will need to force a Loader node's Depth setting to "float32" if are working with multi-channel EXR footage such as V-Ray 3.6 renderings that have mixed bit depths such as 16-bit half-float RGB imagery, and 32-bit float based Cryptomatte channels in the same EXR file.
+
+This adjustment is done by selecting a Loader node and displaying the Import tab. Clicking on the "float32" button will change the Fusion Viewer window based bit depth for the imagery to 32 bit float for all channels.
+
+
