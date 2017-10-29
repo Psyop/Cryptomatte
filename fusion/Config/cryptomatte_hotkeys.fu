@@ -1,0 +1,207 @@
+--[[--
+# Cryptomatte for Fusion Hotkeys #
+2017-10-20  
+
+## Overview ##
+
+The cryptomatte_hotkeys.fu file is used to add Fusion 9.0.1+ compatible hotkey bindings for Cryptomatte (https://github.com/Psyop/Cryptomatte).
+
+Pressing the "Shift + D" hotkey in the Fusion Viewer window will toggle the active Cryptomatte "Matte Locator" selection state to switch between the "Add" and "Remove" modes.
+
+There are commented out entries present in the hotkey file for Add, Clear, KeyableSurface, LayerMinus, LayerPlus, MatteOnly, Remove, and ViewMode. These hotkeys are commented out at the moment since the final hotkey bindings that will be used for the commands are still being work out by the Cryptomatte developers.
+
+## Installation ##
+
+To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. Then restart Fusion for the new hotkey entry to become active.
+
+## Hotkey File Credits ##
+
+Add, Clear, KeyableSurface, LayerMinus, LayerPlus, MatteOnly, Remove, and ViewMode hotkeys by Kristof Indeherberge  [xmnr0x23@gmail.com]
+Toggle hotkey by: Andrew Hazelden [andrew@andrewhazelden.com]
+
+--]]--
+
+
+{
+    Action {
+        ID = "CryptomatteAdd",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Add",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    if obj:Comp().ActiveTool then
+                        print('[' .. obj:Comp().ActiveTool.Name .. '] Add')
+                        if obj:Comp().ActiveTool:GetID() == 'Fuse.Cryptomatte' then
+                            obj:Comp().ActiveTool.Add = 1
+                        end
+                    end
+                ]=],
+            },
+        },
+    },
+    Action {
+        ID = "CryptomatteClear",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Clear",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    if obj:Comp().ActiveTool then
+                        print('[' .. obj:Comp().ActiveTool.Name .. '] Clear')
+                        if obj:Comp().ActiveTool:GetID() == 'Fuse.Cryptomatte' then
+                            obj:Comp().ActiveTool.Clear = 1
+                        end
+                    end
+                ]=],
+            },
+        },
+    },
+    Action {
+        ID = "CryptomatteKeyableSurface",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Keyable Surface",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    if obj:Comp().ActiveTool then
+                        print('[' .. obj:Comp().ActiveTool.Name .. '] Keyable Surface')
+                        if obj:Comp().ActiveTool:GetID() == 'Fuse.Cryptomatte' then
+                            obj:Comp().ActiveTool.KeyableSurface = 1 - obj:Comp().ActiveTool.KeyableSurface[fu.TIME_UNDEFINED]
+                        end
+                    end
+                ]=],
+            },
+        },
+    },
+    Action {
+        ID = "CryptomatteLayerMinus",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Layer Minus",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    if obj:Comp().ActiveTool then
+                        print('[' .. obj:Comp().ActiveTool.Name .. '] Layer Minus')
+                        if obj:Comp().ActiveTool:GetID() == 'Fuse.Cryptomatte' then
+                            if obj:Comp().ActiveTool.CryptoLayerSlider[fu.TIME_UNDEFINED] ~= 1 then
+                                obj:Comp().ActiveTool.CryptoLayerSlider = obj:Comp().ActiveTool.CryptoLayerSlider[fu.TIME_UNDEFINED] - 1
+                            else
+                                print('[' .. obj:Comp().ActiveTool.Name ..'] Reached First Layer')
+                            end
+                        end
+                    end
+                ]=],
+            },
+        },
+    },
+    Action {
+        ID = "CryptomatteLayerPlus",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Layer Plus",
+        Targets = {
+                Composition = {
+                Execute = _Lua [=[
+                    if obj:Comp().ActiveTool then
+                        print('[' .. obj:Comp().ActiveTool.Name .. '] Layer Plus')
+                        if obj:Comp().ActiveTool:GetID() == 'Fuse.Cryptomatte' then
+                            if obj:Comp().ActiveTool.CryptoLayerSlider[fu.TIME_UNDEFINED] ~= obj:Comp().ActiveTool.CryptoLayerSlider:GetAttrs("INPN_MaxScale") then
+                                obj:Comp().ActiveTool.CryptoLayerSlider = obj:Comp().ActiveTool.CryptoLayerSlider[fu.TIME_UNDEFINED] + 1
+                            else
+                                print('[' .. obj:Comp().ActiveTool.Name .. '] Reached Last Layer')
+                            end
+                        end
+                    end
+                ]=],
+            },
+        },
+    },
+    Action {
+        ID = "CryptomatteMatteOnly",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Matte Only",
+        Targets = {
+                Composition = {
+                Execute = _Lua [=[
+                    if obj:Comp().ActiveTool then
+                        print('[' .. obj:Comp().ActiveTool.Name .. '] Matte Only')
+                        if obj:Comp().ActiveTool:GetID() == 'Fuse.Cryptomatte' then
+                            obj:Comp().ActiveTool.MatteOnly = 1 - obj:Comp().ActiveTool.MatteOnly[fu.TIME_UNDEFINED]
+                        end
+                    end
+                ]=],
+            },
+        },
+    },
+    Action {
+        ID = "CryptomatteRemove",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Remove",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    if obj:Comp().ActiveTool then
+                        print('[' .. obj:Comp().ActiveTool.Name .. '] Remove')
+                        if obj:Comp().ActiveTool:GetID() == 'Fuse.Cryptomatte' then
+                            obj:Comp().ActiveTool.Remove = 1
+                        end
+                    end
+                ]=],
+            },
+        },
+    },
+    Action {
+        ID = "CryptomatteToggle",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Toggle",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    if obj:Comp().ActiveTool then
+                        if obj:Comp().ActiveTool:GetID() == 'Fuse.Cryptomatte' then
+                            print('[' .. obj:Comp().ActiveTool.Name .. '] Toggle')
+                            obj:Comp().ActiveTool.Toggle = 1
+                        end
+                    end
+                ]=],
+            },
+        },
+    },
+    Action {
+        ID = "CryptomatteViewMode",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte View Mode",
+        Targets = {
+                Composition = {
+                Execute = _Lua [=[
+                    if obj:Comp().ActiveTool then
+                        print('[' .. obj:Comp().ActiveTool.Name .. '] View Mode')
+                        if obj:Comp().ActiveTool:GetID() == 'Fuse.Cryptomatte' then
+                            if obj:Comp().ActiveTool.ViewMode[fu.TIME_UNDEFINED] ~= 2 then
+                                obj:Comp().ActiveTool.ViewMode = obj:Comp().ActiveTool.ViewMode[fu.TIME_UNDEFINED] + 1
+                            else
+                                obj:Comp().ActiveTool.ViewMode = 0
+                            end
+                        end
+                    end
+                ]=],
+            },
+        },
+    },
+    Hotkeys {
+        Target = "GLView",
+        
+        -- SHIFT_A = "CryptomatteAdd{}",
+        -- SHIFT_C = "CryptomatteClear{}",
+        -- SHIFT_K = "CryptomatteKeyableSurface{}",
+        -- SHIFT_KEYPAD_MINUS = "CryptomatteLayerMinus{}",
+        -- SHIFT_MINUS = "CryptomatteLayerMinus{}",
+        -- SHIFT_KEYPAD_PLUS = "CryptomatteLayerPlus{}",
+        -- SHIFT_PLUS = "CryptomatteLayerPlus{}",
+        -- SHIFT_M = "CryptomatteMatteOnly{}",
+        -- SHIFT_R = "CryptomatteRemove{}",
+        SHIFT_D = "CryptomatteToggle{}",
+        -- SHIFT_V = "CryptomatteViewMode{}",
+        -- SHIFT_CONTROL_K = "CryptomatteViewMode{}",
+    },
+}
