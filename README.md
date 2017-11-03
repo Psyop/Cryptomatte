@@ -289,9 +289,12 @@ os.environ["CRYPTOMATTE_TESTING_SAMPLES"] = "" #  < specify sample_images dir he
 ## Fusion Installation
 
 1. Download a copy of the Cryptomatte GitHub repository. You can do this by navigating to the Cryptomatte Project's [Releases page](https://github.com/Psyop/Cryptomatte/releases) and then clicking on the "Zip" icon. ![Zip Icon](/docs/github-zip.png)
-2.  After you unzip the latest cryptomatte release, copy the three "fusion/Lua Modules" folder based scripts (`cryptomatte_utilities.lua`, `lmurmurhash3.lua`, and `struct.lua`) into the standard Fusion Lua "package.path" location of (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\lua\`, (Linux) `/usr/local/share/lua/5.1/`, or (Mac) `/usr/local/share/lua/5.1/`. The Lua Modules based scripts can also be added to a folder that is listed in your `LUA_PATH` based environment variable.
-3. Copy the `fusion/Fuses/cryptomatte.fuse` file into the Fusion user preferences based `Fuses:/` PathMap directory, or the "Fuses" subfolder in the Fusion installation folder (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\Fuses\`, (Linux) `/opt/BlackmagicDesign/Fusion9/Fuses/`, (Mac) `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Fuses/`.
-4. Copy the `fusion/Config/cryptomatte_hotkeys.fu` file into the Fusion user preferences based `Config:/` PathMap directory, or the "Config" subfolder in the Fusion installation folder (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\Config\`, (Linux) `/opt/BlackmagicDesign/Fusion9/Config/`, (Mac) `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Config/`.
+
+2.  After you unzip the latest cryptomatte release, copy the `fusion/cryptomatte_utilities.lua` module into the standard Fusion Lua "package.path" location of (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\lua`, (Linux) `/usr/local/share/lua/5.1/`, or (Mac) `/usr/local/share/lua/5.1/`. The Lua Modules based scripts can also be added to a folder that is listed in your `LUA_PATH` based environment variable.
+
+3. Copy the `fusion/cryptomatte.fuse` file into the Fusion user preferences based `Fuses:/` PathMap directory, or the "Fuses" subfolder in the Fusion installation folder (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\Fuses\`, (Linux) `/opt/BlackmagicDesign/Fusion9/Fuses/`, (Mac) `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Fuses/`.
+
+4. Copy the `fusion/cryptomatte_hotkeys.fu` file into the Fusion user preferences based `Config:/` PathMap directory, or the "Config" subfolder in the Fusion installation folder (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\Config\`, (Linux) `/opt/BlackmagicDesign/Fusion9/Config/`, (Mac) `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Config/`.
 
 ### Fusion Usage:
 
@@ -300,7 +303,6 @@ os.environ["CRYPTOMATTE_TESTING_SAMPLES"] = "" #  < specify sample_images dir he
 The Cryptomatte Fuse works in Fusion (Free) and Fusion Studio v9.0.1+. The Fuse allows you to create matte selections using a Cryptomatte "Matte Locator" control that is positioned using transfrom control the Fusion Viewer window.
 
 To get started:
-
 1. Add a Cryptomatte exr file to your composite, such as the sample images, using a Loader node. 
 2. Select the Loader node and use the Select Tool window (Shift + Spacebar) to add a new Cryptomatte node to your composite.
 3. Select the Cryptomatte node in the Flow area and display the output in a Viewer window.
@@ -310,12 +312,3 @@ To get started:
 ### Cryptomatte Fuse
 
 ![Cryptomatte for Fusion Tools View](/docs/fusionToolsView.png)
-
-### Troubleshooting
-
-#### Mixed Bit Depths in a Multi-Channel EXR
-
-With Cryptomatte v1.2.0 (Beta 6) you need to force a Loader node's Depth setting to "float32" if are working with multi-channel EXR footage like V-Ray 3.6 based renderings that have mixed bit depths such as 16-bit half-float RGB imagery, and 32-bit float based Cryptomatte channels in the same EXR file.
-
-This adjustment is done by selecting a Loader node and displaying the Import tab. Clicking on the "float32" button will change the Fusion Viewer window based bit depth for the imagery to 32 bit float for all channels.
-

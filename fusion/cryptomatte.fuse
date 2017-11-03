@@ -3,9 +3,7 @@ Requires   : Fusion 9.0.1+
 Optional   : cjson
 Created by : Cédric Duriau         [duriau.cedric@live.be]
              Kristof Indeherberge  [xmnr0x23@gmail.com]
-
-Toggle Button by: Andrew Hazelden [andrew@andrewhazelden.com]
-
+             Andrew Hazelden       [andrew@andrewhazelden.com]
 --]]
 
 -- ===========================================================================
@@ -20,7 +18,6 @@ FUSE_NAME = "Cryptomatte"
 SEPARATOR = string.rep("_", 9999)
 SEPARATOR_INDEX = 0
 SHOW_CALLBACKS = false
-REGEX_MATTE_LIST = "([^,]+),?%s*"
 
 VIEW_MODE_EDGES = "Edges"
 VIEW_MODE_COLORS = "Colors"
@@ -277,32 +274,10 @@ function set_slider_attributes(slider, min, max)
                       INP_MaxScale = max})
 end
 
-function convert_str_to_array(str, pattern)
-    -- convert matte selection list in str format to set
-    local matte_names = {}
-    for matte in string.gmatch(str, pattern) do
-        -- strip the leading and trailing double quote
-        matte = string.sub(matte, 2, matte:len() - 1)
-        table.insert(matte_names, matte)
-    end
-    return matte_names
-end
-
-function get_mattes_from_selection(cInfo, matte_selection_str)
-    -- returns the a set of mattes from the matte list input string
-    local mattes = {}
-    local matte_name_array = convert_str_to_array(matte_selection_str, REGEX_MATTE_LIST)
-    -- convert array to set
-    for _, matte in ipairs(matte_name_array) do
-        mattes[matte] = true
-    end
-    return mattes
-end
-
 function update_matte_list(cInfo, matte_name, remove, toggle, matte_selection_str)
     -- updates the matte list line edit text with given data
     -- get valid matte names cross matches from manifest
-    local matte_set = get_mattes_from_selection(cInfo, matte_selection_str)
+    local matte_set = cryptoutils:get_mattes_from_string(cInfo, matte_selection_str)
 
     -- check if the matte to add/remove is present in the set
     local matte_present = matte_set[matte_name]
@@ -509,7 +484,7 @@ function Process(req)
     local output_image = apply_view_mode(view_mode, input_image, crypto_images)
 
     -- create matte
-    local matte_names = get_mattes_from_selection(cInfo, matte_selection_str)
+    local matte_names = cryptoutils:get_mattes_from_string(cInfo, matte_selection_str)
     local matte = cryptoutils:create_matte_image(cInfo, matte_names, crypto_images, output_image)
 
     -- add matte
