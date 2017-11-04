@@ -1,9 +1,24 @@
 --[[
-Requires   : Fusion 9.0.1+
-Optional   : cjson
-Created by : Cédric Duriau         [duriau.cedric@live.be]
-             Kristof Indeherberge  [xmnr0x23@gmail.com]
-             Andrew Hazelden       [andrew@andrewhazelden.com]
+==============================================================================
+ Cryptomatte for Fusion - Fuse
+==============================================================================
+Cryptomatte : Version 1.2.0 Beta 7 (2017-11-04)
+Requires    : Fusion 9.0.1+
+Optional    : cjson
+Created by  : Cédric Duriau         [duriau.cedric@live.be]
+              Kristof Indeherberge  [xmnr0x23@gmail.com]
+              Andrew Hazelden       [andrew@andrewhazelden.com]
+
+==============================================================================
+ Installation
+==============================================================================
+Copy the `fusion/cryptomatte.fuse` file into the Fusion user preferences based `Fuses:/` PathMap directory, or the "Fuses" subfolder in the Fusion installation folder:
+
+(Windows) C:\Program Files\Blackmagic Design\Fusion 9\Fuses\`
+(Linux)   /opt/BlackmagicDesign/Fusion9/Fuses/`
+(Mac)     /Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Fuses/`
+
+Restart Fusion after the installation is complete.
 --]]
 
 -- ===========================================================================
@@ -24,7 +39,7 @@ VIEW_MODE_COLORS = "Colors"
 VIEW_MODE_NONE = "None"
 VIEW_MODES = {VIEW_MODE_EDGES, VIEW_MODE_COLORS, VIEW_MODE_NONE}
 
--- ================================ ===========================================
+-- ===========================================================================
 -- fuse
 -- ===========================================================================
 FuRegisterClass(FUSE_NAME, CT_Tool, {

@@ -1,15 +1,15 @@
 ![Cryptomatte Logo](/docs/header.png)
 
-Cryptomatte is a tool created at Psyop by Jonah Friedman and Andy Jones. It creates ID mattes automatically with support for motion blur, transparency, and depth of field, using organizational information already available at render time. This organizational information is usually names, object namespaces, and material names. 
+Cryptomatte is a tool created at Psyop by Jonah Friedman and Andy Jones. It creates ID mattes automatically with support for motion blur, transparency, and depth of field, using organizational information already available at render time. This organizational information is usually names, object namespaces, and material names.
 
 * Demo video: [https://vimeo.com/136954966](https://vimeo.com/136954966)
 * Poster: [https://github.com/Psyop/Cryptomatte/raw/master/specification/IDmattes_poster.pdf](https://github.com/Psyop/Cryptomatte/raw/master/specification/IDmattes_poster.pdf)
 
-The goal of releasing Cryptomatte is to turn it into an ecosystem around an open standard. Any developers who wish to make plugins are welcome and encouraged to create tools that inter-operate with the components we are providing. We hope to see a diverse ecosystem of renderers that can create Cryptomatte images and plugins for compositing applications to decode them. 
+The goal of releasing Cryptomatte is to turn it into an ecosystem around an open standard. Any developers who wish to make plugins are welcome and encouraged to create tools that inter-operate with the components we are providing. We hope to see a diverse ecosystem of renderers that can create Cryptomatte images and plugins for compositing applications to decode them.
 
 ## License
 
-Cryptomatte is licenced using the BSD 3-clause license. See [license.txt](license.txt). 
+Cryptomatte is licenced using the BSD 3-clause license. See [license.txt](license.txt).
 
 ## Repo Contents
 
@@ -60,13 +60,13 @@ Decoders:
 
 * Fusion
   * Added a new Matte "Toggle" button to quickly invert the state of a matte entry in the "Matte List" field
-  * Added a new "cryptomatte_hotkeys.fu" Fusion hotkey file. Pressing the "Shift + D" hotkey in the Fusion viewer window will toggle the active Cryptomatte "Matte Locator" selection state to switch between the "Add" and "Remove" modes.
+  * Added a new "cryptomatte_hotkeys.fu" Fusion hotkey file. Pressing the "Shift + D" hotkey in the Fusion viewer window will toggle the active Cryptomatte "Matte Locator" state between the "Add" and "Remove" selection modes.
 
 1.2.0 (Beta 6):
 
-This a major upgrade to the Fusion plugin, by C&eacute;dric Duriau. 
+This a major upgrade to the Fusion plugin, by C&eacute;dric Duriau.
 
-* Fusion - Minimum Fusion version is now 9.0.1. 
+* Fusion - Minimum Fusion version is now 9.0.1.
   * Redesigned around new Fusion 9.0.1 features
   * Fuse now loads EXRs directly via the EXRIO module
   * For older versions, please use an older release (see GitHub releases)
@@ -108,12 +108,12 @@ This a major upgrade to the Fusion plugin, by C&eacute;dric Duriau.
 * Nuke - Bug fixes
   * Mixed selections of names and raw IDs now work correctly for all cases
   * Encryptomatte retains its layer selection properly
-* Nuke - Added unit tests and integration tests. 
+* Nuke - Added unit tests and integration tests.
 
 1.2.0 (Beta 4):
 
 * Fusion - Support for names containing special characters in selection lists
-* Fusion - Known limitation: Commas in names are not yet supported. 
+* Fusion - Known limitation: Commas in names are not yet supported.
 
 1.2.0 (Beta 3):
 
@@ -123,18 +123,18 @@ This a major upgrade to the Fusion plugin, by C&eacute;dric Duriau.
 
 1.2.0 (Beta 2):
 
-* Removed dependency of yaml
+* Removed dependency of YAML
 * Added some testing utility functions to cryptomatte_utilities.py
 
 1.2.0 (Beta!):
 
-* Changed specification regarding sidecar manifests, such that they are always sidecars with relative paths. 
+* Changed specification regarding sidecar manifests, such that they are always sidecars with relative paths.
 * Supported sidecar files in Nuke plugin
 * Support for UTF-8 Characters in Nuke plugin and specification
 * Encryptomatte for modifying or creating Cryptomattes in Nuke
-* Support names containing spaces, commas, and angle brackets. 
-  * Switched matte lists to be yaml-style. This mainly effects names containing spaces, commas, or quotes. 
-  * Names with special character (or names that look like numbers) will be enclosed in quotes. 
+* Support names containing spaces, commas, and angle brackets.
+  * Switched matte lists to be YAML-style. This mainly effects names containing spaces, commas, or quotes.
+  * Names with special character (or names that look like numbers) will be enclosed in quotes.
 
 1.1.4: 
 
@@ -142,12 +142,12 @@ This a major upgrade to the Fusion plugin, by C&eacute;dric Duriau.
 
 1.1.3:
 
-* Adds beta version of Fusion support, also by C&eacute;dric Duriau and Kristof Indeherberge at Grid. 
+* Adds beta version of Fusion support, also by C&eacute;dric Duriau and Kristof Indeherberge at Grid.
   * Major tool connection workflow improvement. No longer requires multiple loaders to work, instead populates single loader channel slots when viewed. 
 
 1.1.2:
 
-* Adds alpha version of Fusion support, created by C&eacute;dric Duriau and Kristof Indeherberge at Grid. 
+* Adds alpha version of Fusion support, created by C&eacute;dric Duriau and Kristof Indeherberge at Grid.
 
 1.1.1:
 
@@ -189,7 +189,8 @@ This a major upgrade to the Fusion plugin, by C&eacute;dric Duriau.
 3. If the destination folder already contains an "init.py" and/or "menu.py" file, open those files in a text editor, and append the contents of the Cryptomatte "init.py" and "menu.py" to those files.
 4. After launching Nuke, if you've installed the plugin correctly you should be able to tab-create a Cryptomatte gizmo.
 
-For more information on installing Nuke plugins, see:  
+For more information on installing Nuke plugins, see:
+
 [https://www.thefoundry.co.uk/products/nuke/developers/70/pythondevguide/installing_plugins.html](https://www.thefoundry.co.uk/products/nuke/developers/70/pythondevguide/installing_plugins.html)
 
 To test the functionality, you can try loading one of the sample images supplied. Load the sample images into Nuke, select one of them, and tab-create the gizmo. Viewing the output of the gizmo should show you a preview of the available mattes. Use the color knob, "Picker Add" to eye-dropper colors on the image to create your mattes.
@@ -200,10 +201,10 @@ To test the functionality, you can try loading one of the sample images supplied
 
 To get started: 
 
-1. Load a Cryptomatte exr file, such as the sample images, using a Read node. 
-2. Select it, and tab create a Cryptomatte gizmo. 
-3. View the output of the gizmo. You should see a preview image (pictured). 
-4. Use the eyedropper with the 'Picker Add' knob to select objects. They should light up in RGB, and output the matte in Alpha. With the eyedropper, make sure you use control-click and not alt-control click. 
+1. Load a Cryptomatte exr file, such as the sample images, using a Read node.
+2. Select it, and tab create a Cryptomatte gizmo.
+3. View the output of the gizmo. You should see a preview image (pictured).
+4. Use the eyedropper with the 'Picker Add' knob to select objects. They should light up in RGB, and output the matte in Alpha. With the eyedropper, make sure you use control-click and not alt-control click.
 
 ### Cryptomatte Gizmo
 
@@ -211,57 +212,57 @@ To get started:
 
 Psyop Cryptomatte Tab:
 
-* Picker Add: This adds "keyed" objects to the matte selection, meant to be used with Nuke's eyedropper. 
-* Picker Remove: This removes "keyed" objects from the matte selection, meant to be used with Nuke's eyedropper. 
-* Preview: Controls whether or not previews of the matte boundaries are drawn. A pulldown controls how they are drawn. 
+* Picker Add: This adds "keyed" objects to the matte selection, meant to be used with Nuke's eyedropper.
+* Picker Remove: This removes "keyed" objects from the matte selection, meant to be used with Nuke's eyedropper.
+* Preview: Controls whether or not previews of the matte boundaries are drawn. A pulldown controls how they are drawn.
   * "Edges" allows viewing input RGBA with borders around keyable regions
   * "Colors" is random colors per matte
   * "None" allows viewing of input RGBA without borders, but with a visible highlight on selected areas
 * Matte Only: Also write the matte to RGBA channels
-* Single Selection: Changes the gizmo behavior so that only one object may be selected at a time. 
-* Remove Channels: Removes the Cryptomatte channels so that downstream of the gizmo, the additional channels are not present. 
+* Single Selection: Changes the gizmo behavior so that only one object may be selected at a time.
+* Remove Channels: Removes the Cryptomatte channels so that downstream of the gizmo, the additional channels are not present.
 * Matte Output: Which channel the extracted matte is written to.
 * Unpremultiply: Unpremults the extracted matte against by the alpha.
-* Matte List: A list of names to extract mattes from. This list may be modified in text form or using the Picker color knobs. 
-* Clear: Clears the matte list. 
-* Force Update: The python scripts keep Cryptomatte gizmos updated when inputs or relevant knobs are changed. If there's a case that it does not update, this button will manually update it. 
+* Matte List: A list of names to extract mattes from. This list may be modified in text form or using the Picker color knobs.
+* Clear: Clears the matte list.
+* Force Update: The python scripts keep Cryptomatte gizmos updated when inputs or relevant knobs are changed. If there's a case that it does not update, this button will manually update it.
 * Stop Auto Update: Stops the automatic updating described above.
-* Layer Selection: If there are multiple Cryptomattes, this is how you select the layer. This is filled in automatically, but may be changed manually. 
-* Lock Layer Selection: Stops the automatic updating of layer selection, which occurs if the specified selection is not available. 
-* Expression: Internally the gizmo generates an expression to extract the matte. The expression is saved here. 
+* Layer Selection: If there are multiple Cryptomattes, this is how you select the layer. This is filled in automatically, but may be changed manually.
+* Lock Layer Selection: Stops the automatic updating of layer selection, which occurs if the specified selection is not available.
+* Expression: Internally the gizmo generates an expression to extract the matte. The expression is saved here.
 
 Advanced Tab:
 
-* Decryptomatte: Replaces gizmo with equivelant nodes
-* Unload Manifest: Generates a keyer for every name in the manifest. 
-* Force Update All Gizmos in Script: Same as "Force Update", but runs the force update functionality on all Gizmos in the script. 
+* Decryptomatte: Replaces gizmo with equivalent nodes
+* Unload Manifest: Generates a keyer for every name in the manifest.
+* Force Update All Gizmos in Script: Same as "Force Update", but runs the force update functionality on all Gizmos in the script.
 
 ### Encryptomatte Gizmo
 
 ![Encryptomatte Gizmo Properties in Nuke](/docs/encryptomatteProperties.png)
 
-Encryptomatte is a gizmo that can modify existing Cryptomattes, or start new ones. One Encryptomatte node adds one matte to a Cryptomatte. 
+Encryptomatte is a gizmo that can modify existing Cryptomattes, or start new ones. One Encryptomatte node adds one matte to a Cryptomatte.
 
 To get started:
 
 1. Load a Cryptomatte with a read node. 
 2. Select it, and tab-create an Encryptomatte. 
-3. Feed in a matte that you would like to add to that Cryptomatte. You can put it over or under all other mattes. 
-4. Write it out as a 32 bit EXR with all metadata, or attach a Cryptomatte node to it to test the mattes. 
+3. Feed in a matte that you would like to add to that Cryptomatte. You can put it over or under all other mattes.
+4. Write it out as a 32 bit EXR with all metadata, or attach a Cryptomatte node to it to test the mattes.
 
 Encryptomatte tab:
 
 * Matte Name: The name your new matte will have in the Cryptomatte
 * Merge Operation: Where in the stack of mattes your matte will be added, over or under the rest
 * Layer selection: Same as Cryptomatte, see above.
-* Force Update: Same as Cryptomatte, see above. 
-* Layers: If starting a fresh Cryptomatte, sets how many Cryptomatte layers are to be created. If starting from scratch, fill in Layer Selection manually. 
-* Setup Layers: If on, starts a fresh Cryptomatte. Otherwise, modifies one from the input. 
+* Force Update: Same as Cryptomatte, see above.
+* Layers: If starting a fresh Cryptomatte, sets how many Cryptomatte layers are to be created. If starting from scratch, fill in Layer Selection manually.
+* Setup Layers: If on, starts a fresh Cryptomatte. Otherwise, modifies one from the input.
 
 ### Menu options
 
 * Cryptomatte: Creates a Cryptomatte gizmo
-* Decryptomatte All: Replaces all Cryptomatte gizmos with other nodes which are functionally equivalent. This is useful for sending nuke scripts to other users who do not have the Cryptomatte plugins installed. 
+* Decryptomatte All: Replaces all Cryptomatte gizmos with other nodes which are functionally equivalent. This is useful for sending nuke scripts to other users who do not have the Cryptomatte plugins installed.
 * Decryptomatte Selected: Same as "decryptomatte all", except only applies to selected nodes. 
 * Encryptomatte: Creates an Encryptomatte gizmo
 
@@ -271,7 +272,7 @@ For common issues, see [troubleshooting.](troubleshooting.md)
 
 ### Testing (developers)
 
-Nuke Cryptomatte has a suite of unit and integration tests. These cover hashing, CSV resolution, operations of the Cryptomatte and Encryptomatte gizmos, and decryptomatte. Use of these is strongly encouraged if working with the Cryptomatte code.  
+Nuke Cryptomatte has a suite of unit and integration tests. These cover hashing, CSV resolution, operations of the Cryptomatte and Encryptomatte gizmos, and Decryptomatte. Use of these is strongly encouraged if working with the Cryptomatte code.
 
 ```
 # To run tests in an ad-hoc style in a Nuke session, in the script editor: 
@@ -290,24 +291,25 @@ os.environ["CRYPTOMATTE_TESTING_SAMPLES"] = "" #  < specify sample_images dir he
 
 1. Download a copy of the Cryptomatte GitHub repository. You can do this by navigating to the Cryptomatte Project's [Releases page](https://github.com/Psyop/Cryptomatte/releases) and then clicking on the "Zip" icon. ![Zip Icon](/docs/github-zip.png)
 
-2.  After you unzip the latest cryptomatte release, copy the `fusion/cryptomatte_utilities.lua` module into the standard Fusion Lua "package.path" location of (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\lua`, (Linux) `/usr/local/share/lua/5.1/`, or (Mac) `/usr/local/share/lua/5.1/`. The Lua Modules based scripts can also be added to a folder that is listed in your `LUA_PATH` based environment variable.
+2.  After you unzip the latest cryptomatte release, copy the `fusion/cryptomatte_utilities.lua` module into the standard Fusion Lua "package.path" location of (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\lua`, (Linux) `/usr/local/share/lua/5.1/`, or (Mac) `/usr/local/share/lua/5.1/`. You may have to create this folder if it does not exist yet. The Lua Modules based script can also be added to a folder that is listed in your `LUA_PATH` based environment variable.
 
 3. Copy the `fusion/cryptomatte.fuse` file into the Fusion user preferences based `Fuses:/` PathMap directory, or the "Fuses" subfolder in the Fusion installation folder (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\Fuses\`, (Linux) `/opt/BlackmagicDesign/Fusion9/Fuses/`, (Mac) `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Fuses/`.
 
-4. Copy the `fusion/cryptomatte_hotkeys.fu` file into the Fusion user preferences based `Config:/` PathMap directory, or the "Config" subfolder in the Fusion installation folder (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\Config\`, (Linux) `/opt/BlackmagicDesign/Fusion9/Config/`, (Mac) `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Config/`.
+4. Copy the `fusion/cryptomatte_hotkeys.fu` file into the Fusion user preferences based `Config:/` PathMap directory, or the "Config" subfolder in the Fusion installation folder (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\Config\`, (Linux) `/opt/BlackmagicDesign/Fusion9/Config/`, (Mac) `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Config/`. You may have to create this folder if it does not exist yet.
 
 ### Fusion Usage:
 
 ![Cryptomatte for Fusion](/docs/fusionScreenshot.png)
 
-The Cryptomatte Fuse works in Fusion (Free) and Fusion Studio v9.0.1+. The Fuse allows you to create matte selections using a Cryptomatte "Matte Locator" control that is positioned using transfrom control the Fusion Viewer window.
+The Cryptomatte Fuse works in Fusion (Free) and Fusion Studio v9.0.1+. The Fuse allows you to create matte selections using a Cryptomatte "Matte Locator" control that is positioned using transform control the Fusion Viewer window.
 
 To get started:
-1. Add a Cryptomatte exr file to your composite, such as the sample images, using a Loader node. 
+
+1. Add a Cryptomatte exr file to your composite, such as the sample images, using a Loader node.
 2. Select the Loader node and use the Select Tool window (Shift + Spacebar) to add a new Cryptomatte node to your composite.
 3. Select the Cryptomatte node in the Flow area and display the output in a Viewer window.
-4. Position the Cryptomatte "Matte Locator" control in the Viewer window over an object in the frame. 
-5. Press the "Add" button in the Cryptomatte Tools view to add a new matte entry to the Matte List. Alternatively, you could press the "Shift + D" hotkey in the Fusion Viewer window to toggle the active Cryptomatte "Matte Locator" selection state between the "Add" and "Remove" modes.
+4. Position the Cryptomatte "Matte Locator" control in the Viewer window over an object in the frame.
+5. Press the "Add" button in the Cryptomatte Tools view to add a new matte entry to the Matte List. Alternatively, you could press the "Shift + D" hotkey in the Fusion Viewer window to toggle the active Cryptomatte "Matte Locator" state between the "Add" and "Remove" selection modes.
 
 ### Cryptomatte Fuse
 

@@ -1,21 +1,35 @@
 --[[
-Requires   : Fusion 9.0.1+
-Optional   : cjson
-Created by : Cédric Duriau         [duriau.cedric@live.be]
-             Kristof Indeherberge  [xmnr0x23@gmail.com]
-             Andrew Hazelden       [andrew@andrewhazelden.com]
---]]
+==============================================================================
+ Cryptomatte for Fusion - Hotkeys
+==============================================================================
+Cryptomatte : Version 1.2.0 Beta 7 (2017-11-04)
+Requires    : Fusion 9.0.1+
+Optional    : cjson
+Created by  : Cédric Duriau         [duriau.cedric@live.be]
+              Kristof Indeherberge  [xmnr0x23@gmail.com]
+              Andrew Hazelden       [andrew@andrewhazelden.com]
 
---[[
-# Cryptomatte for Fusion Hotkeys #
-
-## Overview ##
+==============================================================================
+ Overview
+==============================================================================
 The cryptomatte_hotkeys.fu file is used to add Fusion 9.0.1+ compatible hotkey bindings for Cryptomatte (https://github.com/Psyop/Cryptomatte).
+
 Pressing the "Shift + D" hotkey in the Fusion Viewer window will toggle the active Cryptomatte "Matte Locator" selection state to switch between the "Add" and "Remove" modes.
+
 There are commented out entries present in the hotkey file for Add, Clear, KeyableSurface, LayerMinus, LayerPlus, MatteOnly, Remove, and ViewMode. These hotkeys are commented out at the moment since the final hotkey bindings that will be used for the commands are still being work out by the Cryptomatte developers.
 
-## Installation ##
-To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. Then restart Fusion for the new hotkey entry to become active.
+==============================================================================
+ Installation
+==============================================================================
+Copy the `fusion/cryptomatte_hotkeys.fu` file into the Fusion user preferences based `Config:/` PathMap directory, or the "Config" subfolder in the Fusion installation folder:
+
+(Windows) C:\Program Files\Blackmagic Design\Fusion 9\Config\
+(Linux)   /opt/BlackmagicDesign/Fusion9/Config/
+(Mac)     /Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Config/
+
+You may have to create this folder if it does not exist yet.
+
+Restart Fusion after the installation is complete.
 --]]
 
 {

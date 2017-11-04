@@ -1,9 +1,28 @@
 --[[
-Requires   : Fusion 9.0.1+
-Optional   : cjson
-Created by : Cédric Duriau         [duriau.cedric@live.be]
-             Kristof Indeherberge  [xmnr0x23@gmail.com]
-             Andrew Hazelden       [andrew@andrewhazelden.com]
+==============================================================================
+ Cryptomatte for Fusion - Lua Module
+==============================================================================
+Cryptomatte : Version 1.2.0 Beta 7 (2017-11-04)
+Requires    : Fusion 9.0.1+
+Optional    : cjson
+Created by  : Cédric Duriau         [duriau.cedric@live.be]
+              Kristof Indeherberge  [xmnr0x23@gmail.com]
+              Andrew Hazelden       [andrew@andrewhazelden.com]
+
+==============================================================================
+ Installation
+==============================================================================
+Copy the `fusion/cryptomatte_utilities.lua` module into the standard Fusion Lua "package.path" location of:
+
+(Windows) C:\Program Files\Blackmagic Design\Fusion 9\lua
+(Linux)   /usr/local/share/lua/5.1/
+(Mac)     /usr/local/share/lua/5.1/
+
+You may have to create this folder if it does not exist yet.
+
+Restart Fusion after the installation is complete.
+
+The Lua Modules based script can also be added to a folder that is listed in your `LUA_PATH` based environment variable.
 --]]
 
 -- module table
