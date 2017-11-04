@@ -1,9 +1,9 @@
-![](/docs/header.png)
+![Cryptomatte Logo](/docs/header.png)
 
 Cryptomatte is a tool created at Psyop by Jonah Friedman and Andy Jones. It creates ID mattes automatically with support for motion blur, transparency, and depth of field, using organizational information already available at render time. This organizational information is usually names, object namespaces, and material names. 
 
-* Demo video: https://vimeo.com/136954966
-* Poster: https://github.com/Psyop/Cryptomatte/raw/master/specification/IDmattes_poster.pdf
+* Demo video: [https://vimeo.com/136954966](https://vimeo.com/136954966)
+* Poster: [https://github.com/Psyop/Cryptomatte/raw/master/specification/IDmattes_poster.pdf](https://github.com/Psyop/Cryptomatte/raw/master/specification/IDmattes_poster.pdf)
 
 The goal of releasing Cryptomatte is to turn it into an ecosystem around an open standard. Any developers who wish to make plugins are welcome and encouraged to create tools that inter-operate with the components we are providing. We hope to see a diverse ecosystem of renderers that can create Cryptomatte images and plugins for compositing applications to decode them. 
 
@@ -31,14 +31,14 @@ Encoders:
 
 * [Isotropix Clarisse 3.5 (By Isotropix)](http://www.isotropix.com/products/clarisse-3.5)
 * [Chaos Group V-Ray 3.6 (By Chaos Group)](https://docs.chaosgroup.com/display/VRAY3MAX/Cryptomatte+%7C+VRayCryptomatte)
-* [Arnold 4 (AlShaders), by Jonah Friedman, Andy Jones, Anders Langlands.]( http://www.anderslanglands.com/alshaders/index.html )
-* [Arnold 5 (AlShaders 2), by Jonah Friedman, Andy Jones, Anders Langlands.]( https://github.com/anderslanglands/alShaders2 )
-* Nuke 7+ "Encryptomatte", by Andy Jones. In this repo. 
+* [Arnold 4 (AlShaders), by Jonah Friedman, Andy Jones, Anders Langlands.](http://www.anderslanglands.com/alshaders/index.html)
+* [Arnold 5 (AlShaders 2), by Jonah Friedman, Andy Jones, Anders Langlands.](https://github.com/anderslanglands/alShaders2)
+* Nuke 7+ "Encryptomatte", by Andy Jones. In this repo.
 
 Decoders:
 
 * Nuke 7+, by Jonah Friedman, Andy Jones. In this repo.
-* Fusion: by Cédric Duriau and Kristof Indeherberge at Grid. In this repo.
+* Fusion: by C&eacute;dric Duriau and Kristof Indeherberge at Grid. In this repo.
 
 ## Acknowledgements 
 
@@ -49,16 +49,22 @@ Decoders:
 * Solid Angle
 * All the members of the Cryptomatte Committee
 * Benoit Leveau
-* Cédric Duriau
+* C&eacute;dric Duriau
 * Kristof Indeherberge
 * Vladimir Koylazov
 * Peter Loveday
 
 ## Release Notes
 
+1.2.0 (Beta 7):
+
+* Fusion
+  * Added a new Matte "Toggle" button to quickly invert the state of a matte entry in the "Matte List" field
+  * Added a new "cryptomatte_hotkeys.fu" Fusion hotkey file. Pressing the "Shift + D" hotkey in the Fusion viewer window will toggle the active Cryptomatte "Matte Locator" selection state to switch between the "Add" and "Remove" modes.
+
 1.2.0 (Beta 6):
 
-This a major upgrade to the Fusion plugin, by Cédric Duriau. 
+This a major upgrade to the Fusion plugin, by C&eacute;dric Duriau. 
 
 * Fusion - Minimum Fusion version is now 9.0.1. 
   * Redesigned around new Fusion 9.0.1 features
@@ -136,12 +142,12 @@ This a major upgrade to the Fusion plugin, by Cédric Duriau.
 
 1.1.3:
 
-* Adds beta version of Fusion support, also by Cédric Duriau and Kristof Indeherberge at Grid. 
+* Adds beta version of Fusion support, also by C&eacute;dric Duriau and Kristof Indeherberge at Grid. 
   * Major tool connection workflow improvement. No longer requires multiple loaders to work, instead populates single loader channel slots when viewed. 
 
 1.1.2:
 
-* Adds alpha version of Fusion support, created by Cédric Duriau and Kristof Indeherberge at Grid. 
+* Adds alpha version of Fusion support, created by C&eacute;dric Duriau and Kristof Indeherberge at Grid. 
 
 1.1.1:
 
@@ -178,18 +184,19 @@ This a major upgrade to the Fusion plugin, by Cédric Duriau.
 
 ## Nuke Installation
 
-1. Download the entire Cryptomatte GitHub repository using the green “Clone or download” button. Select “Download Zip” and then extract the contents.
-2. Copy the contents of the “nuke” folder from Cryptomatte into a folder in your Nuke plugin path, such as your home directory’s “.nuke” folder.
-3. If the destination folder already contains an “init.py” and/or “menu.py” file, open those files in a text editor, and append the contents of the Cryptomatte “init.py” and “menu.py” to those files.
+1. Download the entire Cryptomatte GitHub repository using the green "Clone or download" button. Select "Download Zip" and then extract the contents.
+2. Copy the contents of the "nuke" folder from Cryptomatte into a folder in your Nuke plugin path, such as your home directory's ".nuke" folder.
+3. If the destination folder already contains an "init.py" and/or "menu.py" file, open those files in a text editor, and append the contents of the Cryptomatte "init.py" and "menu.py" to those files.
 4. After launching Nuke, if you've installed the plugin correctly you should be able to tab-create a Cryptomatte gizmo.
 
-For more information on installing Nuke plugins, see: https://www.thefoundry.co.uk/products/nuke/developers/70/pythondevguide/installing_plugins.html
+For more information on installing Nuke plugins, see:  
+[https://www.thefoundry.co.uk/products/nuke/developers/70/pythondevguide/installing_plugins.html](https://www.thefoundry.co.uk/products/nuke/developers/70/pythondevguide/installing_plugins.html)
 
 To test the functionality, you can try loading one of the sample images supplied. Load the sample images into Nuke, select one of them, and tab-create the gizmo. Viewing the output of the gizmo should show you a preview of the available mattes. Use the color knob, "Picker Add" to eye-dropper colors on the image to create your mattes.
 
 ## Nuke Usage
 
-![](/docs/nukeScreenshot.jpg)
+![Cryptomatte in Nuke](/docs/nukeScreenshot.jpg)
 
 To get started: 
 
@@ -200,9 +207,10 @@ To get started:
 
 ### Cryptomatte Gizmo
 
-![](/docs/gizmoProperties.png)
+![Cryptomatte Gizmo Properties in Nuke](/docs/gizmoProperties.png)
 
 Psyop Cryptomatte Tab:
+
 * Picker Add: This adds "keyed" objects to the matte selection, meant to be used with Nuke's eyedropper. 
 * Picker Remove: This removes "keyed" objects from the matte selection, meant to be used with Nuke's eyedropper. 
 * Preview: Controls whether or not previews of the matte boundaries are drawn. A pulldown controls how they are drawn. 
@@ -222,14 +230,15 @@ Psyop Cryptomatte Tab:
 * Lock Layer Selection: Stops the automatic updating of layer selection, which occurs if the specified selection is not available. 
 * Expression: Internally the gizmo generates an expression to extract the matte. The expression is saved here. 
 
-Advanced Tab: 
+Advanced Tab:
+
 * Decryptomatte: Replaces gizmo with equivelant nodes
 * Unload Manifest: Generates a keyer for every name in the manifest. 
 * Force Update All Gizmos in Script: Same as "Force Update", but runs the force update functionality on all Gizmos in the script. 
 
 ### Encryptomatte Gizmo
 
-![](/docs/encryptomatteProperties.png)
+![Encryptomatte Gizmo Properties in Nuke](/docs/encryptomatteProperties.png)
 
 Encryptomatte is a gizmo that can modify existing Cryptomattes, or start new ones. One Encryptomatte node adds one matte to a Cryptomatte. 
 
@@ -241,6 +250,7 @@ To get started:
 4. Write it out as a 32 bit EXR with all metadata, or attach a Cryptomatte node to it to test the mattes. 
 
 Encryptomatte tab:
+
 * Matte Name: The name your new matte will have in the Cryptomatte
 * Merge Operation: Where in the stack of mattes your matte will be added, over or under the rest
 * Layer selection: Same as Cryptomatte, see above.
@@ -269,7 +279,7 @@ import cryptomatte_utilities as cu
 cu.tests.run_nuke_tests()
 ```
 
-Tests require the provided sample_images directory. If it is not located in the default location relative to the Python files, its location may be specified using an env variable, $CRYPTOMATTE_TESTING_SAMPLES. This can also be done ad-hoc in Nuke prior to running tests:
+Tests require the provided `sample_images` directory. If it is not located in the default location relative to the Python files, its location may be specified using an env variable, `$CRYPTOMATTE_TESTING_SAMPLES`. This can also be done ad-hoc in Nuke prior to running tests:
 
 ```
 import os
@@ -278,6 +288,27 @@ os.environ["CRYPTOMATTE_TESTING_SAMPLES"] = "" #  < specify sample_images dir he
 
 ## Fusion Installation
 
-1. Download the entire Cryptomatte GitHub repository using the green “Clone or download” button. Select “Download Zip” and then extract the contents.
-2. Locate your Fusion installation folder, create a subfolder called “lua” and put the three lua scripts (cryptomatte_utilities.lua, lmurmurhash3.lua and struct.lua) into that folder.
-3. Copy the fusion/cryptomatte.fuse file into the "Fuses" subfolder in the Fusion installation folder (or another directory in Fusion's Path Map for Fuses). 
+1. Download a copy of the Cryptomatte GitHub repository. You can do this by navigating to the Cryptomatte Project's [Releases page](https://github.com/Psyop/Cryptomatte/releases) and then clicking on the "Zip" icon. ![Zip Icon](/docs/github-zip.png)
+
+2.  After you unzip the latest cryptomatte release, copy the `fusion/cryptomatte_utilities.lua` module into the standard Fusion Lua "package.path" location of (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\lua`, (Linux) `/usr/local/share/lua/5.1/`, or (Mac) `/usr/local/share/lua/5.1/`. The Lua Modules based scripts can also be added to a folder that is listed in your `LUA_PATH` based environment variable.
+
+3. Copy the `fusion/cryptomatte.fuse` file into the Fusion user preferences based `Fuses:/` PathMap directory, or the "Fuses" subfolder in the Fusion installation folder (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\Fuses\`, (Linux) `/opt/BlackmagicDesign/Fusion9/Fuses/`, (Mac) `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Fuses/`.
+
+4. Copy the `fusion/cryptomatte_hotkeys.fu` file into the Fusion user preferences based `Config:/` PathMap directory, or the "Config" subfolder in the Fusion installation folder (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\Config\`, (Linux) `/opt/BlackmagicDesign/Fusion9/Config/`, (Mac) `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Config/`.
+
+### Fusion Usage:
+
+![Cryptomatte for Fusion](/docs/fusionScreenshot.png)
+
+The Cryptomatte Fuse works in Fusion (Free) and Fusion Studio v9.0.1+. The Fuse allows you to create matte selections using a Cryptomatte "Matte Locator" control that is positioned using transfrom control the Fusion Viewer window.
+
+To get started:
+1. Add a Cryptomatte exr file to your composite, such as the sample images, using a Loader node. 
+2. Select the Loader node and use the Select Tool window (Shift + Spacebar) to add a new Cryptomatte node to your composite.
+3. Select the Cryptomatte node in the Flow area and display the output in a Viewer window.
+4. Position the Cryptomatte "Matte Locator" control in the Viewer window over an object in the frame. 
+5. Press the "Add" button in the Cryptomatte Tools view to add a new matte entry to the Matte List. Alternatively, you could press the "Shift + D" hotkey in the Fusion Viewer window to toggle the active Cryptomatte "Matte Locator" selection state between the "Add" and "Remove" modes.
+
+### Cryptomatte Fuse
+
+![Cryptomatte for Fusion Tools View](/docs/fusionToolsView.png)

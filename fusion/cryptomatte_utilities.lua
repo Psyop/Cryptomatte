@@ -1,24 +1,25 @@
+--[[
+Requires   : Fusion 9.0.1+
+Optional   : cjson
+Created by : Cédric Duriau         [duriau.cedric@live.be]
+             Kristof Indeherberge  [xmnr0x23@gmail.com]
+             Andrew Hazelden       [andrew@andrewhazelden.com]
+--]]
+
 -- module table
 cryptomatte_utilities = {}
 
 -- ===========================================================================
 -- constants
 -- ===========================================================================
-METADATA_PREFIX = "cryptomatte/"
-CHANNEL_KEY_NO_MATCH = "SomethingThatWontMatchHopefully"
-REGEX_CHANNEL = "(.*)[.]([a-zA-Z]+)"
-REGEX_RANK_CHANNEL = "(.+)[.](.+)"
 REGEX_METADATA = "%a+/([a-z0-9]+)/(.+)"
-
+REGEX_MATTE_LIST = "([^,]+),?%s*"
+REGEX_RANK_CHANNEL = "(.+)[.](.+)"
+METADATA_PREFIX = "cryptomatte/"
+METADATA_KEY_NAME = "name"
+METADATA_KEY_MANIFEST = "manifest"
 METADATA_KEY_FILENAME = "Filename"
 METADATA_KEY_MANIF_FILE = "manif_file"
-METADATA_KEY_MANIFEST = "manifest"
-METADATA_KEY_NAME = "name"
-
-VALID_NON_CRYPTO_CHANNELS = {r=true, red=true,
-                             g=true, green=true,
-                             b=true, blue=true,
-                             a=true, alpha=true}
 
 -- ===========================================================================
 -- third party modules
@@ -35,7 +36,13 @@ function prefered_load_json(c_module, lua_module)
 end
 
 local json = prefered_load_json("cjson", "dkjson")
-local struct = require("struct")
+
+-- ===========================================================================
+-- ffi C utils
+-- ===========================================================================
+-- int / float representation of hash
+ffi.cdef[[ union int_flt { uint32_t i; float f; }; ]]
+local int_flt = ffi.new("union int_flt")
 
 -- ===========================================================================
 -- utils
@@ -43,6 +50,17 @@ local struct = require("struct")
 function string_starts_with(str, start)
     -- check if the given string stars with the given start substring
     return string.sub(str, 1, string.len(start)) == start
+end
+
+function convert_str_to_array(str, pattern)
+    -- convert matte selection list in str format to set
+    local matte_names = {}
+    for matte in string.gmatch(str, pattern) do
+        -- strip the leading and trailing double quote
+        matte = string.sub(matte, 2, matte:len() - 1)
+        table.insert(matte_names, matte)
+    end
+    return matte_names
 end
 
 function is_key_in_table(key, table)
@@ -311,15 +329,7 @@ function CryptomatteInfo:extract_cryptomatte_metadata(metadata, selected_layer_n
     self.exr_path = exr_path
 end
 
-function CryptomatteInfo:parse_manifest()
-    -- load the manifest and translate ids and names out of it
-    local from_names = {}
-    local from_ids = {}
-    local manifest
-    local manifest_str = ""
-    local all_names = {}
-    local all_ids = {}
-
+function CryptomatteInfo:get_manifest_string()
     local sidecar_path = self.cryptomattes[self.selection][METADATA_KEY_MANIF_FILE]
     if sidecar_path ~= nil then
         -- open the sidecar file in read mode
@@ -336,9 +346,21 @@ function CryptomatteInfo:parse_manifest()
     else
         manifest_str = self.cryptomattes[self.selection][METADATA_KEY_MANIFEST]
     end
+    return manifest_str
+end
 
+function CryptomatteInfo:parse_manifest()
+    -- load the manifest and translate ids and names out of it
+    local from_names = {}
+    local from_ids = {}
+    local all_names = {}
+    local all_ids = {}
+    
+    -- get manifest str
+    local manifest_str = self:get_manifest_string()
+    
     -- decode json str to table
-    manifest = json.decode(manifest_str)
+    local manifest = json.decode(manifest_str)
 
     -- json decode function returns nil when an empty string is passed to decode
     -- assert type of manifest is table to ensure value if valid
@@ -347,15 +369,10 @@ function CryptomatteInfo:parse_manifest()
 
     -- decrypt the hashes by name and store data
     for name, hex in pairs(manifest) do
-        local packed = struct.pack("I", tonumber(hex, 16))
-        -- if the length of the packed value is not 4 chars long
-        -- append with empty "/0" char until value is 4 chars long
-        while string.len(packed) < 4 do
-            packed = "/0" .. packed
-        end
-        local id_float = struct.unpack("f", packed)
+        int_flt.i = tonumber(hex, 16)
+        local id_float = int_flt.f
         local name_str = tostring(name)
-
+        
         from_names[name_str] = id_float
         from_ids[id_float] = name_str
 
@@ -425,14 +442,16 @@ function exr_read_channel_parts(exr, input_image, cryptomatte_channels, partnum)
     
     -- read part with given index
     exr:Part(partnum)
-    for index, channels in pairs(cryptomatte_channels) do
-        -- create placeholder image
-        local image = Image({
-            IMG_Width = input_image.Width,
-            IMG_Height = input_image.Height,
-            IMG_Depth = input_image.Depth
-        })
 
+    for index, channels in pairs(cryptomatte_channels) do
+        -- create placeholder image, set resolution to original input width & height
+        local image = Image({
+            IMG_Width = input_image.OriginalWidth,
+            IMG_Height = input_image.OriginalHeight,
+            IMG_ProxyScale = 1,  -- don't apply the proxy
+            IMG_Depth = IMDP_128bitFloat  -- force image to 32bit float (4 channel 128bit float)
+        })
+        
         -- read rank RGBA channels
         exr:Channel(channels["r"], ANY_TYPE, image, CHAN_RED)
         exr:Channel(channels["g"], ANY_TYPE, image, CHAN_GREEN)
@@ -442,10 +461,39 @@ function exr_read_channel_parts(exr, input_image, cryptomatte_channels, partnum)
         -- store the image as value to the rank index in string format as key
         cryptomatte_images[tostring(index)] = image
     end
+
     if cryptomatte_images ~= {} then
         -- fill the given image with previously read information
         exr:ReadPart(partnum, cryptomatte_images)
     end
+
+    -- handle proxy scale
+    if input_image.ProxyScale ~= 1 then
+        local width = input_image.Width
+        local height = input_image.Height
+
+        for index, image in pairs(cryptomatte_images) do
+            -- create placeholder result image correct by scale
+            result = Image({
+                IMG_Like = image, 
+                IMG_Width = width, 
+                IMG_Height = height,
+                IMAT_OriginalWidth = input_image.OriginalWidth,
+                IMAT_OriginalHeight = input_image.OriginalHeight
+            })
+            
+            -- resize image to proxy scaled resolution (nearest neighbor algorithm)
+            image:Resize(result, {
+                RSZ_Filter = "Nearest",
+                RSZ_Width = width,
+                RSZ_Height = height
+            })
+            
+            -- store result
+            cryptomatte_images[index] = result
+        end
+    end
+
     return cryptomatte_images
 end
 
@@ -550,6 +598,17 @@ function cryptomatte_utilities:get_all_rank_images(cInfo, layer_name, input_imag
     end
 
     return crypto_images
+end
+
+function cryptomatte_utilities:get_mattes_from_string(cInfo, matte_selection_str)
+    -- returns the a set of mattes from the matte list input string
+    local mattes = {}
+    local matte_name_array = convert_str_to_array(matte_selection_str, REGEX_MATTE_LIST)
+    -- convert array to set
+    for _, matte in ipairs(matte_name_array) do
+        mattes[matte] = true
+    end
+    return mattes
 end
 
 -- return module
