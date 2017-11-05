@@ -4,18 +4,7 @@ Optional   : cjson
 Created by : Cédric Duriau         [duriau.cedric@live.be]
              Kristof Indeherberge  [xmnr0x23@gmail.com]
              Andrew Hazelden       [andrew@andrewhazelden.com]
---]]
-
---[[
-# Cryptomatte for Fusion Hotkeys #
-
-## Overview ##
-The cryptomatte_hotkeys.fu file is used to add Fusion 9.0.1+ compatible hotkey bindings for Cryptomatte (https://github.com/Psyop/Cryptomatte).
-Pressing the "Shift + D" hotkey in the Fusion Viewer window will toggle the active Cryptomatte "Matte Locator" selection state to switch between the "Add" and "Remove" modes.
-There are commented out entries present in the hotkey file for Add, Clear, KeyableSurface, LayerMinus, LayerPlus, MatteOnly, Remove, and ViewMode. These hotkeys are commented out at the moment since the final hotkey bindings that will be used for the commands are still being work out by the Cryptomatte developers.
-
-## Installation ##
-To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. Then restart Fusion for the new hotkey entry to become active.
+Version    : 1.2.0-beta7
 --]]
 
 {
@@ -28,7 +17,6 @@ To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. T
                 Execute = _Lua [=[
                     fuse = obj:Comp().ActiveTool
                     if fuse then
-                        print('[' .. fuse.Name .. '] Add')
                         if fuse:GetID() == 'Fuse.Cryptomatte' then
                             fuse.Add = 1
                         end
@@ -46,7 +34,6 @@ To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. T
                 Execute = _Lua [=[
                     fuse = obj:Comp().ActiveTool
                     if fuse then
-                        print('[' .. fuse.Name .. '] Clear')
                         if fuse:GetID() == 'Fuse.Cryptomatte' then
                             fuse.Clear = 1
                         end
@@ -64,7 +51,6 @@ To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. T
                 Execute = _Lua [=[
                     fuse = obj:Comp().ActiveTool
                     if fuse then
-                        print('[' .. fuse.Name .. '] Keyable Surface')
                         if fuse:GetID() == 'Fuse.Cryptomatte' then
                             fuse.KeyableSurface = 1 - fuse.KeyableSurface[fu.TIME_UNDEFINED]
                         end
@@ -82,12 +68,9 @@ To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. T
                 Execute = _Lua [=[
                     fuse = obj:Comp().ActiveTool
                     if fuse then
-                        print('[' .. fuse.Name .. '] Layer Minus')
                         if fuse:GetID() == 'Fuse.Cryptomatte' then
                             if fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] ~= 1 then
                                 fuse.CryptoLayerSlider = fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] - 1
-                            else
-                                print('[' .. fuse.Name ..'] Reached First Layer')
                             end
                         end
                     end
@@ -105,12 +88,9 @@ To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. T
                     fuse = obj:Comp().ActiveTool
 
                     if fuse then
-                        print('[' .. fuse.Name .. '] Layer Plus')
                         if fuse:GetID() == 'Fuse.Cryptomatte' then
                             if fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] ~= fuse.CryptoLayerSlider:GetAttrs("INPN_MaxScale") then
                                 fuse.CryptoLayerSlider = fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] + 1
-                            else
-                                print('[' .. fuse.Name .. '] Reached Last Layer')
                             end
                         end
                     end
@@ -127,7 +107,6 @@ To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. T
                 Execute = _Lua [=[
                     fuse = obj:Comp().ActiveTool
                     if fuse then
-                        print('[' .. fuse.Name .. '] Matte Only')
                         if fuse:GetID() == 'Fuse.Cryptomatte' then
                             fuse.MatteOnly = 1 - fuse.MatteOnly[fu.TIME_UNDEFINED]
                         end
@@ -145,7 +124,6 @@ To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. T
                 Execute = _Lua [=[
                     fuse = obj:Comp().ActiveTool
                     if fuse then
-                        print('[' .. fuse.Name .. '] Remove')
                         if fuse:GetID() == 'Fuse.Cryptomatte' then
                             fuse.Remove = 1
                         end
@@ -164,7 +142,6 @@ To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. T
                     fuse = obj:Comp().ActiveTool
                     if fuse then
                         if fuse:GetID() == 'Fuse.Cryptomatte' then
-                            print('[' .. fuse.Name .. '] Toggle')
                             fuse.Toggle = 1
                         end
                     end
@@ -181,7 +158,6 @@ To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. T
                 Execute = _Lua [=[
                     fuse = obj:Comp().ActiveTool
                     if fuse then
-                        print('[' .. fuse.Name .. '] View Mode')
                         if fuse:GetID() == 'Fuse.Cryptomatte' then
                             if fuse.ViewMode[fu.TIME_UNDEFINED] ~= 2 then
                                 fuse.ViewMode = fuse.ViewMode[fu.TIME_UNDEFINED] + 1
@@ -196,17 +172,17 @@ To use this hotkeys file, place it in the Fusion user prefs "Config:/" folder. T
     },
     Hotkeys {
         Target = "GLView",
-        -- SHIFT_A = "CryptomatteAdd{}",
-        -- SHIFT_C = "CryptomatteClear{}",
-        -- SHIFT_K = "CryptomatteKeyableSurface{}",
-        -- SHIFT_KEYPAD_MINUS = "CryptomatteLayerMinus{}",
-        -- SHIFT_MINUS = "CryptomatteLayerMinus{}",
-        -- SHIFT_KEYPAD_PLUS = "CryptomatteLayerPlus{}",
-        -- SHIFT_PLUS = "CryptomatteLayerPlus{}",
-        -- SHIFT_M = "CryptomatteMatteOnly{}",
-        -- SHIFT_R = "CryptomatteRemove{}",
-        SHIFT_D = "CryptomatteToggle{}",
-        -- SHIFT_V = "CryptomatteViewMode{}",
-        -- SHIFT_CONTROL_K = "CryptomatteViewMode{}",
+        SHIFT_A = "CryptomatteAdd{}",
+        SHIFT_C = "CryptomatteClear{}",
+        SHIFT_K = "CryptomatteKeyableSurface{}",
+        SHIFT_KEYPAD_MINUS = "CryptomatteLayerMinus{}",
+        SHIFT_MINUS = "CryptomatteLayerMinus{}",
+        SHIFT_KEYPAD_PLUS = "CryptomatteLayerPlus{}",
+        SHIFT_PLUS = "CryptomatteLayerPlus{}",
+        SHIFT_M = "CryptomatteMatteOnly{}",
+        SHIFT_R = "CryptomatteRemove{}",
+        SHIFT_T = "CryptomatteToggle{}",
+        SHIFT_V = "CryptomatteViewMode{}",
+        SHIFT_CONTROL_K = "CryptomatteViewMode{}",
     }
 }

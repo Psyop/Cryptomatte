@@ -4,6 +4,7 @@ Optional   : cjson
 Created by : Cédric Duriau         [duriau.cedric@live.be]
              Kristof Indeherberge  [xmnr0x23@gmail.com]
              Andrew Hazelden       [andrew@andrewhazelden.com]
+Version    : 1.2.0-beta7
 --]]
 
 -- module table
@@ -475,14 +476,12 @@ function exr_read_channel_parts(exr, input_image, cryptomatte_channels, partnum)
         for index, image in pairs(cryptomatte_images) do
             -- create placeholder result image correct by scale
             result = Image({
-                IMG_Like = image, 
-                IMG_Width = width, 
-                IMG_Height = height,
-                IMAT_OriginalWidth = input_image.OriginalWidth,
-                IMAT_OriginalHeight = input_image.OriginalHeight
+                IMG_Like = image,
+                IMG_Width = width,
+                IMG_Height = height
             })
             
-            -- resize image to proxy scaled resolution (nearest neighbor algorithm)
+            -- resize image to proxy scaled resolution (nearest neighbor filter algorithm)
             image:Resize(result, {
                 RSZ_Filter = "Nearest",
                 RSZ_Width = width,

@@ -4,6 +4,7 @@ Optional   : cjson
 Created by : Cédric Duriau         [duriau.cedric@live.be]
              Kristof Indeherberge  [xmnr0x23@gmail.com]
              Andrew Hazelden       [andrew@andrewhazelden.com]
+Version    : 1.2.0-beta7
 --]]
 
 -- ===========================================================================
@@ -18,13 +19,12 @@ FUSE_NAME = "Cryptomatte"
 SEPARATOR = string.rep("_", 9999)
 SEPARATOR_INDEX = 0
 SHOW_CALLBACKS = false
-
 VIEW_MODE_EDGES = "Edges"
 VIEW_MODE_COLORS = "Colors"
 VIEW_MODE_NONE = "None"
 VIEW_MODES = {VIEW_MODE_EDGES, VIEW_MODE_COLORS, VIEW_MODE_NONE}
 
--- ================================ ===========================================
+-- ===========================================================================
 -- fuse
 -- ===========================================================================
 FuRegisterClass(FUSE_NAME, CT_Tool, {
@@ -61,21 +61,21 @@ function Create()
         INPID_InputControl = "ButtonControl",
         INP_External = false,
         INP_DoNotifyChanged = true,
-        ICD_Width = 0.33
+        ICD_Width = 1 / 3
     })
     BtnRemove = self:AddInput("Remove", "Remove", {
         LINKID_DataType = "Number",
         INPID_InputControl = "ButtonControl",
         INP_External = false,
         INP_DoNotifyChanged = true,
-        ICD_Width = 0.33
+        ICD_Width = 1 / 3
     })
     BtnToggle= self:AddInput("Toggle", "Toggle", {
         LINKID_DataType = "Number",
         INPID_InputControl = "ButtonControl",
         INP_External = false,
         INP_DoNotifyChanged = true,
-        ICD_Width = 0.34
+        ICD_Width = 1 / 3
     })
 
     create_separator()
@@ -86,14 +86,14 @@ function Create()
         INPID_InputControl = "CheckboxControl",
         INP_Integer = true,
         INP_Default = 0.0,
-        ICD_Width = 1 / 2
+        ICD_Width = 0.5
     })
     ComboViewMode = self:AddInput("", "ViewMode", {
         LINKID_DataType = "Number",
         INPID_InputControl = "ComboControl",
         INP_Default = 0.0,
         INP_Integer = true,
-        ICD_Width = 1 / 2,
+        ICD_Width = 0.5,
         { CCS_AddString = VIEW_MODES[1] },
         { CCS_AddString = VIEW_MODES[2] },
         { CCS_AddString = VIEW_MODES[3] },
@@ -323,7 +323,9 @@ function toggle_matte(cInfo, id_float_value, matte_selection_str)
     
     -- get matte name of id float value
     local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
-    if not matte_name then return end
+    if not matte_name then 
+        return 
+    end
 
     -- create an updated version of the matte list str
     local new_matte_list = update_matte_list(cInfo, matte_name, false, true, matte_selection_str)
@@ -337,7 +339,9 @@ function add_matte(cInfo, id_float_value, matte_selection_str)
     
     -- get matte name of id float value
     local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
-    if not matte_name then return end
+    if not matte_name then 
+        return 
+    end
 
     -- create an updated version of the matte list str
     local new_matte_list = update_matte_list(cInfo, matte_name, false, false, matte_selection_str)
@@ -351,7 +355,9 @@ function remove_matte(cInfo, id_float_value, matte_selection_str)
 
     -- get matte name of id float value
     local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
-    if not matte_name then return end
+    if not matte_name then 
+        return 
+    end
 
     -- create an updated version of the matte list str
     local new_matte_list = update_matte_list(cInfo, matte_name, true, false, matte_selection_str)
@@ -362,8 +368,8 @@ end
 
 function set_name_checker(cInfo, crypto_images, input_image)
     -- activates the name checker if the locator control is visible
-
     local text_to_set = ""
+    
     -- only run code when locator is visible
     local locator_visible = LocatorNameChecker:GetAttr("PC_Visible")
     if locator_visible then
@@ -382,6 +388,7 @@ function set_name_checker(cInfo, crypto_images, input_image)
             text_to_set = "\"" .. text_to_set .. "\""
         end
     end
+    
     -- set the keyed name if different then before
     local keyed_name = TextKeyedName:GetSource(0).Value
     if text_to_set ~= keyed_name then
@@ -394,16 +401,19 @@ function get_view_mode()
     -- else return default view mode "None"
     local view_mode = VIEW_MODES[3]
     local preview_checked = CbPreview:GetSource(0).Value
+    
     if preview_checked == 1  then
         local selected_view_mode_index = ComboViewMode:GetSource(0).Value
         view_mode = VIEW_MODES[selected_view_mode_index + 1]
     end
+    
     return view_mode
 end
 
 function apply_view_mode(mode, input_image, crypto_images)
     -- apply the given view mode to generate an output image
     local output_image
+    
     if mode == VIEW_MODE_EDGES then
         -- edge mode
         -- output.R + rank_00.A * 2 
@@ -418,6 +428,7 @@ function apply_view_mode(mode, input_image, crypto_images)
         -- pass input copy as output
         output_image = input_image:CopyOf()
     end
+    
     return output_image
 end
 
@@ -451,8 +462,9 @@ function Process(req)
     -- set the name checker
     set_name_checker(cInfo, crypto_images, input_image)
 
-    -- add mattes callback
-    -- remove mattes callback
+    -- add matte callback
+    -- remove matte callback
+    -- toggle matte callback
     local add_triggered = CallbackBtnAdd:GetValue(req).Value
     local remove_triggered = CallbackBtnRemove:GetValue(req).Value
     local toggle_triggered = CallbackBtnToggle:GetValue(req).Value
@@ -487,7 +499,7 @@ function Process(req)
     local matte_names = cryptoutils:get_mattes_from_string(cInfo, matte_selection_str)
     local matte = cryptoutils:create_matte_image(cInfo, matte_names, crypto_images, output_image)
 
-    -- add matte
+    -- apply matte to output image
     if matte ~= nil then
         output_image = output_image:ChannelOpOf("Add", matte, { R = "fg.A", G = "fg.A"})
         output_image = output_image:ChannelOpOf("Copy", matte, { A = "fg.A"})
@@ -496,9 +508,18 @@ function Process(req)
     -- matte only callback
     local matte_only = CbMatteOnly:GetValue(req).Value
     if matte_only == 1 then
+        -- enable preview feature
+        CbPreview:SetAttrs({ INP_Disabled = true })
+        ComboViewMode:SetAttrs({ INP_Disabled = true })
+
         -- output mono channel alpha image
         OutImage:Set(req, matte)
     else
+        -- disable preview feature
+        CbPreview:SetAttrs({ INP_Disabled = false })
+        ComboViewMode:SetAttrs({ INP_Disabled = false })
+        
+        -- output preview mode with matte applied
         OutImage:Set(req, output_image)
     end
 end

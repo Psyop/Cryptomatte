@@ -53,14 +53,20 @@ Decoders:
 * Kristof Indeherberge
 * Vladimir Koylazov
 * Peter Loveday
+* Andrew Hazelden
 
 ## Release Notes
 
 1.2.0 (Beta 7):
 
 * Fusion
-  * Added a new Matte "Toggle" button to quickly invert the state of a matte entry in the "Matte List" field
-  * Added a new "cryptomatte_hotkeys.fu" Fusion hotkey file. Pressing the "Shift + D" hotkey in the Fusion viewer window will toggle the active Cryptomatte "Matte Locator" selection state to switch between the "Add" and "Remove" modes.
+  * Removed "struct.lua" dependency
+  * Support for mixed depth EXR images
+  * Support for proxy mode
+  * Added "Toggle" button acting as a Add/Remove switch
+  * Added "cryptomatte_shortcut.fu" shortcut configuration file
+  * Keyable surface feature disabled when in matte only mode`
+  * Added version to file headers
 
 1.2.0 (Beta 6):
 
@@ -79,7 +85,7 @@ This a major upgrade to the Fusion plugin, by C&eacute;dric Duriau.
   * No longer limited to 8 cryptomatte ranks
   * Implemented EXRIO to read exr channel data
 * Fusion - Code improvements
-  * Added cryptomatte_utilities.lua module
+  * Added "cryptomatte_utilities.lua" module
   * Removed simplejson.lua module, using builtin dkjson module
   * Removed loader channel slots workaround
   * Added docstrings
@@ -175,7 +181,7 @@ This a major upgrade to the Fusion plugin, by C&eacute;dric Duriau.
 
 * Added layer selection to gizmo and utilities (backwards compatible)
 * Added menu.py
-* Added `__version__` to cryptomatte_utilities
+* Added `__version__` to cryptomatte_utilities.py
 * Bug fix - invalid manifest broke keying
 
 1.0.0: 
@@ -288,13 +294,19 @@ os.environ["CRYPTOMATTE_TESTING_SAMPLES"] = "" #  < specify sample_images dir he
 
 ## Fusion Installation
 
-1. Download a copy of the Cryptomatte GitHub repository. You can do this by navigating to the Cryptomatte Project's [Releases page](https://github.com/Psyop/Cryptomatte/releases) and then clicking on the "Zip" icon. ![Zip Icon](/docs/github-zip.png)
-
-2.  After you unzip the latest cryptomatte release, copy the `fusion/cryptomatte_utilities.lua` module into the standard Fusion Lua "package.path" location of (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\lua`, (Linux) `/usr/local/share/lua/5.1/`, or (Mac) `/usr/local/share/lua/5.1/`. The Lua Modules based scripts can also be added to a folder that is listed in your `LUA_PATH` based environment variable.
-
-3. Copy the `fusion/cryptomatte.fuse` file into the Fusion user preferences based `Fuses:/` PathMap directory, or the "Fuses" subfolder in the Fusion installation folder (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\Fuses\`, (Linux) `/opt/BlackmagicDesign/Fusion9/Fuses/`, (Mac) `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Fuses/`.
-
-4. Copy the `fusion/cryptomatte_hotkeys.fu` file into the Fusion user preferences based `Config:/` PathMap directory, or the "Config" subfolder in the Fusion installation folder (Windows) `C:\Program Files\Blackmagic Design\Fusion 9\Config\`, (Linux) `/opt/BlackmagicDesign/Fusion9/Config/`, (Mac) `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Config/`.
+1. Download the entire Cryptomatte GitHub repository using the green "Clone or download" button. Select "Download Zip" and then extract the contents.
+2.  Copy the `fusion/cryptomatte_utilities.lua` module into the standard Fusion Lua "package.path" location. The Lua modules can also be added to a folder that is listed in your `LUA_PATH` based environment variable.
+    * Windows : `C:\Program Files\Blackmagic Design\Fusion 9\lua`
+    * Linux : `/usr/local/share/lua/5.1/`
+    * Mac : `/usr/local/share/lua/5.1/`
+3. Copy the `fusion/cryptomatte.fuse` file into the Fusion user preferences based `Fuses:/` PathMap directory, or the "Fuses" subfolder in the Fusion installation folder.
+    * Windows : `C:\Program Files\Blackmagic Design\Fusion 9\Fuses\`
+    * Linux : `/opt/BlackmagicDesign/Fusion9/Fuses/`
+    * Mac : `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Fuses/`
+4. Copy the `fusion/cryptomatte_hotkeys.fu` file into the Fusion user preferences based `Config:/` PathMap directory.
+    * Windows : `%APPDATA%\Blackmagic Design\Fusion 9\Config\`
+    * Linux : `/opt/BlackmagicDesign/Fusion9/Config/`
+    * Mac : `/Applications/Blackmagic Fusion 9/Fusion.app/Contents/MacOS/Config/`
 
 ### Fusion Usage:
 
@@ -303,6 +315,7 @@ os.environ["CRYPTOMATTE_TESTING_SAMPLES"] = "" #  < specify sample_images dir he
 The Cryptomatte Fuse works in Fusion (Free) and Fusion Studio v9.0.1+. The Fuse allows you to create matte selections using a Cryptomatte "Matte Locator" control that is positioned using transfrom control the Fusion Viewer window.
 
 To get started:
+
 1. Add a Cryptomatte exr file to your composite, such as the sample images, using a Loader node. 
 2. Select the Loader node and use the Select Tool window (Shift + Spacebar) to add a new Cryptomatte node to your composite.
 3. Select the Cryptomatte node in the Flow area and display the output in a Viewer window.
