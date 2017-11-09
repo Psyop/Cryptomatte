@@ -1015,7 +1015,6 @@ def run_tests(test_cases, test_filter=""):
         match = re.search('", line \d+, in (test[a-z_0-9]+)', traceback)
         return match.group(1) if match else ""
 
-    result = unittest.TestResult()
     suite = unittest.TestSuite()
     for case in test_cases:
         suite.addTests(unittest.TestLoader().loadTestsFromTestCase(case))
@@ -1029,18 +1028,8 @@ def run_tests(test_cases, test_filter=""):
             raise RuntimeError("Filter %s selected no tests. " % test_filter)
         suite = filtered_suite
 
-    suite.run(result)
-    print "---------"
-    for test_instance, traceback in result.failures:
-        print "Failed: %s.%s" % (type(test_instance).__name__, find_test_method(traceback))
-        print
-        print traceback
-        print "---------"
-    for test_instance, traceback in result.errors:
-        print "Error: %s.%s" % (type(test_instance).__name__, find_test_method(traceback))
-        print
-        print traceback
-        print "---------"
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
 
     if result.failures or result.errors:
         print "TESTING FAILED: %s failed, %s errors. (%s test cases.)" % (len(result.failures),
