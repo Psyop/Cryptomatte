@@ -16,7 +16,7 @@ def get_all_unit_tests():
 
 def get_all_nuke_tests():
     """ Returns the list of Nuke integration tests"""
-    return [CSVParsingNuke, CryptomatteNukeTests]
+    return [CSVParsingNuke, CryptomatteNodePasting, CryptomatteNukeTests]
 
 
 #############################################
@@ -140,6 +140,95 @@ class CSVParsingNuke(unittest.TestCase):
 
     def test_big_csv_through_gizmo(self):
         self.round_trip_through_gizmo(CSVParsing.csv_str, "Round trip failed")
+
+
+class CryptomatteNodePasting(unittest.TestCase):
+    """
+    This one takes some explaining. 
+
+    In Nuke 8, 9, 10, it's been discovered that when copy and pasting certain nodes,
+    or when opening certain scripts the inputchanged knob change callback breaks the script. 
+
+    What actually happens is the call to metadata() breaks it. 
+
+    The only reliable way to notice that it's unsafe we've found is calling node.screenHeight(), 
+    and if zero, stopping. 
+
+    see: https://github.com/Psyop/Cryptomatte/issues/18
+
+    This test tests for it. 
+    """
+
+    def test_paste_with_channelmerge(self):
+        import nuke
+        pastable = """
+            set cut_paste_input [stack 0]
+            version 10.0 v4
+            push $cut_paste_input
+            TimeOffset {
+             time ""
+             name {prefix}_TimeOffset7
+             label "\[value time_offset]"
+             selected true
+             xpos 13246
+             ypos 6816
+            }
+            set Ndd6dafc0 [stack 0]
+            push $Ndd6dafc0
+            add_layer {crypto_object crypto_object.red crypto_object.green crypto_object.blue crypto_object.alpha}
+            add_layer {crypto_object00 crypto_object00.red crypto_object00.green crypto_object00.blue crypto_object00.alpha}
+            add_layer {crypto_object01 crypto_object01.red crypto_object01.green crypto_object01.blue crypto_object01.alpha}
+            add_layer {crypto_object02 crypto_object02.red crypto_object02.green crypto_object02.blue crypto_object02.alpha}
+            Cryptomatte {
+             name {prefix}_Cryptomatte6
+             selected true
+             xpos 13150
+             ypos 6876
+             matteList ""
+             cryptoLayer crypto_object
+             expression a
+             keyedName "ID value not in manifest."
+             previewChannel crypto_object
+             in00 crypto_object00
+             in01 crypto_object01
+             in02 crypto_object02
+             in03 none
+             in04 none
+             in05 none
+             in06 none
+             in07 none
+            }
+            ChannelMerge {
+             inputs 2
+             operation in
+             name {prefix}_ChannelMerge7
+             selected true
+             xpos 13246
+             ypos 6941
+            }
+        """
+
+        prefix = "long_hopefully_unique_name"
+        pasted_node_names = [(prefix+x) for x in ("_TimeOffset7", "_Cryptomatte6", "_ChannelMerge7")]
+        pasted_nodes = [nuke.toNode(x) for x in pasted_node_names]
+        self.assertFalse(any(pasted_nodes), "Nodes already exist at the start of testing, were not pasted. ")
+        try:
+            # deselect all
+            for node in nuke.selectedNodes():
+                node['selected'].setValue(False)
+
+            nuke.tcl(pastable.replace("{prefix}", prefix))
+            pasted_nodes = [nuke.toNode(x) for x in pasted_node_names]
+            ch_merge_node = pasted_nodes[-1]
+            self.assertTrue(ch_merge_node.input(0), "Node lost connection to input 0 on paste.")
+            self.assertTrue(ch_merge_node.input(1), "Node lost connection to input 1 on paste.")
+        except:
+            raise
+        finally:
+            for node in pasted_nodes:
+                if node:
+                    nuke.delete(node)
+
 
 
 class CryptomatteNukeTests(unittest.TestCase):
