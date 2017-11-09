@@ -8,11 +8,11 @@ version 7.0 v1
 Gizmo {
  addUserKnob {20 cryptomatte l "Psyop Cryptomatte"}
 
- addUserKnob {36 pickerAdd l "Picker Add" t "Key objects to add to the Matte List here. " +STARTLINE}
+ addUserKnob {36 pickerAdd l "Picker Add" t "Key objects to add to the Matte List here. " +STARTLINE +DO_NOT_WRITE}
  pickerAdd {0 0 0 0 0 0 0 0}
  addUserKnob {26 pickerAddLabel l "Picker Add" -STARTLINE T " "}
 
- addUserKnob {36 pickerRemove l "Picker Remove" t "Key objects to remove from the Matte List here. " +STARTLINE}
+ addUserKnob {36 pickerRemove l "Picker Remove" t "Key objects to remove from the Matte List here. " +STARTLINE +DO_NOT_WRITE}
  pickerRemove {0 0 0 0 0 0 0 0}
  addUserKnob {26 pickerRemoveLabel l "Picker Remove" -STARTLINE T " "}
 
