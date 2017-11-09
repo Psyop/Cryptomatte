@@ -416,7 +416,6 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
     elif knob.name() in ["previewMode", "previewEnabled"]:
         cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo)
-        _set_preview_expression(node, cinfo)
 
     elif knob.name() == "forceUpdate":
         cinfo = CryptomatteInfo(node)
