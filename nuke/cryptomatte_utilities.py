@@ -516,10 +516,9 @@ def _set_channels(gizmo, channels, layer_name, default="none"):
 
 def _set_crypto_layer_choice(gizmo, cinfo):
     choice_knob = gizmo.knob("cryptoLayerChoice")
-    values = [v.get('name', '') for v in cinfo.cryptomattes.values()]
-    values = sorted(values)
+    values = sorted([v.get('name', '') for v in cinfo.cryptomattes.values()])
     choice_knob.setValues(values)
-    choice_knob.setValue(values.index(cinfo.cryptomattes[cinfo.selection]['name']))
+    choice_knob.setValue(values.index(cinfo.get_selection_name()))
 
 def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     if _cancel_update(gizmo, force):
