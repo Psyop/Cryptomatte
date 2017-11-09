@@ -381,7 +381,12 @@ def encryptomatte_create_gizmo():
 
 
 def cryptomatte_knob_changed_event(node = None, knob = None):
-    if knob.name() in ["inputChange", "cryptoLayer", "cryptoLayerLock"]:
+    if knob.name() == "inputChange":
+        if unsafe_to_do_inputChange(node):
+            return # see comment in #unsafe_to_do_inputChange. 
+        cinfo = CryptomatteInfo(node)
+        _update_cryptomatte_gizmo(node, cinfo)
+    elif knob.name() in ["cryptoLayer", "cryptoLayerLock"]:
         cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo)
     elif knob.name() in ["cryptoLayerChoice"]:
@@ -512,6 +517,20 @@ def _force_update_all():
 
         nuke.message("Updated %s cryptomatte gizmos." % node_count)
 
+
+def unsafe_to_do_inputChange(node):
+    """
+    In Nuke 8, 9, 10, it's been discovered that when copy and pasting certain nodes,
+    or when opening certain scripts the inputchanged knob change callback breaks the script. 
+
+    What actually happens is the call to metadata() breaks it. 
+
+    The only reliable way to notice that it's unsafe we've found is calling node.screenHeight(), 
+    and if zero, stopping. 
+
+    see: https://github.com/Psyop/Cryptomatte/issues/18
+    """
+    return nuke.NUKE_VERSION_MAJOR > 7 and node.screenHeight() == 0
 
 
 #############################################
