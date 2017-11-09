@@ -209,9 +209,11 @@ class CryptomatteNodePasting(unittest.TestCase):
         """
 
         prefix = "long_hopefully_unique_name"
-        pasted_node_names = [(prefix+x) for x in ("_TimeOffset7", "_Cryptomatte6", "_ChannelMerge7")]
+        pasted_node_names = [(prefix + x)
+                             for x in ("_TimeOffset7", "_Cryptomatte6", "_ChannelMerge7")]
         pasted_nodes = [nuke.toNode(x) for x in pasted_node_names]
-        self.assertFalse(any(pasted_nodes), "Nodes already exist at the start of testing, were not pasted. ")
+        self.assertFalse(
+            any(pasted_nodes), "Nodes already exist at the start of testing, were not pasted. ")
         try:
             # deselect all
             for node in nuke.selectedNodes():
@@ -228,7 +230,6 @@ class CryptomatteNodePasting(unittest.TestCase):
             for node in pasted_nodes:
                 if node:
                     nuke.delete(node)
-
 
 
 class CryptomatteNukeTests(unittest.TestCase):
@@ -1055,22 +1056,22 @@ class CryptomatteNukeTests(unittest.TestCase):
                             "Under mode did not change preview image from original. ")
 
     def test_encrypt_fresh_roundtrip(self):
-        constant1080 = self.tempNode("Constant", format="HD_1080")
-        empty_hash = self._scansample(constant1080, None, "alpha", num_scanlines=16)
+        constant2k = self.tempNode("Constant", format="square_2K")
+        empty_hash = self._scansample(constant2k, None, "alpha", num_scanlines=16)
 
-        roto1080 = self._setup_rotomask()
-        roto1080.setInput(0, constant1080)
-        roto_hash = self._scansample(roto1080, None, "alpha", num_scanlines=16)
+        roto1k = self._setup_rotomask()
+        roto1k.setInput(0, constant2k)
+        roto_hash = self._scansample(roto1k, None, "alpha", num_scanlines=16)
 
         if empty_hash == roto_hash:
-            raise RuntimeError("Roto matte did not change alpha, test is invalid. ")
+            raise RuntimeError("Roto matte did not change alpha, test is invalid. (%s)" % roto_hash)
 
-        constant720 = self.tempNode("Constant", format="HD_720")
-        merge = self.tempNode("Merge", inputs=[constant720, roto1080])
+        constant2k = self.tempNode("Constant", format="square_1K")
+        merge = self.tempNode("Merge", inputs=[constant2k, roto1k])
         roto_hash_720 = self._scansample(merge, None, "alpha", num_scanlines=16)
 
         encryptomatte = self.tempNode(
-            "Encryptomatte", inputs=[constant720, roto1080], matteName="triangle")
+            "Encryptomatte", inputs=[constant2k, roto1k], matteName="triangle")
         encryptomatte.knob("cryptoLayer").setValue("customCrypto")
         encryptomatte.knob("setupLayers").setValue(True)
 
