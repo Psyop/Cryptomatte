@@ -532,7 +532,7 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     _set_ui(gizmo)
     _set_channels(gizmo, cryptomatte_channels, cinfo.get_selection_name())
     _set_expression(gizmo, cryptomatte_channels)
-    _set_preview_expression(gizmo, cinfo)
+    _set_preview_expression(gizmo, cryptomatte_channels)
     _set_crypto_layer_choice(gizmo, cinfo)
 
 
@@ -775,12 +775,12 @@ def _build_extraction_expression(channel_list, IDs):
 
     return expression
 
-def _set_preview_expression(gizmo, cinfo):
+def _set_preview_expression(gizmo, cryptomatte_channels):
     enabled = gizmo.knob('previewEnabled').getValue()
     preview_mode = gizmo.knob('previewMode').value() if enabled else 'None'
 
     channel_pairs = []
-    for c in cinfo.get_channels():
+    for c in cryptomatte_channels:
         channel_pairs.append(('%s.red' % c, '%s.green' % c))
         channel_pairs.append(('%s.blue' % c, '%s.alpha' % c))
 
