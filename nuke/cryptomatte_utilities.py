@@ -49,6 +49,16 @@ def setup_cryptomatte():
 #############################################
 
 class CryptomatteTesting(object):
+    """ Utility functions for manually running tests. 
+    Returns results if there are failures, otherwise None 
+
+    Arguments of these functions:
+        test_filter -- (string) will be matched fnmatch style (* wildcards) to either the name of the TestCase 
+        class or test method. 
+
+        failfast -- (bool) will stop after a failure, and skip cleanup of the nodes that were created. 
+    """
+
     def get_all_unit_tests(self, test_filter=""):
         import cryptomatte_utilities_tests as cu_tests
         return cu_tests.get_all_unit_tests(test_filter=test_filter)
@@ -57,13 +67,13 @@ class CryptomatteTesting(object):
         import cryptomatte_utilities_tests as cu_tests
         return cu_tests.get_all_nuke_tests(test_filter=test_filter)
 
-    def run_unit_tests(self, test_filter=""):
+    def run_unit_tests(self, test_filter="", failfast=False):
         import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.run_unit_tests(test_filter=test_filter)
+        return cu_tests.run_unit_tests(test_filter, failfast)
 
-    def run_nuke_tests(self, test_filter=""):
+    def run_nuke_tests(self, test_filter="", failfast=False):
         import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.run_nuke_tests(test_filter=test_filter)
+        return cu_tests.run_nuke_tests(test_filter, failfast)
 
 tests = CryptomatteTesting()
 

@@ -5,6 +5,7 @@
 #
 #
 
+import sys
 import unittest
 
 
@@ -15,7 +16,7 @@ def get_all_unit_tests():
 
 def get_all_nuke_tests():
     """ Returns the list of Nuke integration tests"""
-    return [CSVParsingNuke, CryptomatteGizmoSetup]
+    return [CSVParsingNuke, CryptomatteNukeTests]
 
 
 #############################################
@@ -27,6 +28,20 @@ directory can be defined using the environment variable below. Otherwise, they a
 relative to this file.
 """
 SAMPLES_IMAGES_DIR_ENVIRON = "CRYPTOMATTE_TESTING_SAMPLES"
+global CRYPTOMATTETEST_SKIP_CLEANUP_ON_FAILURE
+CRYPTOMATTETEST_SKIP_CLEANUP_ON_FAILURE = False
+
+
+def set_skip_cleanup_on_failure(enabled):
+    assert type(enabled) is bool
+    global CRYPTOMATTETEST_SKIP_CLEANUP_ON_FAILURE
+    CRYPTOMATTETEST_SKIP_CLEANUP_ON_FAILURE = enabled
+
+
+def reset_skip_cleanup_on_failure():
+    global CRYPTOMATTETEST_SKIP_CLEANUP_ON_FAILURE
+    CRYPTOMATTETEST_SKIP_CLEANUP_ON_FAILURE = False
+
 
 #############################################
 # Unit tests
@@ -127,7 +142,7 @@ class CSVParsingNuke(unittest.TestCase):
         self.round_trip_through_gizmo(CSVParsing.csv_str, "Round trip failed")
 
 
-class CryptomatteGizmoSetup(unittest.TestCase):
+class CryptomatteNukeTests(unittest.TestCase):
     """ 
     Many tests are combined into one big class because setupClass takes significant time,
     and many tests in the same class is the lesser evil. 
@@ -179,6 +194,15 @@ class CryptomatteGizmoSetup(unittest.TestCase):
         global g_cancel_nuke_testing
         return g_cancel_nuke_testing
 
+    def skip_cleanup(self):
+        global CRYPTOMATTETEST_SKIP_CLEANUP_ON_FAILURE
+        test_ok = (sys.exc_info() == (None, None, None) or sys.exc_info()[0] is unittest.SkipTest)
+        if CRYPTOMATTETEST_SKIP_CLEANUP_ON_FAILURE and not test_ok:
+            self.set_canceled(True)  # ensure that teardownClass does not run
+            return True
+        else:
+            return False
+
     def setUp(self):
         import nuke
         if self.canceled():
@@ -204,7 +228,7 @@ class CryptomatteGizmoSetup(unittest.TestCase):
                 self.set_canceled(True)
                 self.fail(("After running '%s', can no longer sample. "
                            "No remaining tests can run.") % (self.id()))
-        if not self.canceled():
+        if not self.canceled() and not self.skip_cleanup():
             for node in self._remove_later:
                 nuke.delete(node)
 
@@ -985,27 +1009,30 @@ class CryptomatteGizmoSetup(unittest.TestCase):
 #############################################
 
 
-def run_unit_tests(test_filter=""):
+def run_unit_tests(test_filter="", failfast=False):
     """ Utility function for manually running tests unit tests.
     Returns unittest results if there are failures, otherwise None """
 
-    return run_tests(get_all_unit_tests(), test_filter=test_filter)
+    return run_tests(get_all_unit_tests(), test_filter=test_filter, failfast=failfast)
 
 
-def run_nuke_tests(test_filter=""):
+def run_nuke_tests(test_filter="", failfast=False):
     """ Utility function for manually running tests inside Nuke
     Returns unittest results if there are failures, otherwise None """
 
-    return run_tests(get_all_unit_tests() + get_all_nuke_tests(), test_filter=test_filter)
+    return run_tests(
+        get_all_unit_tests() + get_all_nuke_tests(), test_filter=test_filter, failfast=failfast)
 
 
-def run_tests(test_cases, test_filter=""):
+def run_tests(test_cases, test_filter="", failfast=False):
     """ Utility function for manually running tests. 
     Returns results if there are failures, otherwise None 
 
-    test_filter will be matched fnmatch style (* wildcards) to either the name of the TestCase 
-    class or test method. 
+    Args:
+        test_filter will be matched fnmatch style (* wildcards) to either the name of the TestCase 
+        class or test method. 
 
+        failfast stop after a failure, and skip cleanup of the nodes that were created. 
     """
     import fnmatch
 
@@ -1028,16 +1055,16 @@ def run_tests(test_cases, test_filter=""):
             raise RuntimeError("Filter %s selected no tests. " % test_filter)
         suite = filtered_suite
 
-    runner = unittest.TextTestRunner(verbosity=2)
+    set_skip_cleanup_on_failure(failfast)
+
+    runner = unittest.TextTestRunner(verbosity=2, failfast=failfast)
     result = runner.run(suite)
 
+    reset_skip_cleanup_on_failure()
+
     if result.failures or result.errors:
-        print "TESTING FAILED: %s failed, %s errors. (%s test cases.)" % (len(result.failures),
-                                                                          len(result.errors),
-                                                                          suite.countTestCases())
+        print "TESTING FAILED: %s failed, %s errors. " % (len(result.failures), len(result.errors))
         return result
     else:
-        print "Testing passed: %s failed, %s errors. (%s test cases.)" % (len(result.failures),
-                                                                          len(result.errors),
-                                                                          suite.countTestCases())
+        print "Testing passed: %s failed, %s errors. " % (len(result.failures), len(result.errors))
         return None
