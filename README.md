@@ -67,10 +67,12 @@ Decoders:
 This is a major update to both the Nuke plugins and Fusion plugins, and a minor update to the Cryptomatte specification. 
 
 Specification:
+
 * Changed specification regarding sidecar manifests, such that they are always sidecars with relative paths.
 * Support for UTF-8 Characters in Nuke plugin and specification
 
 Nuke:
+
 * Encryptomatte
   * Added Encryptomatte - allows modifying or creating Cryptomattes in Nuke
 * Added support for sidecar manifests
@@ -105,6 +107,7 @@ Nuke:
   * Fixed (Beta only) bug with errors on load with invalid Cryptomatte
 
 Fusion (by C&eacute;dric Duriau)
+
 * Minimum Fusion version is now 9.0.1.
   * Redesigned around new Fusion 9.0.1 features
   * Fuse now loads EXRs directly via the EXRIO module
@@ -190,7 +193,7 @@ Fusion (by C&eacute;dric Duriau)
 
 For more information on installing Nuke plugins, see:
 
-[https://www.thefoundry.co.uk/products/nuke/developers/70/pythondevguide/installing_plugins.html](https://www.thefoundry.co.uk/products/nuke/developers/70/pythondevguide/installing_plugins.html)
+[https://www.thefoundry.co.uk/products/nuke/developers/105/pythondevguide/installing_plugins.html](https://www.thefoundry.co.uk/products/nuke/developers/105/pythondevguide/installing_plugins.html)
 
 To test the functionality, you can try loading one of the sample images supplied. Load the sample images into Nuke, select one of them, and tab-create the gizmo. Viewing the output of the gizmo should show you a preview of the available mattes. Use the color knob, "Picker Add" to eye-dropper colors on the image to create your mattes.
 
@@ -314,7 +317,7 @@ To get started:
 2. Select the Loader node and use the Select Tool window (Shift + Spacebar) to add a new Cryptomatte node to your composite.
 3. Select the Cryptomatte node in the Flow area and display the output in a Viewer window.
 4. Position the Cryptomatte "Matte Locator" control in the Viewer window over an object in the frame.
-5. Press the "Add" button in the Cryptomatte Tools view to add a new matte entry to the Matte List. Alternatively, you could press the "Shift + D" hotkey in the Fusion Viewer window to toggle the active Cryptomatte "Matte Locator" state between the "Add" and "Remove" selection modes.
+5. Press the "Add" button in the Cryptomatte Tools view to add a new matte entry to the Matte List. Alternatively, you could press the "Shift + T" hotkey in the Fusion Viewer window to toggle the active Cryptomatte "Matte Locator" state between the "Add" and "Remove" selection modes.
 
 ### Cryptomatte Fuse
 
