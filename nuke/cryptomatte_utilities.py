@@ -5,7 +5,7 @@
 #
 #
 
-__version__ = "1.2.0-beta7"
+__version__ = "1.2.0"
 
 GIZMO_CHANNEL_KNOBS = [
     "in00", "in01", "in02", "in03", 
@@ -87,7 +87,6 @@ try:
 except ImportError:
     # ... otherwise fallback to the pure python version
     import pymmh3 as mmh3
-
 
 def mm3hash_float(name):
     hash_32 = mmh3.hash(name)
