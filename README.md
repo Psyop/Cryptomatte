@@ -71,10 +71,10 @@ Specification:
 * Support for UTF-8 Characters in Nuke plugin and specification
 
 Nuke:
-* Support for sidecar manifests
+* Encryptomatte
+  * Added Encryptomatte - allows modifying or creating Cryptomattes in Nuke
+* Added support for sidecar manifests
 * Added layer selection pulldown
-* Added Encryptomatte
-  * Allows modifying or creating Cryptomattes in Nuke
 * New Eyedropper "picker" knobs which use picker position and not sampled values
   * No longer use Color knob's built in picker
   * Fixed keying problems sometimes caused by GPU-enabled viewers
@@ -90,48 +90,50 @@ Nuke:
   * "Remove Channels" now defaults to false
   * "Matte only" now causes mattes to be written to R, G, B, A in addition to specified output
 * "Unpremultiply" option to unpremult output matte by input alpha
-* Support for all names
+* Support for special characters and UTF-8
   * Support for non-ascii unicode
-  * Added support names containing spaces, commas, and angle brackets.
-  * Switched matte lists to be YAML-style. (Names with special characters are enclosed in quotes.)
-* Added unit tests and integration tests.
+  * Added support names containing spaces, commas, and angle brackets
+  * Switched matte lists to be YAML-style (names with special characters are enclosed in quotes)
+* Added test suite
   * Added failfast with cleanup skipping to Nuke tests, to allow inspecting what went wrong
 * Bug fixes
   * Mixed selections of names and raw IDs now work correctly for all cases
-  * Gizmo now works when read nodes have "do not attach prefix" enabled.
+  * Gizmo now works when read nodes have "do not attach prefix" enabled
   * Fixed rare issue where connections were lost on script load and copy and paste when used with channelmerge
   * Fixed (Beta only) bug Encryptomatte retains its layer selection properly
   * Fixed (Beta only) bug with PickerAdd and PickerRemove values stored in files
   * Fixed (Beta only) bug with errors on load with invalid Cryptomatte
 
 Fusion (by C&eacute;dric Duriau)
-* Support for sidecar manifests
 * Minimum Fusion version is now 9.0.1.
   * Redesigned around new Fusion 9.0.1 features
   * Fuse now loads EXRs directly via the EXRIO module
   * For older versions, please use an older release (see GitHub releases)
+* Added support for sidecar manifests
 * Added layer selection slider with layer name display
 * Added "Preview" (AKA "Keyable Surface") options
   * Colors now generated dynamically, removing need for preview channels
-* Added "cryptomatte_shortcut.fu" shortcut configuration file
-* Bug fixes and enhancements
-  * Improved "matte only" previewing
-  * Large performance improvements - Optimized multi threaded functions
-  * No longer limited to 8 cryptomatte ranks
-  * Implemented EXRIO to read exr channel data
-  * Added "cryptomatte_utilities.lua" module
-  * Removed simplejson.lua module, using builtin dkjson module
+* Added shortcut configuration file ("cryptomatte_shortcut.fu")
+  * Added "Toggle" button acting as a Add/Remove switch (Shift+T)
+* Added support special characters in selection lists
+  * Known limitation: Commas in names are not yet supported
+* Performance Improvements
+  * Optimized multi threaded functions
+* Added Support for mixed depth EXR images
+* Added Support for proxy mode
+* Using EXRIO module
   * Removed loader channel slots workaround
-  * Added docstrings
   * Removed "Update Loader" button
-  * Removed "struct.lua" dependency
-  * Support for mixed depth EXR images
-  * Support for proxy mode
-  * Added "Toggle" button acting as a Add/Remove switch
-  * Keyable surface feature disabled when in matte only mode`
+  * No longer limited to 8 cryptomatte ranks
+* Bug fixes
+  * Improved "matte only" previewing
+  * Keyable surface feature disabled when in matte only mode
+* Code improvements
   * Added version to file headers
-  * Support for names containing special characters in selection lists
-  * Known limitation: Commas in names are not yet supported.
+  * Added "cryptomatte_utilities.lua" module
+  * Added docstrings
+  * Removed simplejson.lua module, using builtin dkjson module
+  * Removed "struct.lua" dependency
 
 1.1.4: 
 
