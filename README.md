@@ -72,6 +72,11 @@ Decoders:
   * Added "cryptomatte_shortcut.fu" shortcut configuration file
   * Keyable surface feature disabled when in matte only mode`
   * Added version to file headers
+* Nuke
+  * Fixed rare issue where connections were lost on script load and copy and paste when used with channelmerge
+  * Fixed bug with PickerAdd and PickerRemove values stored in files
+  * Fixed errors with on load with invalid Cryptomatte
+  * Added failfast with cleanup skipping to Nuke tests, to allow inspecting what went wrong
 
 1.2.0 (Beta 6):
 
