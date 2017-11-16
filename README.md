@@ -32,8 +32,8 @@ Encoders:
 * [Isotropix Clarisse 3.5 (By Isotropix)](http://www.isotropix.com/products/clarisse-3.5) [Demo](https://www.youtube.com/watch?v=V_ov8B24jq0)
 * [Chaos Group V-Ray 3.6 (By Chaos Group)](https://docs.chaosgroup.com/display/VRAY3MAX/Cryptomatte+%7C+VRayCryptomatte) [3DSMax demo](https://www.youtube.com/watch?v=tlahITki4xg) [Maya demo](https://www.youtube.com/watch?v=iVHcuke_aWk) [Nuke demo](https://www.youtube.com/watch?v=Vb4OX7UNIMw)
 * [3Delight for Katana and Maya 9.0](https://3delight.atlassian.net/wiki/spaces/3DFK/pages/220135565/Exporting+CryptoMatte+IDs)
-* [Houdini 16.5 Mantra (By Sidefx)](http://www.sidefx.com/docs/houdini/props/mantra#cryptomatte) [Demo](https://vimeo.com/241036613#t=2862s)
-* Blender Cycles (Tangent Animation and Blender Foundation): [Demo](https://www.youtube.com/watch?v=_2Ia4h8q3xs) [Build](https://twitter.com/stefan_3d/status/928556500045516800)
+* [Houdini 16.5 Mantra (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html) [Demo](https://vimeo.com/241036613#t=2862s)
+* Blender Cycles (By Tangent Animation and Blender Foundation): [Demo](https://www.youtube.com/watch?v=_2Ia4h8q3xs) [Build](https://twitter.com/stefan_3d/status/928556500045516800)
 * [Arnold 4 (AlShaders), by Jonah Friedman, Andy Jones, Anders Langlands.](http://www.anderslanglands.com/alshaders/index.html)
 * [Arnold 5 (AlShaders 2), by Jonah Friedman, Andy Jones, Anders Langlands.](https://github.com/anderslanglands/alShaders2)
 * Nuke 7+ "Encryptomatte", by Andy Jones. In this repo.
@@ -42,8 +42,8 @@ Decoders:
 
 * Nuke 7+, by Jonah Friedman, Andy Jones. In this repo.
 * Fusion: by C&eacute;dric Duriau and Kristof Indeherberge at Grid. In this repo.
-* [Houdini 16.5 Compositor (By Sidefx)](http://www.sidefx.com/docs/houdini/composite/index.html) [Demo](https://vimeo.com/241036613#t=2862s)
-* Blender Compositor (Tangent Animation and Blender Foundation): [Demo](https://www.youtube.com/watch?v=_2Ia4h8q3xs) [Build](https://twitter.com/stefan_3d/status/928556500045516800)
+* [Houdini 16.5 Compositor (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html) [Demo](https://vimeo.com/241036613#t=2862s)
+* Blender Compositor (By Tangent Animation and Blender Foundation): [Demo](https://www.youtube.com/watch?v=_2Ia4h8q3xs) [Build](https://twitter.com/stefan_3d/status/928556500045516800)
 
 ## Acknowledgements 
 
