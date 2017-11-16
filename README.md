@@ -70,6 +70,7 @@ Specification:
 
 * Changed specification regarding sidecar manifests, such that they are always sidecars with relative paths.
 * Support for UTF-8 Characters in Nuke plugin and specification
+* Deprecated preview channels
 
 Nuke:
 
