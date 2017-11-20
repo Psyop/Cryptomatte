@@ -442,6 +442,9 @@ def encryptomatte_knob_changed_event(node=None, knob=None):
         _update_encryptomatte_gizmo(node, cinfo)
 
     if knob.name() in ["setupLayers", "cryptoLayer", "inputChange", "cryptoLayers"]:
+        if knob.name() == "inputChange":
+            if unsafe_to_do_inputChange(node):
+                return # see comment in #unsafe_to_do_inputChange. 
         _update_encyptomatte_setup_layers(node)
         cinfo = CryptomatteInfo(node)
         _update_encryptomatte_gizmo(node, cinfo)
