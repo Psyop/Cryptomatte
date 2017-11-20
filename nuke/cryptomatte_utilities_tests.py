@@ -169,7 +169,6 @@ class CryptomatteNodePasting(unittest.TestCase):
             version 10.0 v4
             push $cut_paste_input
             TimeOffset {
-             time ""
              name {prefix}_TimeOffset7
              label "\[value time_offset]"
              selected true
@@ -1182,7 +1181,11 @@ def run_tests(test_cases, test_filter="", failfast=False):
 
     set_skip_cleanup_on_failure(failfast)
 
-    runner = unittest.TextTestRunner(verbosity=2, failfast=failfast)
+    pv = sys.version_info
+    if "%s.%s" % (pv[0], pv[1]) == "2.6":
+        runner = unittest.TextTestRunner(verbosity=2) # nuke 7 again..
+    else:
+        runner = unittest.TextTestRunner(verbosity=2, failfast=failfast)
     result = runner.run(suite)
 
     reset_skip_cleanup_on_failure()
