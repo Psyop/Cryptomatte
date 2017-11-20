@@ -168,11 +168,9 @@ Fusion (by C&eacute;dric Duriau)
 * No longer raises errors if no metadata is available (would happen in batch mode)
 * No longer raises errors if picker in is in single value mode rather than RGB
 
-
 1.0.2:
 
 * Updated pymmh3 to output signed ints, in compliance with mmh3
-
 
 1.0.1: 
 
