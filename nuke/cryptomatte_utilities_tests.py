@@ -159,7 +159,10 @@ class CryptomatteNodePasting(unittest.TestCase):
     This test tests for it. 
     """
 
+    expected_error_prefix =  "On paste, node lost connection to"
+
     def test_paste_with_channelmerge(self):
+        """Tests this bug has been fixed."""
         import nuke
         pastable = """
             set cut_paste_input [stack 0]
@@ -222,14 +225,46 @@ class CryptomatteNodePasting(unittest.TestCase):
             nuke.tcl(pastable.replace("{prefix}", prefix))
             pasted_nodes = [nuke.toNode(x) for x in pasted_node_names]
             ch_merge_node = pasted_nodes[-1]
-            self.assertTrue(ch_merge_node.input(0), "Node lost connection to input 0 on paste.")
-            self.assertTrue(ch_merge_node.input(1), "Node lost connection to input 1 on paste.")
+            self.assertTrue(ch_merge_node.input(0), "%s input 0." % self.expected_error_prefix)
+            self.assertTrue(ch_merge_node.input(1), "%s input 1." % self.expected_error_prefix)
         except:
             raise
         finally:
             for node in pasted_nodes:
                 if node:
                     nuke.delete(node)
+
+    def test_bug_still_exists(self):
+        """Tests this bug still exists. We don't want to be running the fix if we don't have to. """
+        import nuke
+
+        if nuke.NUKE_VERSION_MAJOR == 7:  # but is known not to exist in version 7.
+            return
+
+        def test_callback(node=None, knob=None):
+            node.metadata()
+
+        callback = lambda: test_callback(nuke.thisNode())
+        nuke.addKnobChanged(callback, nodeClass='Cryptomatte')
+
+        try:
+            self.test_paste_with_channelmerge()
+            exception = None
+        except Exception, e:
+            exception = e
+        finally:
+            nuke.removeKnobChanged(callback, nodeClass='Cryptomatte')
+
+        if exception:
+            self.assertTrue(
+                type(exception) is AssertionError,
+                "Bug check failure was not assertion error. %s " % exception)
+            self.assertTrue(
+                self.expected_error_prefix in str(exception),
+                "Assertion did not contain expected prefix (wrong assertion failed, probably). %s" %
+                exception)
+        else:
+            self.fail("Pasting bug does not reproduce in Nuke Version %s" % nuke.NUKE_VERSION_MAJOR)
 
 
 class CryptomatteNukeTests(unittest.TestCase):
