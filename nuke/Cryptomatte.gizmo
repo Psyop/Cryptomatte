@@ -89,7 +89,7 @@ Gizmo {
 }
  Input {
   inputs 0
-  name Input1
+  name Input
   xpos -1361
   ypos -499
  }
