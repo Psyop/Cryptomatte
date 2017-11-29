@@ -6,5 +6,5 @@
 #
 
 import cryptomatte_utilities
-cryptomatte_utilities.setup_cryptomatte()
 
+cryptomatte_utilities.setup_cryptomatte()
