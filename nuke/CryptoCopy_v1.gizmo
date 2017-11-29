@@ -1,0 +1,147 @@
+# Created by Diogo Girondi, if it breaks it wasn’t me.
+
+version 10.5 v3
+Gizmo {
+ inputs 2
+ name CryptoCopy1
+ help "@b;CryptoCopy v1@n; for Nuke v10.5+\n\nCopies a Cryptomatte from input A over to input B.\n\ncreated by Diogo Girondi\ndiogogirondi@gmail.com"
+ knobChanged "\nimport cryptomatte_utilities as cu\n\nnode = nuke.thisNode()\nknob = nuke.thisKnob()\ncopy_knobs = \['layer_m', 'layer_00', 'layer_01', 'layer_02']\n\nif knob.name() in ('inputChange') and not node.knob('lock').value():\n\n    crypto_data_raw = cu.CryptomatteInfo(node.input(1))\n    crypto_data = dict()\n    \n    for i in crypto_data_raw.cryptomattes.keys():\n        name = crypto_data_raw.cryptomattes\[i]\['name']\n        channels = crypto_data_raw.cryptomattes\[i]\['channels']\n        crypto_data\[i] = \{'name': name, 'channels': channels\}\n\n    if crypto_data:\n        cryptomattes = \[crypto_data\[i]\['name'] for i in crypto_data]\n        crypto_prefix = list(crypto_data)\[0]\n        layers = crypto_data\[crypto_prefix]\['channels']\n\n        node.knob('cryptomatte_layer').setValues(cryptomattes)\n        node.knob('cryptomatte_layer').setValue(cryptomattes\[0])\n        node.knob('crypto_data').setText(str(crypto_data))\n        node.knob('crypto_prefix').setText(crypto_prefix)\n        for e, layer in enumerate(layers):\n            node.knob(copy_knobs\[e]).setValue(layer)\n\n    else:\n        node.knob('cryptomatte_layer').setValues(\['                               '])\n        node.knob('crypto_data').setText('')\n        node.knob('crypto_prefix').setText('')\n        for k in copy_knobs:\n            node.knob(k).setValue('none')\n\nif knob.name() in ('cryptomatte_layer'):\n    crypto_data = eval(node.knob('crypto_data').getText())\n    cryptomatte_layer = crypto_data.items()\[int(node.knob('cryptomatte_layer').getValue())]\n    crypto_prefix = cryptomatte_layer\[0]\n    node.knob('crypto_prefix').setText(crypto_prefix)\n    for e, layer in enumerate(cryptomatte_layer\[1]\['channels']):\n        node.knob(copy_knobs\[e]).setValue(layer)   \n"
+ tile_color 0x9e3c63ff
+ addUserKnob {20 CryptoCopy l "CryptoCopy v1"}
+ addUserKnob {4 cryptomatte_layer l "Cryptomatte Layer" t "Cryptomatte layers present on input A" M {"                               "} +DO_NOT_WRITE}
+ addUserKnob {6 lock l "Lock Selection" t "Prevents the Cryptomatte Layer list from being re-populated on input change." -STARTLINE}
+ addUserKnob {41 layer_m l INVISIBLE +INVISIBLE T Layer_M.channels}
+ addUserKnob {41 layer_00 l INVISIBLE +INVISIBLE T Layer_00.channels}
+ addUserKnob {41 layer_01 l INVISIBLE +INVISIBLE T Layer_01.channels}
+ addUserKnob {41 layer_02 l INVISIBLE +INVISIBLE T Layer_02.channels}
+ addUserKnob {1 output l INVISIBLE +INVISIBLE}
+ output "\[value this.layer_m]"
+ addUserKnob {1 crypto_data l INVISIBLE +INVISIBLE}
+ addUserKnob {1 crypto_prefix l INVISIBLE +INVISIBLE}
+}
+ Input {
+  inputs 0
+  name B
+  xpos 0
+  ypos -26
+ }
+ Dot {
+  name Dot8
+  xpos 34
+  ypos 31
+ }
+set N729d900 [stack 0]
+ Dot {
+  name Dot7
+  xpos 127
+  ypos 31
+ }
+ Dot {
+  name Dot6
+  xpos 127
+  ypos 410
+ }
+set N72a1820 [stack 0]
+ Dot {
+  name Dot9
+  xpos 127
+  ypos 474
+ }
+push $N72a1820
+ Input {
+  inputs 0
+  name A
+  xpos -124
+  ypos -26
+  number 1
+ }
+ Dot {
+  name Dot1
+  xpos -90
+  ypos 94
+ }
+set N7201c60 [stack 0]
+ Dot {
+  name Dot2
+  xpos -90
+  ypos 157
+ }
+set Nb4f55a30 [stack 0]
+ Dot {
+  name Dot3
+  xpos -90
+  ypos 222
+ }
+set Nb4fbeb40 [stack 0]
+ Dot {
+  name Dot4
+  xpos -90
+  ypos 283
+ }
+set N72f7e30 [stack 0]
+ Dot {
+  name Dot5
+  xpos -90
+  ypos 348
+ }
+push $N72f7e30
+push $Nb4fbeb40
+push $Nb4f55a30
+push $N7201c60
+push $N729d900
+ Copy {
+  inputs 2
+  name Layer_M
+  xpos 0
+  ypos 87
+  disable {{this.channels==0}}
+ }
+ Copy {
+  inputs 2
+  name Layer_00
+  xpos 0
+  ypos 150
+  disable {{this.channels==0}}
+ }
+ Copy {
+  inputs 2
+  name Layer_01
+  xpos 0
+  ypos 215
+  disable {{this.channels==0}}
+ }
+ Copy {
+  inputs 2
+  name Layer_02
+  xpos 0
+  ypos 276
+  disable {{this.channels==0}}
+ }
+ CopyMetaData {
+  inputs 2
+  mergeMode Meta+Image
+  metadatafilter "\[value parent.crypto_prefix]"
+  name CopyMetaData1
+  xpos 0
+  ypos 345
+ }
+ Switch {
+  inputs 2
+  which {{!clamp(Layer_M.channels+Layer_00.channels+Layer_01.channels+Layer_02.channels)}}
+  name AllNone
+  xpos 0
+  ypos 407
+ }
+ Switch {
+  inputs 2
+  which {{parent.disable}}
+  name Disable
+  xpos 0
+  ypos 471
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos 540
+ }
+end_group
