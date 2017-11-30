@@ -1,0 +1,84 @@
+# Created by Diogo Girondi, if it breaks it wasn’t me.
+
+version 10.5 v3
+Gizmo {
+ name CryptoRemove1
+ help "@b;CryptoRemove v1@n; for Nuke v10.5+\n\nRemoves a Cryptomatte layer(s) and accompanying metadata from the pipe.\n\ncreated by Diogo Girondi\ndiogogirondi@gmail.com"
+ knobChanged "\nimport cryptomatte_utilities as cu\n\nnode = nuke.thisNode()\nknob = nuke.thisKnob()\nremove_knobs = \['channels1', 'channels2', 'channels3', 'channels4']\n\nif knob.name() in ('inputChange') and not node.knob('lock').value():\n\n    crypto_data_raw = cu.CryptomatteInfo(node.input(0))\n    crypto_data = dict()\n    \n    for i in crypto_data_raw.cryptomattes.keys():\n        name = crypto_data_raw.cryptomattes\[i]\['name']\n        channels = crypto_data_raw.cryptomattes\[i]\['channels']\n        crypto_data\[i] = \{'name': name, 'channels': channels\}\n\n    if crypto_data:\n        cryptomattes = \[crypto_data\[i]\['name'] for i in crypto_data]\n        crypto_prefix = list(crypto_data)\[0]\n        layers = crypto_data\[crypto_prefix]\['channels']\n\n        node.knob('cryptomatte_layer').setValues(cryptomattes)\n        node.knob('cryptomatte_layer').setValue(cryptomattes\[0])\n        node.knob('crypto_data').setText(str(crypto_data))\n        node.knob('crypto_prefix').setText(crypto_prefix)\n        for e, layer in enumerate(layers):\n            node.knob(remove_knobs\[e]).setValue(layer)\n\n    else:\n        node.knob('cryptomatte_layer').setValues(\['                               '])\n        node.knob('crypto_data').setText('')\n        node.knob('crypto_prefix').setText('')\n        for k in remove_knobs:\n            node.knob(k).setValue('none')\n\nif knob.name() in ('cryptomatte_layer'):\n    crypto_data = eval(node.knob('crypto_data').getText())\n    cryptomatte_layer = crypto_data.items()\[int(node.knob('cryptomatte_layer').getValue())]\n    crypto_prefix = cryptomatte_layer\[0]\n    node.knob('crypto_prefix').setText(crypto_prefix)\n    for e, layer in enumerate(cryptomatte_layer\[1]\['channels']):\n        node.knob(remove_knobs\[e]).setValue(layer)\n"
+ tile_color 0x9e3c63ff
+ addUserKnob {20 CryptoRemove l "CryptoRemove v1"}
+ addUserKnob {4 cryptomatte_layer l "Cryptomatte Layer" t "Cryptomatte layers present on the input" M {"                               "} +DO_NOT_WRITE}
+ addUserKnob {6 lock l "Lock Selection" t "Prevents the Cryptomatte Layer list from being re-populated on input change." -STARTLINE}
+ addUserKnob {41 channels1 l INVISIBLE +INVISIBLE T Remove1.channels}
+ addUserKnob {41 channels2 l INVISIBLE +INVISIBLE T Remove1.channels2}
+ addUserKnob {41 channels3 l INVISIBLE +INVISIBLE T Remove1.channels3}
+ addUserKnob {41 channels4 l INVISIBLE +INVISIBLE T Remove1.channels4}
+ addUserKnob {1 output l INVISIBLE +INVISIBLE}
+ output "\[value this.channels1]"
+ addUserKnob {1 crypto_data l INVISIBLE +INVISIBLE}
+ addUserKnob {1 crypto_prefix l INVISIBLE +INVISIBLE}
+}
+ Input {
+  inputs 0
+  name Input
+  xpos 0
+  ypos 18
+ }
+ Dot {
+  name Dot1
+  xpos 34
+  ypos 75
+ }
+set N947c9ed0 [stack 0]
+ Dot {
+  name Dot2
+  xpos 127
+  ypos 75
+ }
+ Dot {
+  name Dot6
+  xpos 127
+  ypos 244
+ }
+set N12f1b7d0 [stack 0]
+ Dot {
+  name Dot9
+  xpos 127
+  ypos 308
+ }
+push $N12f1b7d0
+push $N947c9ed0
+ Remove {
+  channels none
+  name Remove1
+  xpos 0
+  ypos 124
+ }
+ ModifyMetaData {
+  metadata {
+   {remove "exr/cryptomatte/\[value parent.crypto_prefix]/*" ""}
+  }
+  name ModifyMetaData1
+  xpos 0
+  ypos 184
+ }
+ Switch {
+  inputs 2
+  which {{!clamp(parent.channels1)}}
+  name AllNone
+  xpos 0
+  ypos 241
+ }
+ Switch {
+  inputs 2
+  which {{parent.disable}}
+  name Disable
+  xpos 0
+  ypos 305
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos 369
+ }
+end_group
