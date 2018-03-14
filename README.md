@@ -34,6 +34,7 @@ Encoders:
 * [3Delight for Katana and Maya 9.0](https://3delight.atlassian.net/wiki/spaces/3DFK/pages/220135565/Exporting+CryptoMatte+IDs)
 * [Houdini 16.5 Mantra (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html) [Demo](https://vimeo.com/241036613#t=2862s)
 * Blender Cycles (By Tangent Animation and Blender Foundation): [Demo](https://www.youtube.com/watch?v=_2Ia4h8q3xs) [Build](https://twitter.com/stefan_3d/status/928556500045516800)
+* [Pixar Renderman 21.7](https://rmanwiki.pixar.com/display/REN/RenderMan+21.7) [Docs](https://rmanwiki.pixar.com/display/REN/PxrCryptomatte) 
 * [Arnold 4 (AlShaders), by Jonah Friedman, Andy Jones, Anders Langlands.](http://www.anderslanglands.com/alshaders/index.html)
 * [Arnold 5 (AlShaders 2), by Jonah Friedman, Andy Jones, Anders Langlands.](https://github.com/anderslanglands/alShaders2)
 * Nuke 7+ "Encryptomatte", by Andy Jones. In this repo.
