@@ -45,6 +45,7 @@ Decoders:
 * Fusion: by C&eacute;dric Duriau and Kristof Indeherberge at Grid. In this repo.
 * [Houdini 16.5 Compositor (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html) [Demo](https://vimeo.com/241036613#t=2862s)
 * Blender Compositor (By Tangent Animation and Blender Foundation): [Demo](https://www.youtube.com/watch?v=_2Ia4h8q3xs) [Build](https://twitter.com/stefan_3d/status/928556500045516800)
+* [Autodesk Flame (By Lewis Saunders)](https://logik-matchbook.org/shader/Cryptomatte)
 
 ## Acknowledgements 
 
