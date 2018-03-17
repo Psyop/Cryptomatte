@@ -16,6 +16,12 @@ local cryptoutils = require("cryptomatte_utilities")
 -- constants
 -- ===========================================================================
 FUSE_NAME = "Cryptomatte"
+FUSE_CATEGORY = "Matte"
+FUSE_COMPANY = "Psyop"
+FUSE_HELP = "https://www.steakunderwater.com/wesuckless/viewtopic.php?f=6&t=1027"
+FUSE_URL = "https://github.com/Psyop/Cryptomatte"
+FUSE_VERSION = 121
+
 SEPARATOR = string.rep("_", 9999)
 SEPARATOR_INDEX = 0
 SHOW_CALLBACKS = false
@@ -29,13 +35,18 @@ VIEW_MODES = {VIEW_MODE_EDGES, VIEW_MODE_COLORS, VIEW_MODE_NONE}
 -- ===========================================================================
 FuRegisterClass(FUSE_NAME, CT_Tool, {
     REGS_Name = FUSE_NAME,
-    REGS_Category = FUSE_NAME,
+    REGS_Category = FUSE_CATEGORY,
+    REGS_Company = FUSE_COMPANY,
     REGS_OpIconString = FUSE_NAME,
     REGS_OpDescription = FUSE_NAME,
+    REGS_URL = FUSE_URL,
+    REGS_HelpTopic = FUSE_HELP,
     REG_NoMotionBlurCtrls = true,
     REG_NoBlendCtrls = true,
-    REG_OpNoMask = true
+    REG_OpNoMask = true,
+    REG_Version = FUSE_VERSION
 })
+
 
 function Create()
     -- input
