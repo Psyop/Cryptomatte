@@ -74,18 +74,6 @@ function is_key_in_table(key, table)
     return false
 end
 
-function is_item_in_array(item, arr)
-    -- checks if the given item is in the given array
-    local item_present = false
-    for i, value in ipairs(arr) do
-        if value == item then
-            item_present = true
-            break
-        end
-    end
-    return item_present
-end
-
 function build_manifest_path(exr_path, sidecar_path)
     -- builds the manifest path from the directory of the given exr path
     -- and joins it with the given relative sidecar path
