@@ -291,7 +291,7 @@ os.environ["CRYPTOMATTE_TESTING_SAMPLES"] = "" #  < specify sample_images dir he
 ## Fusion Installation
 
 1. Download the entire Cryptomatte GitHub repository using the green "Clone or download" button. Select "Download Zip" and then extract the contents.
-2.  Copy the `fusion/cryptomatte_utilities.lua` module into the standard Fusion Lua "package.path" location. The Lua modules can also be added to a folder that is listed in your `LUA_PATH` based environment variable.
+2.  Copy the `fusion/cryptomatte_utilities.lua` module into the Fusion user preferences based `LuaModules:/` PathMap directory, or the standard Fusion Lua "package.path" location. The Lua modules can also be added to a folder that is listed in your `LUA_PATH` based environment variable.
     * Windows : `C:\Program Files\Blackmagic Design\Fusion 9\lua\`
     * Linux : `/usr/local/share/lua/5.1/`
     * Mac : `/usr/local/share/lua/5.1/`
