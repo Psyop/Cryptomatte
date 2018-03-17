@@ -62,6 +62,15 @@ Decoders:
 
 ## Release Notes
 
+1.2.1
+
+Fusion (by C&eacute;dric Duriau)
+
+* Minimum Fusion version is now 9.0.2.
+* Added Fuse registry information (help, company, version, ...)
+* Code improvements
+  * removed unused function
+
 1.2.0:
 
 This is a major update to both the Nuke plugins and Fusion plugins, and a minor update to the Cryptomatte specification. 
