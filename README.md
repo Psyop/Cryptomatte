@@ -68,6 +68,7 @@ Decoders:
 
 Fusion (by C&eacute;dric Duriau)
 
+* Updated README install documentation
 * Minimum Fusion version is now 9.0.2.
 * Changed directory structure
 * Added Fuse registry information (help, company, version, ...)
