@@ -988,19 +988,19 @@ class CryptomatteNukeTests(unittest.TestCase):
         for layer in customLayers[6:]:
             self.assertFalse("%s.red" % layer in channels, "%s in channels" % layer)
 
+    def _hash_layer_channel(self, node, layer, channel, num_scanlines=16):
+        shuf = self.tempNode("Shuffle", inputs=[node])
+        shuf.knob("in").setValue(layer)
+        return self._scansample(shuf, None, channel, num_scanlines=num_scanlines)
+
     def test_encrypt_roundtrip_setup(self):
         import cryptomatte_utilities as cu
-
-        def hash_layer_channel(node, layer, channel):
-            shuf = self.tempNode("Shuffle", inputs=[node])
-            shuf.knob("in").setValue(layer)
-            return self._scansample(shuf, None, channel, num_scanlines=16)
 
         roto = self._setup_rotomask()
         keysurf_hash = self._scansample(self.gizmo, None, "blue", num_scanlines=16)
         roto_hash = self._scansample(roto, None, "alpha", num_scanlines=16)
 
-        id0_hash = hash_layer_channel(self.read_asset, "uCryptoAsset00", "red")
+        id0_hash = self._hash_layer_channel(self.read_asset, "uCryptoAsset00", "red")
 
         encryptomatte = self.tempNode(
             "Encryptomatte", inputs=[self.read_asset, roto], matteName="triangle")
@@ -1009,7 +1009,7 @@ class CryptomatteNukeTests(unittest.TestCase):
 
         self.assertEqual(encryptomatte.knob("cryptoLayer").getValue(), "uCryptoAsset", "Layer was not set")
 
-        new_id0_hash = hash_layer_channel(encryptomatte, "uCryptoAsset00", "red")
+        new_id0_hash = self._hash_layer_channel(encryptomatte, "uCryptoAsset00", "red")
         self.assertNotEqual(id0_hash, new_id0_hash, "ID channel did not change. ")
 
         decrypto_hash = self._scansample(second_cryptomatte, None, "alpha", num_scanlines=16)
@@ -1072,44 +1072,25 @@ class CryptomatteNukeTests(unittest.TestCase):
             self.triangle_pkr, "Encryptomatte result not keyable after bogus manifest", alpha=1.0)
 
     def test_encrypt_merge_operations(self):
-        # todo(jfriedman): figure out whether this is our bug or just a quirk of Nuke
-        if hasattr(self, "skipTest"):
-            self.skipTest("Auto failed this test to stop it wrecking the rest of the tests")
-        return  # just pass tests on nuke 7 (python 2.6)
-        """
-        There's something wrong here and I think it's a nuke bug. 
-
-        After setting mergeOperation to "under", this not causes the rest of the tests to fail. 
-        After this, nothing can sample values off any image anymore. This condition is detected in 
-        teardown and cancels the rest of the tests. 
-
-        This was the same test as test_encrypt_roundtrip (the setup is the same), but because
-        of the strange issue I've broken this out. 
-        """
-
         import cryptomatte_utilities as cu
-        roto = self._setup_rotomask()
-        keysurf_hash = self._scansample(self.gizmo, None, "blue", num_scanlines=8)
-        roto_hash = self._scansample(roto, None, "alpha", num_scanlines=8)
 
-        encryptomatte = self.tempNode(
-            "Encryptomatte", inputs=[self.gizmo, roto], matteName="triangle")
-        second_cryptomatte = self.tempNode(
-            "Cryptomatte", inputs=[encryptomatte], matteList="triangle")
+        encry_over = self.tempNode(
+            "Encryptomatte",
+            inputs=[self.read_asset, self._setup_rotomask()],
+            matteName="triangle",
+            mergeOperation="over")
 
-        mod_keysurf_hash = self._scansample(second_cryptomatte, None, "blue", num_scanlines=8)
-        """
-        FOR SOME REASON the following lines causes the rest of testing to fail. 
-        """
-        encryptomatte.knob("mergeOperation").setValue("under")
-        under_keysurf_hash = self._scansample(second_cryptomatte, None, "blue", num_scanlines=8)
-        """   
-        The following assertions will pass, but fail in teardown as nothing else can be sampled. 
-        """
-        self.assertNotEqual(under_keysurf_hash, mod_keysurf_hash,
-                            "Under mode did not change preview image from over. ")
-        self.assertNotEqual(under_keysurf_hash, keysurf_hash,
-                            "Under mode did not change preview image from original. ")
+        id0_hash = self._hash_layer_channel(encry_over, "uCryptoAsset00", "red")
+
+        # use a new rotomask every time, less bug prone in Nuke. 
+        encry_under = self.tempNode(
+            "Encryptomatte",
+            inputs=[self.read_asset, self._setup_rotomask()],
+            matteName="triangle",
+            mergeOperation="under")
+        id0_mod_hash = self._hash_layer_channel(encry_under, "uCryptoAsset00", "red")
+
+        self.assertNotEqual(id0_hash, id0_mod_hash, "Under mode did not change ID 0. ")
 
     def test_encrypt_fresh_roundtrip(self):
         constant2k = self.tempNode("Constant", format="square_2K")
