@@ -1132,6 +1132,15 @@ class CryptomatteNukeTests(unittest.TestCase):
         encryptomatte.knob("setupLayers").setValue(False)
         cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
 
+    def test_encrypt_fresh_keyable(self):
+        """Tests fresh Encryptomatte setup where there is no input constant."""
+        import cryptomatte_utilities as cu
+        encryptomatte = self.tempNode(
+            "Encryptomatte", inputs=[None, self._setup_rotomask()], matteName="triangle", setupLayers=True)
+        self.gizmo.setInput(0, encryptomatte)
+        self.key_on_image(self.triangle_pkr)
+        self.assertMatteList("triangle", "Encryptomatte did not produce a keyable triangle")
+
 
 #############################################
 # Ad hoc test running
