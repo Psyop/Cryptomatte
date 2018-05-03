@@ -931,57 +931,48 @@ def _id_from_matte_name(name):
         return mm3hash_float(name)
 
 def _get_knob_channel_value(knob, recursive_mode=None):
-    # todo(jonah): Why is this in a try/except?
-    try:
-        bbox = knob.getValue()[4:]
-        node = knob.node()
-        upstream_node = node.input(0)
-        if not upstream_node:
-            return 0.0
-
-        if recursive_mode is None:
-            id_list = []
-        else:
-            matte_list = get_mattelist_as_set(node)
-            id_list = map(_id_from_matte_name, matte_list)
-
-        saw_bg = False
-        add_mode = recursive_mode == "add"
-        rm_mode = recursive_mode == "remove"
-
-        for layer_knob in GIZMO_CHANNEL_KNOBS:
-            layer = node.knob(layer_knob).value()
-
-            if layer == "none":
-                return 0.0
-
-            for id_suffix, cov_suffix in [('.red', '.green'), ('.blue',
-                                                               '.alpha')]:
-                id_channel = layer + id_suffix
-                cov_channel = layer + cov_suffix
-                selected_id = upstream_node.sample(id_channel, bbox[0],
-                                                   bbox[1])
-                selected_coverage = upstream_node.sample(
-                    cov_channel, bbox[0], bbox[1])
-
-                if add_mode or rm_mode:
-                    if selected_id == 0.0 or selected_coverage == 0.0:
-                        # Seen bg twice?  Select bg.
-                        if saw_bg:
-                            break
-                        saw_bg = True
-                        continue
-
-                    in_list = selected_id in id_list
-                    if (add_mode and not in_list) or (rm_mode and in_list):
-                        return selected_id
-                else:
-                    # Non-recursive.  Just return the first id found.
-                    return selected_id
-
-    except:
+    bbox = knob.getValue()[4:]
+    node = knob.node()
+    upstream_node = node.input(0)
+    if not upstream_node:
         return 0.0
 
+    if recursive_mode is None:
+        id_list = []
+    else:
+        matte_list = get_mattelist_as_set(node)
+        id_list = map(_id_from_matte_name, matte_list)
+
+    saw_bg = False
+    add_mode = recursive_mode == "add"
+    rm_mode = recursive_mode == "remove"
+
+    for layer_knob in GIZMO_CHANNEL_KNOBS:
+        layer = node.knob(layer_knob).value()
+
+        if layer == "none":
+            return 0.0
+
+        for id_suffix, cov_suffix in [('.red', '.green'), ('.blue', '.alpha')]:
+            id_chan = layer + id_suffix
+            cov_chan = layer + cov_suffix
+            selected_id = upstream_node.sample(id_chan, bbox[0], bbox[1])
+            selected_coverage = upstream_node.sample(cov_chan, bbox[0], bbox[1])
+
+            if add_mode or rm_mode:
+                if selected_id == 0.0 or selected_coverage == 0.0:
+                    # Seen bg twice?  Select bg.
+                    if saw_bg:
+                        break
+                    saw_bg = True
+                    continue
+
+                in_list = selected_id in id_list
+                if (add_mode and not in_list) or (rm_mode and in_list):
+                    return selected_id
+            else:
+                # Non-recursive.  Just return the first id found.
+                return selected_id
 
 
 #############################################
