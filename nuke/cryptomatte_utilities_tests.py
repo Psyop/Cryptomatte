@@ -784,6 +784,12 @@ class CryptomatteNukeTests(unittest.TestCase):
                 m.update(str(node.sample(channel, x, y)))
         return m.hexdigest()
 
+    def _scansample_layer(self, node, layer, channel, num_scanlines=16):
+        """Hashes some scanlines of a layer other than rgba, by shuffling first. """
+        shuf = self.tempNode("Shuffle", inputs=[node])
+        shuf.knob("in").setValue(layer)
+        return self._scansample(shuf, None, channel, num_scanlines=num_scanlines)
+
     def test_decrypto_basic(self):
         """ Tests both basic decryptomatte, as well as ensuring _scansample() is
         returning different hashes for different values. 
@@ -988,11 +994,6 @@ class CryptomatteNukeTests(unittest.TestCase):
         for layer in customLayers[6:]:
             self.assertFalse("%s.red" % layer in channels, "%s in channels" % layer)
 
-    def _hash_layer_channel(self, node, layer, channel, num_scanlines=16):
-        shuf = self.tempNode("Shuffle", inputs=[node])
-        shuf.knob("in").setValue(layer)
-        return self._scansample(shuf, None, channel, num_scanlines=num_scanlines)
-
     def test_encrypt_roundtrip_setup(self):
         import cryptomatte_utilities as cu
 
@@ -1000,7 +1001,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         keysurf_hash = self._scansample(self.gizmo, None, "blue", num_scanlines=16)
         roto_hash = self._scansample(roto, None, "alpha", num_scanlines=16)
 
-        id0_hash = self._hash_layer_channel(self.read_asset, "uCryptoAsset00", "red")
+        id0_hash = self._scansample_layer(self.read_asset, "uCryptoAsset00", "red")
 
         encryptomatte = self.tempNode(
             "Encryptomatte", inputs=[self.read_asset, roto], matteName="triangle")
@@ -1009,7 +1010,7 @@ class CryptomatteNukeTests(unittest.TestCase):
 
         self.assertEqual(encryptomatte.knob("cryptoLayer").getValue(), "uCryptoAsset", "Layer was not set")
 
-        new_id0_hash = self._hash_layer_channel(encryptomatte, "uCryptoAsset00", "red")
+        new_id0_hash = self._scansample_layer(encryptomatte, "uCryptoAsset00", "red")
         self.assertNotEqual(id0_hash, new_id0_hash, "ID channel did not change. ")
 
         decrypto_hash = self._scansample(second_cryptomatte, None, "alpha", num_scanlines=16)
@@ -1080,7 +1081,7 @@ class CryptomatteNukeTests(unittest.TestCase):
             matteName="triangle",
             mergeOperation="over")
 
-        id0_hash = self._hash_layer_channel(encry_over, "uCryptoAsset00", "red")
+        id0_hash = self._scansample_layer(encry_over, "uCryptoAsset00", "red")
 
         # use a new rotomask every time, less bug prone in Nuke. 
         encry_under = self.tempNode(
@@ -1088,7 +1089,7 @@ class CryptomatteNukeTests(unittest.TestCase):
             inputs=[self.read_asset, self._setup_rotomask()],
             matteName="triangle",
             mergeOperation="under")
-        id0_mod_hash = self._hash_layer_channel(encry_under, "uCryptoAsset00", "red")
+        id0_mod_hash = self._scansample_layer(encry_under, "uCryptoAsset00", "red")
 
         self.assertNotEqual(id0_hash, id0_mod_hash, "Under mode did not change ID 0. ")
 
@@ -1114,7 +1115,7 @@ class CryptomatteNukeTests(unittest.TestCase):
 
         self.gizmo.setInput(0, encryptomatte)
         self.key_on_image(self.triangle_pkr)
-        self.gizmo.knob("forceUpdate").execute() # needed for some reason when using encryptomatte
+        self.gizmo.knob("forceUpdate").execute() # needed for some reason
         self.assertMatteList("triangle", "Encryptomatte did not produce a keyable triangle")
         decrypto_hash = self._scansample(self.gizmo, None, "alpha", num_scanlines=16)
         self.assertEqual(roto_hash_720, decrypto_hash, ("Alpha did not survive round trip through "
