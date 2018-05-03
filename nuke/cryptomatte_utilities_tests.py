@@ -898,8 +898,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         [828.0, 676.0],
     ]
 
-    triangle_pkr = ("add", (861.0, 536.0))
-    rm_triangle_pkr = ("add", (861.0, 536.0))
+    triangle_pkr = ("add", (840.0, 615.0))
 
     def _setup_rotomask(self):
         """Which partially covers the flower."""
@@ -989,17 +988,29 @@ class CryptomatteNukeTests(unittest.TestCase):
         for layer in customLayers[6:]:
             self.assertFalse("%s.red" % layer in channels, "%s in channels" % layer)
 
-    def test_encrypt_roundtrip(self):
+    def test_encrypt_roundtrip_setup(self):
         import cryptomatte_utilities as cu
+
+        def hash_layer_channel(node, layer, channel):
+            shuf = self.tempNode("Shuffle", inputs=[node])
+            shuf.knob("in").setValue(layer)
+            return self._scansample(shuf, None, channel, num_scanlines=16)
 
         roto = self._setup_rotomask()
         keysurf_hash = self._scansample(self.gizmo, None, "blue", num_scanlines=16)
         roto_hash = self._scansample(roto, None, "alpha", num_scanlines=16)
 
+        id0_hash = hash_layer_channel(self.read_asset, "uCryptoAsset00", "red")
+
         encryptomatte = self.tempNode(
-            "Encryptomatte", inputs=[self.gizmo, roto], matteName="triangle")
+            "Encryptomatte", inputs=[self.read_asset, roto], matteName="triangle")
         second_cryptomatte = self.tempNode(
             "Cryptomatte", inputs=[encryptomatte], matteList="triangle")
+
+        self.assertEqual(encryptomatte.knob("cryptoLayer").getValue(), "uCryptoAsset", "Layer was not set")
+
+        new_id0_hash = hash_layer_channel(encryptomatte, "uCryptoAsset00", "red")
+        self.assertNotEqual(id0_hash, new_id0_hash, "ID channel did not change. ")
 
         decrypto_hash = self._scansample(second_cryptomatte, None, "alpha", num_scanlines=16)
         mod_keysurf_hash = self._scansample(second_cryptomatte, None, "blue", num_scanlines=16)
@@ -1013,22 +1024,31 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.assertTrue("set" in names_to_IDs, "Manifest doesn't contain original manifest")
         self.assertTrue("triangle" in names_to_IDs, "Manifest doesn't contain new members")
 
+    def test_encrypt_roundtrip_keyable(self):
+        import cryptomatte_utilities as cu
         global g_cryptomatte_manf_from_names
         global g_cryptomatte_manf_from_IDs
         g_cryptomatte_manf_from_names = {}
         g_cryptomatte_manf_from_IDs = {}
+        
+        roto = self._setup_rotomask()
+        encryptomatte = self.tempNode(
+            "Encryptomatte", inputs=[self.read_asset, roto], matteName="triangle")
 
-        second_cryptomatte.knob("matteList").setValue("")
-        self.key_on_gizmo(second_cryptomatte, self.triangle_pkr, self.set_pkr)
-        mlist = second_cryptomatte.knob("matteList").getValue()
+        self.gizmo.setInput(0, encryptomatte)
+        self.key_on_gizmo(self.gizmo, self.triangle_pkr, self.set_pkr)
+        mlist = self.gizmo.knob("matteList").getValue()
         self.assertEqual(mlist, "set, triangle",
                          "Encrypto-modified manifest not properly keyable. {0}".format(mlist))
+
+        self.assertTrue("set" in mlist, "Couldn't properly key 'set' (Pre-existing)")
+        self.assertTrue("triangle" in mlist, "Couldn't properly key 'triangle' (New Member)")
 
     def test_encrypt_roundtrip_without_prefix(self):
         self.read_asset.knob("noprefix").setValue(True)
         exception = None
         try:
-            self.test_encrypt_roundtrip()
+            self.test_encrypt_roundtrip_setup()
         except Exception, e:
             exception = e
         self.read_asset.knob("noprefix").setValue(False)
@@ -1046,6 +1066,8 @@ class CryptomatteNukeTests(unittest.TestCase):
         cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
         self.gizmo.setInput(0, encryptomatte)
         self.key_on_image(self.triangle_pkr)
+        self.gizmo.knob("forceUpdate").execute()
+        self.assertMatteList("<1.54567320652e-21>", "Did not update after keying. ")
         self.assertSampleEqual(
             self.triangle_pkr, "Encryptomatte result not keyable after bogus manifest", alpha=1.0)
 
@@ -1111,6 +1133,7 @@ class CryptomatteNukeTests(unittest.TestCase):
 
         self.gizmo.setInput(0, encryptomatte)
         self.key_on_image(self.triangle_pkr)
+        self.gizmo.knob("forceUpdate").execute() # needed for some reason when using encryptomatte
         self.assertMatteList("triangle", "Encryptomatte did not produce a keyable triangle")
         decrypto_hash = self._scansample(self.gizmo, None, "alpha", num_scanlines=16)
         self.assertEqual(roto_hash_720, decrypto_hash, ("Alpha did not survive round trip through "
