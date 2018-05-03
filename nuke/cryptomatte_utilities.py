@@ -953,12 +953,14 @@ def _get_knob_channel_value(knob, recursive_mode=None):
             if layer == "none":
                 return 0.0
 
-            for sub_channel in ['.red', '.blue']:
-                channel = layer + sub_channel
-                selected_id = upstream_node.sample(channel, bbox[0], bbox[1])
+            for id_suffix, cov_suffix in [('.red', '.green'), ('.blue', '.alpha')]:
+                id_channel = layer + id_suffix
+                cov_channel = layer + cov_suffix
+                selected_id = upstream_node.sample(id_channel, bbox[0], bbox[1])
+                selected_coverage = upstream_node.sample(cov_channel, bbox[0], bbox[1])
                 
                 if recursive_mode == "add":
-                    if selected_id == 0.0:
+                    if selected_id == 0.0 or selected_coverage == 0.0:
                         # Seen bg twice?  Select bg.
                         if saw_bg:
                             return 0.0
@@ -970,7 +972,7 @@ def _get_knob_channel_value(knob, recursive_mode=None):
                         return selected_id
 
                 elif recursive_mode == "remove":
-                    if selected_id == 0.0:                        
+                    if selected_id == 0.0 or selected_coverage == 0.0:
                         # Seen bg twice?  Select bg.
                         if saw_bg:
                             return 0.0
