@@ -1,3 +1,19 @@
+1.2.1:
+
+A reorganization of this repo, and a minor update to the Nuke plugins.
+
+Repo changes:
+
+* Reorganized into separate files. 
+* Added some tiny test images showing different cases of Cryptomatte usage.
+
+Nuke:
+
+* Added troubleshooting button to Cryptomatte gizmo
+* Fixed Encryptomatte issue where it couldn't start a new Cryptomatte with no inputs
+* Added test for Encryptomatte with no inputs
+* Do not allow keying IDs with zero coverage
+* Fixed some test issues in Nuke 11.3
 
 1.2.0:
 

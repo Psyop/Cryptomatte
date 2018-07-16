@@ -4,7 +4,7 @@ Optional   : cjson
 Created by : Cédric Duriau         [duriau.cedric@live.be]
              Kristof Indeherberge  [xmnr0x23@gmail.com]
              Andrew Hazelden       [andrew@andrewhazelden.com]
-Version    : 1.2.0
+Version    : 1.2.1
 --]]
 
 -- module table
