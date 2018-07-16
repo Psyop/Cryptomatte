@@ -2,9 +2,7 @@
 
 A reorganization of this repo, and a minor update to the Nuke plugins.
 
-Repo changes:
-
-* Reorganized into separate files. 
+* Reorganized Fusion and Nuke documentation into separate files. 
 * Added some tiny test images showing different cases of Cryptomatte usage.
 
 Nuke:

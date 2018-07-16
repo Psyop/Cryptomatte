@@ -13,7 +13,7 @@ To test the functionality, you can try loading one of the sample images supplied
 
 ## Nuke Usage
 
-![Cryptomatte in Nuke](/docs/nukeScreenshot.jpg)
+![Cryptomatte in Nuke](nukeScreenshot.jpg)
 
 To get started: 
 
@@ -24,7 +24,7 @@ To get started:
 
 ### Cryptomatte Gizmo
 
-![Cryptomatte Gizmo Properties in Nuke](/docs/gizmoProperties.png)
+![Cryptomatte Gizmo Properties in Nuke](gizmoProperties.png)
 
 Psyop Cryptomatte Tab:
 
@@ -55,7 +55,7 @@ Advanced Tab:
 
 ### Encryptomatte Gizmo
 
-![Encryptomatte Gizmo Properties in Nuke](/docs/encryptomatteProperties.png)
+![Encryptomatte Gizmo Properties in Nuke](encryptomatteProperties.png)
 
 Encryptomatte is a gizmo that can modify existing Cryptomattes, or start new ones. One Encryptomatte node adds one matte to a Cryptomatte.
 

@@ -25,8 +25,8 @@ The contents of this repository are:
 
 ## Documentation
 
-* [Nuke Documentation](nuke.md) - Installation, Usage instructions, Troubleshooting
-* [Fusion Documentation](fusion.md) - Installation, Usage instructions
+* [Nuke Documentation](/docs/nuke.md) - Installation, Usage instructions, Troubleshooting
+* [Fusion Documentation](/docs/fusion.md) - Installation, Usage instructions
 
 ## Implementations
 
@@ -56,7 +56,7 @@ Decoders:
 
 ## Chnage Log / Release Notes
 
-See [changelog.](changelog.md)
+See [changelog.](CHANGELOG.md)
 
 ## Acknowledgements 
 

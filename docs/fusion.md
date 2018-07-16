@@ -16,7 +16,7 @@
 
 ### Fusion Usage:
 
-![Cryptomatte for Fusion](/docs/fusionScreenshot.png)
+![Cryptomatte for Fusion](fusionScreenshot.png)
 
 The Cryptomatte Fuse works in Fusion (Free) and Fusion Studio v9.0.1+. The Fuse allows you to create matte selections using a Cryptomatte "Matte Locator" control that is positioned using transform control the Fusion Viewer window.
 
@@ -30,4 +30,4 @@ To get started:
 
 ### Cryptomatte Fuse
 
-![Cryptomatte for Fusion Tools View](/docs/fusionToolsView.png)
+![Cryptomatte for Fusion Tools View](fusionToolsView.png)
