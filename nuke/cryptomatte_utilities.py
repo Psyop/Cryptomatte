@@ -1123,7 +1123,7 @@ def _decryptomatte(gizmo):
         name_out = gizmo.knob("matteList").value()
         name_out.replace(", ", "_")
         if len(name_out) > 16:
-            name_out = "%s_._%s" % (name_out[:16], hex(mmh3.hash(name_out))[2:8])
+            name_out = "%s_%s" % (name_out[:16], hex(mmh3.hash(name_out))[2:8])
         return name_out
 
     matte_name = _decryptomatte_get_name(gizmo)
