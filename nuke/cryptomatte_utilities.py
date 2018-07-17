@@ -1092,11 +1092,8 @@ def decryptomatte_button(node):
 
 
 def decryptomatte_nodes(nodes, ask):
-    gizmos = []
-
-    for node in nodes:
-        if node.Class() == "Cryptomatte":
-            gizmos.append(node)
+    """ Replaces Cryptomatte gizmos with equivelant nodes. """
+    gizmos = [n for n in nodes if n.Class() == "Cryptomatte"]
     if not gizmos:
         return
 
@@ -1119,60 +1116,61 @@ def decryptomatte_nodes(nodes, ask):
 
 
 def _decryptomatte(gizmo):
+    """ Returns list of new nodes, in order of connections. """
     orig_name = gizmo.name()
-
-    expr_setting = gizmo.knob("expression").value()
-    rm_channels_setting = gizmo.knob("RemoveChannels").value()
-    matte_only_setting = gizmo.knob("matteOnly").value()
-    matte_list_setting = gizmo.knob("matteList").value()
-    output_setting = gizmo.knob("matteOutput").value()
-    unpremult_setting = gizmo.knob("unpremultiply").value()
-    disabled_setting = gizmo.knob("disable").getValue()
-    matte_channel = gizmo.knob("matteOutput").value()
+    disabled = gizmo.knob("disable").getValue()
+    matte_list = gizmo.knob("matteList").value()
+    matte_only = gizmo.knob("matteOnly").value()
+    expression = gizmo.knob("expression").value()
+    matte_output = gizmo.knob("matteOutput").value()
+    unpremultiply = gizmo.knob("unpremultiply").value()
+    remove_channels = gizmo.knob("RemoveChannels").value()
 
     # compile list immediate outputs to connect to
     connect_to = []
     for node in gizmo.dependent():
-        for input_index in xrange(node.inputs()):
-            inode = node.input(input_index)
-            if inode and inode.fullName() == gizmo.fullName():
-                connect_to.append((node, input_index))
+        for i in xrange(node.inputs()):
+            input_node = node.input(i)
+            if input_node and input_node.fullName() == gizmo.fullName():
+                connect_to.append((i, input_node))
 
-    expr = expr_setting
-    if unpremult_setting:
-        expr = "(%s) / (alpha ? alpha : 1)" % expr_setting
+    # Modifiy expression to perform premult.
+    if unpremultiply and expression:
+        expression = "(%s) / (alpha ? alpha : 1)" % expression
 
+    # Setup expression node.
     expr_node = nuke.nodes.Expression(
-        inputs=[gizmo], channel0=output_setting, expr0=expr, 
-        name="%sExtract"%orig_name, disable=disabled_setting
-    )
-    ml_knob = nuke.nuke.String_Knob('origMatteList', 'Original Matte List', matte_list_setting)
-    expr_node.addKnob(ml_knob)
+        inputs=[gizmo], channel0=matte_output, expr0=expression,
+        name="%sExtract" % orig_name, disable=disabled)
+    expr_node.addKnob(nuke.nuke.String_Knob(
+        'origMatteList', 'Original Matte List', matte_list))
     for knob_name in GIZMO_CHANNEL_KNOBS:
         expr_node.addKnob(nuke.nuke.Channel_Knob(knob_name, "none") )
         expr_node.knob(knob_name).setValue(gizmo.knob(knob_name).value())
         expr_node.knob(knob_name).setVisible(False)
-
     new_nodes = [expr_node]
 
-    if rm_channels_setting:
-        channels2 = output_setting if output_setting != "alpha" else ""
+    # Add remove channels node, if needed.
+    if remove_channels:
+        channels2 = matte_output if matte_output != "alpha" else ""
         remove = nuke.nodes.Remove(
-            inputs=[expr_node], operation="keep", channels="rgba", 
-            channels2=channels2, name="%sRemove"%orig_name, 
-            disable=disabled_setting
-        )
+            inputs=[expr_node], operation="keep", channels="rgba",
+            channels2=channels2, name="%sRemove" % orig_name,
+            disable=disabled)
         new_nodes.append(remove)
 
-    if matte_only_setting:
+    # If "matte only" is used, add shuffle node.
+    if matte_only:
         shuffle = nuke.nodes.Shuffle(
-            name="%sMatteOnly"%orig_name, inputs=[new_nodes[-1]]
-        )
-        shuffle.knob("in").setValue(output_setting)
+            name="%sMatteOnly" % orig_name, inputs=[new_nodes[-1]],
+            disable=disabled)
+        shuffle.knob("in").setValue(matte_output)
         new_nodes.append(shuffle)        
 
+    # Disable original
     gizmo.knob("disable").setValue(True)
 
-    for node, inputID in connect_to:
+    # Reconnect outputs
+    for inputID, node in connect_to:
         node.setInput(inputID, new_nodes[-1])
     return new_nodes
