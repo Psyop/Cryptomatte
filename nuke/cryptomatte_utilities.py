@@ -696,47 +696,52 @@ def encryptomatte_add_manifest_id():
 #############################################
 
 def _troubleshoot_gizmo(gizmo):
+    MSG_WRONGTYPE = 'Troubleshooting: Cannot troubleshoot non-Cryptomatte nodes'
+    MSG_UNCONNECTED = 'Cryptomatte gizmo is not plugged into anything'
+    MSG_NONE_FOUND = 'No Cryptomattes found in input. '
+    MSG_LYR_UNSET = ('Gizmo needs updating, layer is not set. '
+                     'Press "force update" or reconnect.')
+    MSG_LYR_UNPOP = ('Gizmo needs updating, layer menu is not populated. '
+                     'Press "force update" or reconnect.')
+    MSG_ODD_STATE = ('Gizmo is in an odd state and needs updating. '
+                     'Press "force update" or reconnect.')
+    MSG_INVALID_SEL = ('Layer is set to "%s", which is unavailable. '
+                       'Select another layer.')
     if gizmo.Class() != "Cryptomatte":
-        return ['Troubleshooting: Cannot troubleshoot non-Cryptomatte nodes']
+        return [MSG_WRONGTYPE]
+
     issues = []
-    source_node = gizmo.input(0)
-    if not source_node:
-        issues.append('Cryptomatte gizmo is not plugged into anything')
+    if not gizmo.input(0):
+        issues.append(MSG_UNCONNECTED)
     else:
         cinfo = CryptomatteInfo(gizmo)
         available = cinfo.get_cryptomatte_names()
         selection = gizmo.knob('cryptoLayer').value()
-        menuSelection = gizmo.knob('cryptoLayerChoice').value()
+        menu_selection = gizmo.knob('cryptoLayerChoice').value()
         if not cinfo.cryptomattes:
-            issues.append('No Cryptomattes found in input. ')
+            issues.append(MSG_NONE_FOUND)
         else:
-            if not selection or not menuSelection:
-                issues.append(
-                    'Gizmo needs updating, layer is not set. Press "force update" or reconnect.'
-                )
-            if menuSelection not in available:
-                issues.append(
-                    'Gizmo needs updating, layer menu is not populated. Press "force update" or reconnect.'
-                )
+            if not selection or not menu_selection:
+                issues.append(MSG_LYR_UNSET)
+            if menu_selection not in available:
+                issues.append(MSG_LYR_UNPOP)
             elif selection not in gizmo.knob(GIZMO_CHANNEL_KNOBS[0]).value():
-                issues.append(
-                    'Gizmo is in an odd state and needs updating. Press "force update" or reconnect.'
-                )
+                issues.append(MSG_ODD_STATE)
             elif selection not in available:
-                issues.append(
-                    'Layer is set to "%s", which is unavailable. Select another layer.'
-                    % selection)
+                issues.append(MSG_INVALID_SEL % selection)
     return issues
 
 def _troubleshoot_setup():
+    MSG_BAD_INSTALL = ("Installation is wrong, callbacks were not found. "
+                       "setup_cryptomatte() did not run, init.py may "
+                       "not be set up properly. ")
+    PROXY_MODE = "Proxy mode is on, this can cause artifacts. "
     issues = []
-    expected_knobChangeds = ["Cryptomatte", "Encryptomatte"]
-    if any(x not in nuke.callbacks.knobChangeds for x in expected_knobChangeds):
-        issues.append(
-            ("Installation is wrong, callbacks were not found. setup_cryptomatte() "
-             "did not run, init.py may not be set up properly. "))
+    expected_knob_changeds = ["Cryptomatte", "Encryptomatte"]
+    if any(x not in nuke.callbacks.knobChangeds for x in expected_knob_changeds):
+        issues.append(BAD_INSTALL)
     if nuke.root().knob('proxy').value():
-        issues.append("Proxy mode is on, this can cause artifacts. ")
+        issues.append(PROXY_MODE)
     return issues
 
 def troubleshoot_gizmo(node):
