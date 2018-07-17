@@ -430,7 +430,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         ml = self.gizmo.knob("matteList").getValue()
         self.assertEqual(ml, value, '%s. ("%s" vs "%s")' % (msg, value, ml))
 
-    def hash_channel(self, node, pkr, channel, num_scanlines=8):
+    def hash_channel(self, node, pkr, channel, num_scanlines=8, precision=None):
         """
         Returns a hash from the values a channel, tested in a number of 
         horizontal scanlines across the images. A picker tuple can be 
@@ -447,11 +447,17 @@ class CryptomatteNukeTests(unittest.TestCase):
         if pkr:
             y = pkr[1][1]
             for x in xrange(width):
-                m.update(str(node.sample(channel, x, y)))
+                sample = node.sample(channel, x, y)
+                if precision:
+                    sample = round(sample, precision)
+                m.update(str(sample))
         for y_index in xrange(num_scanlines):
             y = (float(y_index) + 0.5) * height / (num_scanlines)
             for x in xrange(width):
-                m.update(str(node.sample(channel, x, y)))
+                sample = node.sample(channel, x, y)
+                if precision:
+                    sample = round(sample, precision)
+                m.update(str(sample))
         return m.hexdigest()
 
     def hash_channel_layer(self, node, layer, channel, num_scanlines=16):
@@ -829,6 +835,7 @@ class CryptomatteNukeTests(unittest.TestCase):
     def test_decrypto_matteonly_unpremul(self):
         import cryptomatte_utilities as cu
         custom_layer = "uCryptoAsset"  # guaranteed to already exist
+        prec = 5
 
         # self.gizmo will have alpha for unpremult.
         self.key_on_image(self.set_pkr, self.bunny_pkr)
@@ -838,39 +845,50 @@ class CryptomatteNukeTests(unittest.TestCase):
             matteList="bunny",
             matteOnly=True,
             matteOutput=custom_layer)
-        no_unpremult_hash = self.hash_channel(new_gizmo, self.set_pkr, "alpha")
+        no_unpremult_hash = self.hash_channel(new_gizmo, self.set_pkr, "alpha", precision=prec)
         new_gizmo.knob("unpremultiply").setValue(True)
 
-        channels = ["%s.red" % custom_layer, "red", "green", "alpha"]
-        gizmo_hashes = [self.hash_channel(new_gizmo, self.set_pkr, ch) for ch in channels]
+        channels = ["red", "green", "alpha", "%s.red" % custom_layer]
+        gizmo_hashes = [self.hash_channel(new_gizmo, self.set_pkr, ch, precision=prec)
+                        for ch in channels]
         new_nodes = cu._decryptomatte(new_gizmo)
         self.delete_nodes_after_test(new_nodes)
-        decrypto_hashes = [self.hash_channel(new_nodes[-1], self.set_pkr, ch) for ch in channels]
+        decrypto_hashes = [self.hash_channel(new_nodes[-1], self.set_pkr, ch, precision=prec)
+                           for ch in channels]
 
         self.assertNotEqual(no_unpremult_hash, gizmo_hashes[0],
                             "Unpremult didn't seem to change anything.")
         for ch, g_hash, dc_hash in zip(channels, gizmo_hashes, decrypto_hashes):
             self.assertEqual(g_hash, dc_hash,
-                             "Difference between decryptomatte and regular in %s" % ch)
+                             "Difference between decryptomatte (%s) and regular (%s) in %s"
+                              % (new_nodes[-1].name(), new_gizmo.name(), ch))
         for i, channel in enumerate(channels[:-1]):
             msg = "Matte-only difference between %s and %s" % (channels[i], channels[i + 1])
             self.assertEqual(decrypto_hashes[i], decrypto_hashes[i + 1], msg)
 
-    def test_decrypto_rmchannels(self):
-        import cryptomatte_utilities as cu
+    def test_decrypto_rmchannels_customlayer(self):
+        self._test_decrypto_rmchannels("uCryptoAsset")
 
-        channels = [x for x in self.gizmo.channels()]
+    def test_decrypto_rmchannels_alpha(self):
+        self._test_decrypto_rmchannels("alpha")
+
+    def _test_decrypto_rmchannels(self, output_layer="alpha"):
+        import cryptomatte_utilities as cu
+        orig_channels = set(x for x in self.gizmo.channels())
         self.gizmo.knob("RemoveChannels").setValue(True)
-        channels_removed = [x for x in self.gizmo.channels()]
+        self.gizmo.knob("matteOutput").setValue(output_layer)
+        channels_removed = set(x for x in self.gizmo.channels())
 
         new_nodes = cu._decryptomatte(self.gizmo)
         self.delete_nodes_after_test(new_nodes)
 
-        channels_removed_decrypto = [x for x in new_nodes[-1].channels()]
+        channels_removed_decrypto = set(x for x in new_nodes[-1].channels())
+        channels_removed_decrypto |= set(['rgba.red', 'rgba.green', 'rgba.blue', 'rgba.alpha'])
 
-        self.assertNotEqual(channels, channels_removed, "Removing channels did nothing")
+        self.assertNotEqual(orig_channels, channels_removed, 
+                            "Removing channels did nothing (%s)" % output_layer)
         self.assertEqual(channels_removed, channels_removed_decrypto,
-                         "Channels not removed properly after decrypto.")
+                         "Channels not removed properly after decrypto. (%s)" % output_layer)
 
     #############################################
     # Gizmo integrity

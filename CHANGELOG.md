@@ -12,6 +12,7 @@ Nuke:
 * Added test for Encryptomatte with no inputs
 * Do not allow keying IDs with zero coverage
 * Fixed some test issues in Nuke 11.3
+* Cleaner decryptomatte results, with maximum of 3 nodes in sequence, no dots, and better naming
 
 1.2.0:
 

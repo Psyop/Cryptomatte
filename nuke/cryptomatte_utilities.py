@@ -1119,21 +1119,16 @@ def decryptomatte_nodes(nodes, ask):
 
 
 def _decryptomatte(gizmo):
-    def _decryptomatte_get_name(gizmo):
-        name_out = gizmo.knob("matteList").value()
-        name_out.replace(", ", "_")
-        if len(name_out) > 16:
-            name_out = "%s_%s" % (name_out[:16], hex(mmh3.hash(name_out))[2:8])
-        return name_out
-
-    matte_name = _decryptomatte_get_name(gizmo)
+    orig_name = gizmo.name()
 
     expr_setting = gizmo.knob("expression").value()
     rm_channels_setting = gizmo.knob("RemoveChannels").value()
     matte_only_setting = gizmo.knob("matteOnly").value()
+    matte_list_setting = gizmo.knob("matteList").value()
     output_setting = gizmo.knob("matteOutput").value()
     unpremult_setting = gizmo.knob("unpremultiply").value()
     disabled_setting = gizmo.knob("disable").getValue()
+    matte_channel = gizmo.knob("matteOutput").value()
 
     # compile list immediate outputs to connect to
     connect_to = []
@@ -1143,54 +1138,41 @@ def _decryptomatte(gizmo):
             if inode and inode.fullName() == gizmo.fullName():
                 connect_to.append((node, input_index))
 
-    start_dot = nuke.nodes.Dot(inputs=[gizmo])
-    expr_node = nuke.nodes.Expression(
-        inputs=[start_dot], channel0="red", expr0=expr_setting, 
-        name="CryptExpr_%s"%matte_name, disable=disabled_setting
-    )
-    new_nodes = [start_dot, expr_node]
+    expr = expr_setting
+    if unpremult_setting:
+        expr = "(%s) / (alpha ? alpha : 1)" % expr_setting
 
+    expr_node = nuke.nodes.Expression(
+        inputs=[gizmo], channel0=output_setting, expr0=expr, 
+        name="%sExtract"%orig_name, disable=disabled_setting
+    )
+    ml_knob = nuke.nuke.String_Knob('origMatteList', 'Original Matte List', matte_list_setting)
+    expr_node.addKnob(ml_knob)
     for knob_name in GIZMO_CHANNEL_KNOBS:
         expr_node.addKnob(nuke.nuke.Channel_Knob(knob_name, "none") )
         expr_node.knob(knob_name).setValue(gizmo.knob(knob_name).value())
         expr_node.knob(knob_name).setVisible(False)
 
-    shufflecopy_main, shufflecopy_side = start_dot, expr_node
+    new_nodes = [expr_node]
 
     if rm_channels_setting:
         channels2 = output_setting if output_setting != "alpha" else ""
-        shufflecopy_main = nuke.nodes.Remove(
-            inputs=[shufflecopy_main], operation="keep", channels="rgba", 
-            channels2=channels2, name="CryptRemove_%s"%matte_name, 
+        remove = nuke.nodes.Remove(
+            inputs=[expr_node], operation="keep", channels="rgba", 
+            channels2=channels2, name="%sRemove"%orig_name, 
             disable=disabled_setting
         )
-        new_nodes.append(shufflecopy_main)
+        new_nodes.append(remove)
 
-    if unpremult_setting:
-        shufflecopy_side = nuke.nodes.Unpremult(
-            inputs=[shufflecopy_side], channels="red", 
-            name="CryptUnpremul_%s"%matte_name, disable=disabled_setting
-        )
-        new_nodes.append(shufflecopy_side)
-
-    shufflecopy = nuke.nodes.ShuffleCopy(
-        inputs=[shufflecopy_main, shufflecopy_side], out="rgb",
-        alpha="alpha2", red2="red", green2="red", white="red", black="red",
-        out2=output_setting, name="CryptShufCpy_%s"%matte_name,
-        disable=disabled_setting
-    )
-    new_nodes.append(shufflecopy)
-    
     if matte_only_setting:
-        if output_setting != "alpha":
-            shufflecopy.knob("out").setValue("rgba")
-        shufflecopy.knob("red").setValue("red")
-        shufflecopy.knob("green").setValue("red")
-        shufflecopy.knob("blue").setValue("red")
-        shufflecopy.knob("alpha").setValue("red")
+        shuffle = nuke.nodes.Shuffle(
+            name="%sMatteOnly"%orig_name, inputs=[new_nodes[-1]]
+        )
+        shuffle.knob("in").setValue(output_setting)
+        new_nodes.append(shuffle)        
 
     gizmo.knob("disable").setValue(True)
 
     for node, inputID in connect_to:
-        node.setInput(inputID, shufflecopy)
+        node.setInput(inputID, new_nodes[-1])
     return new_nodes
