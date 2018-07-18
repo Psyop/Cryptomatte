@@ -273,7 +273,7 @@ class CryptomatteNukeTests(unittest.TestCase):
     """
 
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         import nuke
         import os
         default_path = os.path.normpath(os.path.join(__file__, "../", "../", "sample_images"))
@@ -289,32 +289,32 @@ class CryptomatteNukeTests(unittest.TestCase):
                     ("Could not find: %s. Sample image dir can be defined env variable, %s") %
                     (file_path, SAMPLES_IMAGES_DIR_ENVIRON))
 
-        self.read_obj = nuke.nodes.Read(file=obj_path)
-        self.read_asset = nuke.nodes.Read(file=asset_path)
-        self.read_material = nuke.nodes.Read(file=material_path)
-        self.read_sidecar = nuke.nodes.Read(file=sidecar_path)
+        cls.read_obj = nuke.nodes.Read(file=obj_path)
+        cls.read_asset = nuke.nodes.Read(file=asset_path)
+        cls.read_material = nuke.nodes.Read(file=material_path)
+        cls.read_sidecar = nuke.nodes.Read(file=sidecar_path)
 
-        self.constant = nuke.nodes.Constant(color=0.5)
-        self.set_canceled(False)
+        cls.constant = nuke.nodes.Constant(color=0.5)
+        cls.set_canceled(False)
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(cls):
         import nuke
-        if self.canceled():
+        if cls.canceled():
             return
-        nuke.delete(self.read_obj)
-        nuke.delete(self.read_asset)
-        nuke.delete(self.read_material)
-        nuke.delete(self.read_sidecar)
-        nuke.delete(self.constant)
+        nuke.delete(cls.read_obj)
+        nuke.delete(cls.read_asset)
+        nuke.delete(cls.read_material)
+        nuke.delete(cls.read_sidecar)
+        nuke.delete(cls.constant)
 
     @classmethod
-    def set_canceled(self, canceled):
+    def set_canceled(cls, canceled):
         global g_cancel_nuke_testing
         g_cancel_nuke_testing = canceled
 
     @classmethod
-    def canceled(self):
+    def canceled(cls):
         global g_cancel_nuke_testing
         return g_cancel_nuke_testing
 
