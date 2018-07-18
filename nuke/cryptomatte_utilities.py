@@ -59,13 +59,13 @@ class CryptomatteTesting(object):
         failfast -- (bool) will stop after a failure, and skip cleanup of the nodes that were created. 
     """
 
-    def get_all_unit_tests(self, test_filter=""):
+    def get_all_unit_tests(self):
         import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.get_all_unit_tests(test_filter=test_filter)
+        return cu_tests.get_all_unit_tests()
 
-    def get_all_nuke_tests(self, test_filter=""):
+    def get_all_nuke_tests(self):
         import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.get_all_nuke_tests(test_filter=test_filter)
+        return cu_tests.get_all_nuke_tests()
 
     def run_unit_tests(self, test_filter="", failfast=False):
         import cryptomatte_utilities_tests as cu_tests
