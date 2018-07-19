@@ -1,4 +1,4 @@
-1.2.1:
+## 1.2.1:
 
 A reorganization of this repo, and a minor update to the Nuke plugins.
 
@@ -14,7 +14,7 @@ Nuke:
 * Fixed some test issues in Nuke 11.3
 * Cleaner decryptomatte results, with maximum of 3 nodes in sequence, no dots, and better naming
 
-1.2.0:
+## 1.2.0:
 
 This is a major update to both the Nuke plugins and Fusion plugins, and a minor update to the Cryptomatte specification. 
 
@@ -91,20 +91,20 @@ Fusion (by C&eacute;dric Duriau)
   * Removed simplejson.lua module, using builtin dkjson module
   * Removed "struct.lua" dependency
 
-1.1.4: 
+## 1.1.4: 
 
 * Fixes Fusion crash when rendering with FusionRenderConsole
 
-1.1.3:
+## 1.1.3:
 
 * Adds beta version of Fusion support, also by C&eacute;dric Duriau and Kristof Indeherberge at Grid.
   * Major tool connection workflow improvement. No longer requires multiple loaders to work, instead populates single loader channel slots when viewed. 
 
-1.1.2:
+## 1.1.2:
 
 * Adds alpha version of Fusion support, created by C&eacute;dric Duriau and Kristof Indeherberge at Grid.
 
-1.1.1:
+## 1.1.1:
 
 * Store channels on hidden knobs on Cryptomatte gizmo and decryptomatte expression nodes
   * Fixes expression node errors in batch mode
@@ -112,7 +112,7 @@ Fusion (by C&eacute;dric Duriau)
   * Allow API users to use decryptomatte without prompt
 * Fixed error when loading gizmo in Nuke 7
 
-1.1.0:
+## 1.1.0:
 
 * Changes to specification regarding storage of metadata
 * Enabled Nuke code to read this metadata
@@ -120,17 +120,17 @@ Fusion (by C&eacute;dric Duriau)
 * No longer raises errors if no metadata is available (would happen in batch mode)
 * No longer raises errors if picker in is in single value mode rather than RGB
 
-1.0.2:
+## 1.0.2:
 
 * Updated pymmh3 to output signed ints, in compliance with mmh3
 
-1.0.1: 
+## 1.0.1: 
 
 * Added layer selection to gizmo and utilities (backwards compatible)
 * Added menu.py
 * Added `__version__` to cryptomatte_utilities.py
 * Bug fix - invalid manifest broke keying
 
-1.0.0: 
+## 1.0.0: 
 
 * Initial release of Nuke plugins, specification, and sample images.
