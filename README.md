@@ -1,7 +1,5 @@
 ![Cryptomatte Logo](/docs/header.png)
 
-Version 1.2.1.
-
 Cryptomatte is a tool created at Psyop by Jonah Friedman and Andy Jones. It creates ID mattes automatically with support for motion blur, transparency, and depth of field, using organizational information already available at render time. This organizational information is usually names, object namespaces, and material names.
 
 * Demo video: [https://vimeo.com/136954966](https://vimeo.com/136954966)
@@ -10,6 +8,8 @@ Cryptomatte is a tool created at Psyop by Jonah Friedman and Andy Jones. It crea
 The goal of releasing Cryptomatte is to turn it into an ecosystem around an open standard. Any developers who wish to make plugins are welcome and encouraged to create tools that inter-operate with the components we are providing. We hope to see a diverse ecosystem of renderers that can create Cryptomatte images and plugins for compositing applications to decode them.
 
 Cryptomatte is licenced using the BSD 3-clause license. See [license.txt](license.txt).
+
+Version 1.2.1. See [changelog](CHANGELOG.md) for version history. 
 
 ## Repo Contents
 
@@ -54,13 +54,9 @@ Decoders:
 * [Autodesk Flame (By Lewis Saunders)](https://logik-matchbook.org/shader/Cryptomatte)
 * After Effects (Fnordware ProEXR plugin): Beta 6 [Windows](http://www.fnordware.com/ProEXR/ProEXR_v2.0b6_win.zip) [Mac](http://www.fnordware.com/ProEXR/ProEXR_v2.0b6_mac.dmg)
 
-## Chnage Log / Release Notes
-
-See [changelog.](CHANGELOG.md)
-
 ## Acknowledgements 
 
-* Anders Langlands
+* Anders Langlands 
 * Alon Gibli
 * Jean-Francois Panisset
 * Psyop
