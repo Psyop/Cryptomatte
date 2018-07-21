@@ -10,9 +10,9 @@ Version    : 1.2.1
 -- module table
 cryptomatte_utilities = {}
 
--- ===========================================================================
+-- =============================================================================
 -- constants
--- ===========================================================================
+-- =============================================================================
 REGEX_METADATA = "%a+/([a-z0-9]+)/(.+)"
 REGEX_MATTE_LIST = "([^,]+),?%s*"
 REGEX_RANK_CHANNEL = "(.+)[.](.+)"
@@ -22,39 +22,38 @@ METADATA_KEY_MANIFEST = "manifest"
 METADATA_KEY_FILENAME = "Filename"
 METADATA_KEY_MANIF_FILE = "manif_file"
 
--- ===========================================================================
--- third party modules
--- ===========================================================================
-function prefered_load_json(c_module, lua_module)
-    -- try to load cjson first, it's the fastest one (10x faster than simplejson)
-    -- if cjson cannot be loaded, load simplejson
-    -- if simplejson cannot be loaded, lua will raise an error
-    local status, mod = pcall(require, c_module)
-    if not status then
-        mod = require(lua_module)
-    end
-    return mod
-end
-
-local json = prefered_load_json("cjson", "dkjson")
-
--- ===========================================================================
+-- =============================================================================
 -- ffi C utils
--- ===========================================================================
+-- =============================================================================
 -- int / float representation of hash
-ffi.cdef[[ union int_flt { uint32_t i; float f; }; ]]
+ffi.cdef [[ union int_flt { uint32_t i; float f; }; ]]
 local int_flt = ffi.new("union int_flt")
 
--- ===========================================================================
+-- =============================================================================
+-- third party modules
+-- =============================================================================
+function prefered_load(first, second)
+    -- Loads first module, if that fails, loads second module.
+    local status, module = pcall(require, first)
+    if not status then
+        module = require(second)
+    end
+    return module
+end
+
+-- load cjson module if present, if not, load Fusion stdlib dkjson module
+local json = prefered_load("cjson", "dkjson")
+
+-- =============================================================================
 -- utils
--- ===========================================================================
+-- =============================================================================
 function string_starts_with(str, start)
-    -- check if the given string stars with the given start substring
+    -- Checks if the given string starts with the given substring.
     return string.sub(str, 1, string.len(start)) == start
 end
 
 function convert_str_to_array(str, pattern)
-    -- convert matte selection list in str format to set
+    -- Converts the given string to an array based on given pattern.
     local matte_names = {}
     for matte in string.gmatch(str, pattern) do
         -- strip the leading and trailing double quote
@@ -65,7 +64,7 @@ function convert_str_to_array(str, pattern)
 end
 
 function is_key_in_table(key, table)
-    -- checks if the given key is in the given table
+    -- Checks if the given key is present in given table.
     for k, v in pairs(table) do
         if key == k then
             return true
@@ -75,14 +74,13 @@ function is_key_in_table(key, table)
 end
 
 function build_manifest_path(exr_path, sidecar_path)
-    -- builds the manifest path from the directory of the given exr path
-    -- and joins it with the given relative sidecar path
+    -- Builds the path of the manifest based on given EXR file path.
     local exr_dir = exr_path:match("(.*/)")
     return exr_dir .. sidecar_path
 end
 
 function get_screen_pixel(img, x, y)
-    -- get the pixel at given location of given image
+    -- Returns the pixel object from given image at given coordinate.
     local p = Pixel()
     local pixel_x = math.floor(img.Width / (1 / x))
     local pixel_y = math.floor(img.Height / (1 / y))
@@ -90,27 +88,27 @@ function get_screen_pixel(img, x, y)
     return p
 end
 
-function generate_mattes_from_rank_init()
-    -- init function used to run before the scanline function "generate_mattes_from_rank"
-    -- creates pixel pointer objects instead of creating pixel object for every coordinat to improve peformance
+function create_matte_image_init()
+    -- Initializer function for scanline function "create_matte_image_scanline".
+    -- Create placeholder pixel objects to avoid creating them for each scanline pass.
     global_p = Pixel()
     local_p = Pixel()
-
-    pixptr_in = PixPtr(In, global_p)
-    pixptr_out = PixPtr(Out, local_p)
+    pixptr_in = PixPtr(input_image, global_p)
+    pixptr_out = PixPtr(output_image, local_p)
 end
 
-function generate_mattes_from_rank(y)
-    -- scanline function used to generates matte from every cryptomatte rank
-    -- goto position X=0,Y=y pixel location
+function create_matte_image_scanline(y)
+    -- Scanline function that creates a matte.
+
+    -- set start X position for scanline pass
     pixptr_in:GotoXY(0, y)
     pixptr_out:GotoXY(0, y)
 
-    for x = 0, In.Width - 1 do
-        -- goto correct X pos
+    for x = output_image.DataWindow.left, output_image.DataWindow.right - 1 do
+        -- go to correct X position
         pixptr_in:GetNextPixel(global_p)
-        
-        -- reset pixel RGBA values
+
+        -- reset placeholder pixel RGBA values
         local_p.R = 0.0
         local_p.G = 0.0
         local_p.B = 0.0
@@ -137,29 +135,30 @@ function generate_mattes_from_rank(y)
     end
 end
 
-function create_colors_image_init()
-    -- initializer function that gets called before the scanline function "create_colors_image_init"
-    -- creates pixel pointer objects instead of creating pixel object for every coordinat to improve peformance
+function create_preview_image_init()
+    -- Initializer function for the scanline function "create_preview_image".
+    -- Create placeholder pixel objects to avoid creating them for each scanline pass.
     global_p_c00 = Pixel()
     global_p_c01 = Pixel()
     local_p = Pixel()
 
     -- rank 00
-    pixptr_00 = PixPtr(rank_img_00, global_p_c00)
+    pixptr_00 = PixPtr(rank_0_image, global_p_c00)
     -- rank 01
-    pixptr_01 = PixPtr(rank_img_01, global_p_c01)
-    pixptr_out = PixPtr(output, local_p)
+    pixptr_01 = PixPtr(rank_1_image, global_p_c01)
+    pixptr_out = PixPtr(preview_image, local_p)
 end
 
-function create_colors_image(y)
-    -- scanline function used to generates matte from every cryptomatte rank
-    -- goto position X=0,Y=y pixel location
+function create_preview_image_scanline(y)
+    -- Scanline function that creates the keyable surface preview image.
+    
+    -- set start X position for scanline pass
     pixptr_00:GotoXY(0, y)
     pixptr_01:GotoXY(0, y)
     pixptr_out:GotoXY(0, y)
 
-    for x = 0, output.Width - 1 do
-         -- goto correct X pos
+    for x = preview_image.DataWindow.left, preview_image.DataWindow.right - 1 do
+        -- go to correct X position
         pixptr_00:GetNextPixel(global_p_c00)
         pixptr_01:GetNextPixel(global_p_c01)
 
@@ -201,51 +200,149 @@ function create_colors_image(y)
     end
 end
 
-function create_mattes(crypto_images, id_float_values, output_image)
-    local combined_matte = Image({ IMG_Like = output_image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
+function create_matte_image(crypto_images, id_float_values, output_image)
+    -- Creates a combined matte image holding all mattes of given id float values.
+    local combined_matte = Image({IMG_Like = output_image,
+                                  IMG_CopyChannels = false,
+                                  {IMG_Channel = "Alpha"}})
     combined_matte:Clear()
 
     for _, image in pairs(crypto_images) do
-        local rank_matte = image:CopyOf()
+        local rank_matte = Image({IMG_Like = image})
         rank_matte:Clear()
 
         -- process pixels to retrieve the pixels matching the id float value
-        self:DoMultiProcess(generate_mattes_from_rank_init, { In = image, Out = rank_matte, id_float_values = id_float_values }, image.Height, generate_mattes_from_rank)
+        local args = {input_image = image, 
+                      output_image = rank_matte, 
+                      id_float_values = id_float_values}
+        self:DoMultiProcess(create_matte_image_init,
+                            args,
+                            output_image.DataWindow.top - output_image.DataWindow.bottom,
+                            create_matte_image_scanline)
 
         -- create mono channel output to store iterative matte in
-        local i_matte = Image({ IMG_Like = image, IMG_CopyChannels = false, { IMG_Channel = "Alpha" } })
-        i_matte = i_matte:ChannelOpOf("Add", rank_matte, { A = "fg.G" })
-        i_matte = i_matte:ChannelOpOf("Add", rank_matte, { A = "fg.A" })
+        local i_matte = Image({IMG_Like = image, 
+                               IMG_CopyChannels = false, 
+                               {IMG_Channel = "Alpha"}})
+        i_matte = i_matte:ChannelOpOf("Add", rank_matte, {A = "fg.G"})
+        i_matte = i_matte:ChannelOpOf("Add", rank_matte, {A = "fg.A"})
 
         -- add mono result to main output
-        combined_matte = combined_matte:ChannelOpOf("Add", i_matte, { A = "fg.A" })
+        combined_matte = combined_matte:ChannelOpOf("Add", i_matte, {A = "fg.A"})
     end
 
     return combined_matte
 end
 
-function create_preview_image(input_image, rank_img_00, rank_img_01)
-    -- creates the preview image from the first two ranks
-    -- this function was at first attached to the module like functions at the end of this module
-    -- this did not work due to the "self" then taking the role of the module, instead of the Fuse
-    local output = input_image:CopyOf()
-    output:Clear()
-    self:DoMultiProcess(create_colors_image_init, { output = output, rank_img_00 = rank_img_00, rank_img_01 = rank_img_01 }, output.Height, create_colors_image)
-    return output
+function create_preview_image(rank_0_image, rank_1_image, input_image)
+    -- Creates the keyable surface preview image from first two rank images.
+    local preview_image = input_image:CopyOf()
+    preview_image:Clear()
+    local args = {preview_image = preview_image,
+                  rank_0_image = rank_0_image,
+                  rank_1_image = rank_1_image}
+    self:DoMultiProcess(create_preview_image_init,
+                        args, 
+                        input_image.DataWindow.top - input_image.DataWindow.bottom,
+                        create_preview_image_scanline)
+    return preview_image
 end
 
--- ===========================================================================
--- CryptomatteInfo object
--- ===========================================================================
+function exr_read_channels(exr, partnum, crypto_layer)
+    -- retrieve all exr channels filtering on given layer name
+    local channel_names = {}
+    local channels = exr:GetChannels(partnum)
+    for i, channel in ipairs(channels) do
+        local channel_name = channel["Name"]
+        if string.find(channel_name, crypto_layer) then
+            table.insert(channel_names, channel_name)
+        end
+    end
+    return channel_names
+end
+
+function get_channels_by_index(exr_channels)
+    -- gets all the cryptomatte required channels by rank index and short 
+    -- channel name (r, g, b, a)
+    local by_index = {}
+    for i, channel in ipairs(exr_channels) do
+        -- get rank and channel name from channel
+        local rank, name = string.match(channel, REGEX_RANK_CHANNEL)
+
+        if rank ~= nil and name ~= nil then
+            -- get index from rank
+            local index = string.match(rank, "[0-9]+$")
+
+            if index ~= nil then
+                -- first tonumber to avoid leading numbers, then tostring again 
+                -- to ensure string keys
+                index = tostring(tonumber(index))
+
+                if not is_key_in_table(index, by_index) then
+                    by_index[index] = {}
+                end
+
+                -- store the rank channels under respective short form
+                local _channel = string.lower(name)
+                if _channel == "r" or _channel == "red" then
+                    by_index[index]["r"] = channel
+                elseif _channel == "g" or _channel == "green" then
+                    by_index[index]["g"] = channel
+                elseif _channel == "b" or _channel == "blue" then
+                    by_index[index]["b"] = channel
+                elseif _channel == "a" or _channel == "alpha" then
+                    by_index[index]["a"] = channel
+                end
+            end
+        end
+    end
+    return by_index
+end
+
+function exr_read_channel_part(exr, cryptomatte_channels, partnum)
+    -- creates an image from the given cryptomatte channels by rank
+    local cryptomatte_images = {}
+
+    local dispw = exr:DisplayWindow(partnum)
+    local dataw = exr:DataWindow(partnum)
+    local ox, oy = dispw.left, dispw.bottom
+    local w, h = dispw.right - dispw.left, dispw.top - dispw.bottom
+
+    local imgw = ImgRectI(dataw)
+    imgw:Offset(-ox, -oy)
+
+    local pixel_aspect_ratio = exr:PixelAspectRatio(partnum)
+
+    -- read part with given index
+    exr:Part(partnum)
+
+    for index, channels in pairs(cryptomatte_channels) do
+        local image = Image({IMG_Width = w,
+                             IMG_Height = h,
+                             IMG_Depth = IMDP_128bitFloat,
+                             IMG_DataWindow = imgw,
+                             IMG_YScale = 1.0 / pixel_aspect_ratio})
+
+        -- read rank RGBA channels
+        exr:Channel(channels["r"], ANY_TYPE, image, CHAN_RED)
+        exr:Channel(channels["g"], ANY_TYPE, image, CHAN_GREEN)
+        exr:Channel(channels["b"], ANY_TYPE, image, CHAN_BLUE)
+        exr:Channel(channels["a"], ANY_TYPE, image, CHAN_ALPHA)
+
+        -- store the image as value to the rank index in string format as key
+        exr:ReadPart(partnum, {image})
+        cryptomatte_images[tostring(index)] = image
+    end
+
+    return cryptomatte_images
+end
+
+-- =============================================================================
+-- CryptomatteInfo class
+-- =============================================================================
 local CryptomatteInfo = {}
 CryptomatteInfo.__index = CryptomatteInfo
--- call new function at object creation
-setmetatable(CryptomatteInfo, {
-    __call = function(cls)
-        return cls:new()
-    end
-})
--- new function constructs object and declares variables
+setmetatable(CryptomatteInfo, {__call = function(cls) return cls:new() end})
 function CryptomatteInfo:new()
     local self = setmetatable({}, CryptomatteInfo)
 
@@ -261,14 +358,12 @@ function CryptomatteInfo:new()
 end
 
 -- functions
-function CryptomatteInfo:extract_cryptomatte_metadata(metadata, selected_layer_name)
-    -- extracts cryptomatte data from the given exr metadata
+function CryptomatteInfo:get_cryptomatte_metadata(metadata, layer_name)
+    -- Gets the cryptomatte metadata from the given exr metadata for given layer.
     local exr_path = ""
     local cryptomattes = {}
-
     local default_selection = nil
     local fallback_selection = nil
-
     local index = 0
     local index_to_layer_name = {}
     local layer_name_to_index = {}
@@ -278,22 +373,24 @@ function CryptomatteInfo:extract_cryptomatte_metadata(metadata, selected_layer_n
             -- e.g. cryptomatte/0/name/uCryptoObject
             local metadata_id, partial_key = string.match(k, REGEX_METADATA)
 
-            -- store cryptomatte data by metadata layver id
+            -- store cryptomatte data by metadata layer id
             if not is_key_in_table(metadata_id, cryptomattes) then
                 cryptomattes[metadata_id] = {}
             end
             cryptomattes[metadata_id][partial_key] = v
 
+            -- store layer name by index and reverse for fast lookups
             if partial_key == METADATA_KEY_NAME then
                 index = index + 1
                 index_to_layer_name[index] = v
                 layer_name_to_index[v] = index
             end
 
-            -- if the given selected layer name was found inside the metadata, store the id to
-            -- set as default selection, else store current metadata layer id as fallback selection
+            -- if the given selected layer name was found inside the metadata, 
+            -- store the id to set as default selection, else store current 
+            -- metadata layer id as fallback selection
             fallback_selection = metadata_id
-            if partial_key == METADATA_KEY_NAME and v == selected_layer_name then
+            if partial_key == METADATA_KEY_NAME and v == layer_name then
                 default_selection = metadata_id
             end
         elseif k == METADATA_KEY_FILENAME then
@@ -325,7 +422,7 @@ function CryptomatteInfo:get_manifest_string()
         local path = build_manifest_path(self.exr_path, sidecar_path)
         local fp = io.open(path, "r")
         if fp == nil then
-            print(string.format('ERROR: following path does not exist: %s', path))
+            print(string.format("ERROR: following path does not exist: %s", path))
         else
             -- read all lines from file into a string
             manifest_str = fp:read("*all")
@@ -344,10 +441,10 @@ function CryptomatteInfo:parse_manifest()
     local from_ids = {}
     local all_names = {}
     local all_ids = {}
-    
+
     -- get manifest str
     local manifest_str = self:get_manifest_string()
-    
+
     -- decode json str to table
     local manifest = json.decode(manifest_str)
 
@@ -361,7 +458,7 @@ function CryptomatteInfo:parse_manifest()
         int_flt.i = tonumber(hex, 16)
         local id_float = int_flt.f
         local name_str = tostring(name)
-        
+
         from_names[name_str] = id_float
         from_ids[id_float] = name_str
 
@@ -376,121 +473,14 @@ function CryptomatteInfo:parse_manifest()
     self.cryptomattes[self.selection]["ids"] = all_ids
 end
 
-function exr_read_channels(exr, partnum, crypto_layer)
-    -- retrieve all exr channels filtering on given layer name
-    local channel_names = {}
-    local channels = exr:GetChannels(partnum)
-    for i, channel in ipairs(channels) do
-        local channel_name = channel["Name"]
-        if string.find(channel_name, crypto_layer) then
-            table.insert(channel_names, channel_name)
-        end
-    end
-    return channel_names
-end
-
-function get_channels_by_index(exr_channels)
-    -- gets all the cryptomatte required channels by rank index and short channel name (r, g, b, a)
-    local by_index = {}
-    for i, channel in ipairs(exr_channels) do
-        -- get rank and channel name from channel
-        local rank, name = string.match(channel, REGEX_RANK_CHANNEL)
-
-        if rank ~= nil and name ~= nil then
-            -- get index from rank
-            local index = string.match(rank, "[0-9]+$")
-
-            if index ~= nil then
-                -- first tonumber to avoid leading numbers, then tostring again to ensure string keys
-                index = tostring(tonumber(index))
-
-                if not is_key_in_table(index, by_index) then
-                    by_index[index] = {}
-                end
-
-                -- store the rank channels under respective short form
-                local _channel = string.lower(name)
-                if _channel == "r" or _channel == "red" then
-                    by_index[index]["r"] = channel
-                elseif _channel == "g" or _channel == "green" then
-                    by_index[index]["g"] = channel
-                elseif _channel == "b" or _channel == "blue" then
-                    by_index[index]["b"] = channel
-                elseif _channel == "a" or _channel == "alpha" then
-                    by_index[index]["a"] = channel
-                end
-            end
-        end
-    end
-    return by_index
-end
-
-function exr_read_channel_parts(exr, input_image, cryptomatte_channels, partnum)
-    -- creates an image from the given cryptomatte channels by rank
-    local cryptomatte_images = {}
-    
-    -- read part with given index
-    exr:Part(partnum)
-
-    for index, channels in pairs(cryptomatte_channels) do
-        -- create placeholder image, set resolution to original input width & height
-        local image = Image({
-            IMG_Width = input_image.OriginalWidth,
-            IMG_Height = input_image.OriginalHeight,
-            IMG_ProxyScale = 1,  -- don't apply the proxy
-            IMG_Depth = IMDP_128bitFloat  -- force image to 32bit float (4 channel 128bit float)
-        })
-        
-        -- read rank RGBA channels
-        exr:Channel(channels["r"], ANY_TYPE, image, CHAN_RED)
-        exr:Channel(channels["g"], ANY_TYPE, image, CHAN_GREEN)
-        exr:Channel(channels["b"], ANY_TYPE, image, CHAN_BLUE)
-        exr:Channel(channels["a"], ANY_TYPE, image, CHAN_ALPHA)
-
-        -- store the image as value to the rank index in string format as key
-        cryptomatte_images[tostring(index)] = image
-    end
-
-    if cryptomatte_images ~= {} then
-        -- fill the given image with previously read information
-        exr:ReadPart(partnum, cryptomatte_images)
-    end
-
-    -- handle proxy scale
-    if input_image.ProxyScale ~= 1 then
-        local width = input_image.Width
-        local height = input_image.Height
-
-        for index, image in pairs(cryptomatte_images) do
-            -- create placeholder result image correct by scale
-            result = Image({
-                IMG_Like = image,
-                IMG_Width = width,
-                IMG_Height = height
-            })
-            
-            -- resize image to proxy scaled resolution (nearest neighbor filter algorithm)
-            image:Resize(result, {
-                RSZ_Filter = "Nearest",
-                RSZ_Width = width,
-                RSZ_Height = height
-            })
-            
-            -- store result
-            cryptomatte_images[index] = result
-        end
-    end
-
-    return cryptomatte_images
-end
-
--- ===========================================================================
+-- =============================================================================
 -- module
--- ===========================================================================
-function cryptomatte_utilities:create_cryptomatte_info(metadata, selected_layer_name)
+-- =============================================================================
+function cryptomatte_utilities:create_cryptomatte_info(metadata, layer_name)
     -- create cryptomatte info and populate cryptomattes data from given metadata
     cInfo = CryptomatteInfo()
-    cInfo:extract_cryptomatte_metadata(metadata, selected_layer_name)
+    cInfo:get_cryptomatte_metadata(metadata, layer_name)
+    cInfo:parse_manifest()
     return cInfo
 end
 
@@ -498,11 +488,11 @@ function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, crypto_imag
     -- get the pixel at the given location for all the given crypto images (ranks)
     -- if an R, G, B or A channel value is different than zero, the id float value was found
     local id_float_value = nil
-    
+
     -- sort keys
     local keys = {}
-    for k in pairs(crypto_images) do 
-        table.insert(keys, tonumber(k)) 
+    for k in pairs(crypto_images) do
+        table.insert(keys, tonumber(k))
     end
     table.sort(keys)
 
@@ -517,9 +507,11 @@ function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, crypto_imag
                 break
             end
         end
-        if id_float_value ~= nil then break end
+        if id_float_value ~= nil then
+            break
+        end
     end
-    
+
     if id_float_value == nil then
         -- check if the background is being parsed (RGB=0,0,0)
         local pixel = get_screen_pixel(input_image, screen_pos.X, screen_pos.Y)
@@ -545,18 +537,27 @@ function cryptomatte_utilities:create_matte_image(cInfo, matte_names, crypto_ima
     -- create the combined matte image
     local combined_matte = nil
     if ids then
-        combined_matte = create_mattes(crypto_images, ids, output_image)
+        combined_matte = create_matte_image(crypto_images, ids, output_image)
     end
     return combined_matte
 end
 
-function cryptomatte_utilities:create_preview_image(input_image, rank_img_00, rank_img_01)
-    -- creates the preview image
-    local output = create_preview_image(input_image, rank_img_00, rank_img_01)
-    return output
+function cryptomatte_utilities:create_preview_image(rank_0_image, rank_1_image, input_image)
+    -- Creates the keyable surface preview image.
+    
+    -- There are two functions called "create_preview_image", this one which
+    -- is inside the cryptomatte_utilities module and one standalone. The reason
+    -- for this is that "self" in standalone context is the Fuse, and "self" in 
+    -- a module context is the module. Inside the standalone function we build 
+    -- the preview image using the Fuse scanline multi threaded function 
+    -- "DoMultiProcess". This function cannot be called from the current 
+    -- function due to the "self" being the module, does not have this function.
+    -- Long story short, I wanted this function to be public, so I had to make 
+    -- two of them to avoid any clashes.
+    return create_preview_image(rank_0_image, rank_1_image, input_image)
 end
 
-function cryptomatte_utilities:get_all_rank_images(cInfo, layer_name, input_image)
+function cryptomatte_utilities:get_all_rank_images(cInfo, layer_name)
     local partnum = 1
     local crypto_images = {}
 
@@ -572,7 +573,7 @@ function cryptomatte_utilities:get_all_rank_images(cInfo, layer_name, input_imag
         -- filter channels and rearrange data by rank index
         local cryptomatte_channels = get_channels_by_index(exr_channel_names)
         -- create image by rank
-        crypto_images = exr_read_channel_parts(exr, input_image, cryptomatte_channels, partnum)
+        crypto_images = exr_read_channel_part(exr, cryptomatte_channels, partnum)
     end
 
     -- close the context manager

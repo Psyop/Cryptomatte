@@ -44,7 +44,8 @@ FuRegisterClass(FUSE_NAME, CT_Tool, {
     REG_NoMotionBlurCtrls = true,
     REG_NoBlendCtrls = true,
     REG_OpNoMask = true,
-    REG_Version = FUSE_VERSION
+    REG_Version = FUSE_VERSION,
+    REG_SupportsDoD = true
 })
 
 
@@ -244,8 +245,7 @@ end
 
 function get_selected_layer()
     -- returns the text inside the crypto layer line edir
-    local selected_layer = TextCryptoLayer:GetSource(0).Value
-    return selected_layer
+    return TextCryptoLayer:GetSource(0).Value
 end
 
 function get_matte_list_input()
@@ -410,37 +410,34 @@ end
 function get_view_mode()
     -- returns the selected view mode if the preview checbkbox is checked
     -- else return default view mode "None"
-    local view_mode = VIEW_MODES[3]
-    local preview_checked = CbPreview:GetSource(0).Value
-    
-    if preview_checked == 1  then
-        local selected_view_mode_index = ComboViewMode:GetSource(0).Value
-        view_mode = VIEW_MODES[selected_view_mode_index + 1]
+    if CbPreview:GetSource(0).Value == 1  then
+        return VIEW_MODES[ComboViewMode:GetSource(0).Value + 1]
     end
-    
-    return view_mode
+    return VIEW_MODE_NONE
 end
 
-function apply_view_mode(mode, input_image, crypto_images)
-    -- apply the given view mode to generate an output image
-    local output_image
-    
-    if mode == VIEW_MODE_EDGES then
+function apply_view_mode(view_mode, input_image, crypto_images)
+    local result
+
+    if view_mode == VIEW_MODE_EDGES then
         -- edge mode
-        -- output.R + rank_00.A * 2 
+        -- output.R + rank_00.A * 2
         -- output.G + rank_00.A * 2
         local coverage = crypto_images["0"]:CopyOf()
         coverage:Gain(1.0, 1.0, 1.0, 2.0)
-        output_image = input_image:ChannelOpOf("Add", coverage, { G = "fg.A", B = "fg.A" })
-    elseif mode == VIEW_MODE_COLORS then
+        result = input_image:ChannelOpOf("Add", coverage, { G = "fg.A", B = "fg.A" })
+    elseif view_mode == VIEW_MODE_COLORS then
         -- colors mode generates an "ID" colored image based on an algorithm using the first two ranks
-        output_image = cryptoutils:create_preview_image(input_image, crypto_images["0"], crypto_images["1"])
-    elseif mode == VIEW_MODE_NONE then
+        result = cryptoutils:create_preview_image(crypto_images["0"], 
+                                                  crypto_images["1"], 
+                                                  input_image)
+    elseif view_mode == VIEW_MODE_NONE then
         -- pass input copy as output
-        output_image = input_image:CopyOf()
+        result = input_image:CopyOf()
+    else
+        print(string.format("ERROR: %s", "unknown view mode "..view_mode))
     end
-    
-    return output_image
+    return result
 end
 
 -- ===========================================================================
@@ -450,15 +447,15 @@ function Process(req)
     -- get input image
     local input_image = InImage:GetValue(req)
     local metadata = input_image.Metadata
+    local dod, roi = req:GetInputDoD(InImage), req:GetRoI()
+    local datawnd = dod:Intersect(input_image.DataWindow)
+    datawnd = roi:Intersect(datawnd)
 
     -- get current selected layer
     local layer_name = get_selected_layer()
 
     -- create cryptomatte information object
     local cInfo = cryptoutils:create_cryptomatte_info(metadata, layer_name)
-
-    -- refresh the manifest
-    cInfo:parse_manifest()
 
     -- populate layer selection
     set_layer_selection_slider(cInfo)
@@ -468,10 +465,10 @@ function Process(req)
     layer_name = get_selected_layer()
 
     -- get all crypto images
-    local crypto_images = cryptoutils:get_all_rank_images(cInfo, layer_name, input_image)
+    local crypto_images = cryptoutils:get_all_rank_images(cInfo, layer_name)
 
     -- set the name checker
-    set_name_checker(cInfo, crypto_images, input_image)
+    -- set_name_checker(cInfo, crypto_images, input_image)
 
     -- add matte callback
     -- remove matte callback
@@ -508,7 +505,7 @@ function Process(req)
 
     -- create matte
     local matte_names = cryptoutils:get_mattes_from_string(cInfo, matte_selection_str)
-    local matte = cryptoutils:create_matte_image(cInfo, matte_names, crypto_images, output_image)
+    -- local matte = cryptoutils:create_matte_image(cInfo, matte_names, crypto_images, output_image)
 
     -- apply matte to output image
     if matte ~= nil then
