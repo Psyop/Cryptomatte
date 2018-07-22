@@ -79,13 +79,22 @@ function build_manifest_path(exr_path, sidecar_path)
     return exr_dir .. sidecar_path
 end
 
-function get_screen_pixel(img, x, y)
-    -- Returns the pixel object from given image at given coordinate.
-    local p = Pixel()
-    local pixel_x = math.floor(img.Width / (1 / x))
-    local pixel_y = math.floor(img.Height / (1 / y))
-    img:GetPixel(pixel_x, pixel_y, p)
-    return p
+function get_screen_pixel(image, x, y)
+    --[[
+    Get the pixel object from given image at given coordinates.
+
+    :param x: absolute x position in pixel unit
+    :type x: int
+
+    :param y: absolute y position in pixel unit
+    :type y: int
+
+    :return: pixel object from given image at given coordinates
+    :rtype: Pixel
+    ]]
+    local pixel = Pixel()
+    image:GetPixel(x, y, pixel)
+    return pixel
 end
 
 function create_matte_image_init()
@@ -93,18 +102,21 @@ function create_matte_image_init()
     -- Create placeholder pixel objects to avoid creating them for each scanline pass.
     global_p = Pixel()
     local_p = Pixel()
-    pixptr_in = PixPtr(input_image, global_p)
-    pixptr_out = PixPtr(output_image, local_p)
+    pixptr_in = PixPtr(rank_image, global_p)
+    pixptr_out = PixPtr(rank_intermediate_image, local_p)
 end
 
-function create_matte_image_scanline(y)
+function create_matte_image_scanline(n)
     -- Scanline function that creates a matte.
 
-    -- set start X position for scanline pass
-    pixptr_in:GotoXY(0, y)
-    pixptr_out:GotoXY(0, y)
+    -- calculate real scanline y position
+    local y = n + dod.bottom
 
-    for x = output_image.DataWindow.left, output_image.DataWindow.right - 1 do
+    -- set start X position for scanline pass
+    pixptr_in:GotoXY(dod.left, y)
+    pixptr_out:GotoXY(dod.left, y)
+
+    for x = dod.left, dod.right - 1 do
         -- go to correct X position
         pixptr_in:GetNextPixel(global_p)
 
@@ -142,20 +154,21 @@ function create_preview_image_init()
     global_p_c01 = Pixel()
     local_p = Pixel()
 
-    -- rank 00
     pixptr_00 = PixPtr(rank_0_image, global_p_c00)
-    -- rank 01
     pixptr_01 = PixPtr(rank_1_image, global_p_c01)
     pixptr_out = PixPtr(preview_image, local_p)
 end
 
-function create_preview_image_scanline(y)
+function create_preview_image_scanline(n)
     -- Scanline function that creates the keyable surface preview image.
     
+    -- calculate real scanline y position
+    local y = n + preview_image.DataWindow.bottom
+
     -- set start X position for scanline pass
-    pixptr_00:GotoXY(0, y)
-    pixptr_01:GotoXY(0, y)
-    pixptr_out:GotoXY(0, y)
+    pixptr_00:GotoXY(preview_image.DataWindow.left, y)
+    pixptr_01:GotoXY(preview_image.DataWindow.left, y)
+    pixptr_out:GotoXY(preview_image.DataWindow.left, y)
 
     for x = preview_image.DataWindow.left, preview_image.DataWindow.right - 1 do
         -- go to correct X position
@@ -200,38 +213,45 @@ function create_preview_image_scanline(y)
     end
 end
 
-function create_matte_image(crypto_images, id_float_values, output_image)
+function create_matte_image(rank_images, id_float_values, output_image)
     -- Creates a combined matte image holding all mattes of given id float values.
-    local combined_matte = Image({IMG_Like = output_image,
-                                  IMG_CopyChannels = false,
-                                  {IMG_Channel = "Alpha"}})
-    combined_matte:Clear()
 
-    for _, image in pairs(crypto_images) do
-        local rank_matte = Image({IMG_Like = image})
-        rank_matte:Clear()
+    -- create monochannel combined matte image from all rank matte images and
+    -- keep the input resolution and DoD
+    local combined_matte_image = Image({IMG_Like = output_image,
+                                        IMG_CopyChannels = false,
+                                        {IMG_Channel = "Alpha"}})
+    combined_matte_image:Clear()
+    local dod = output_image.DataWindow
+
+    for _, rank_image in pairs(rank_images) do
+        -- create an intermediate image from the rank image holding the data 
+        -- to build a rank matte
+        local rank_intermediate_image = Image({IMG_Like = rank_image})
+        rank_intermediate_image:Clear()
 
         -- process pixels to retrieve the pixels matching the id float value
-        local args = {input_image = image, 
-                      output_image = rank_matte, 
+        local args = {dod = dod,
+                      rank_image = rank_image,
+                      rank_intermediate_image = rank_intermediate_image, 
                       id_float_values = id_float_values}
         self:DoMultiProcess(create_matte_image_init,
                             args,
-                            output_image.DataWindow.top - output_image.DataWindow.bottom,
+                            dod.top - dod.bottom,
                             create_matte_image_scanline)
 
-        -- create mono channel output to store iterative matte in
-        local i_matte = Image({IMG_Like = image, 
-                               IMG_CopyChannels = false, 
-                               {IMG_Channel = "Alpha"}})
-        i_matte = i_matte:ChannelOpOf("Add", rank_matte, {A = "fg.G"})
-        i_matte = i_matte:ChannelOpOf("Add", rank_matte, {A = "fg.A"})
+        -- create mono channel matte image for current rank
+        local rank_matte_image = Image({IMG_Like = rank_image, 
+                                        IMG_CopyChannels = false, 
+                                        {IMG_Channel = "Alpha"}})
+        rank_matte_image = rank_matte_image:ChannelOpOf("Add", rank_intermediate_image, {A = "fg.G"})
+        rank_matte_image = rank_matte_image:ChannelOpOf("Add", rank_intermediate_image, {A = "fg.A"})
 
-        -- add mono result to main output
-        combined_matte = combined_matte:ChannelOpOf("Add", i_matte, {A = "fg.A"})
+        -- add rank matte image to combined matte image
+        combined_matte_image = combined_matte_image:ChannelOpOf("Add", rank_matte_image, {A = "fg.A"})
     end
 
-    return combined_matte
+    return combined_matte_image
 end
 
 function create_preview_image(rank_0_image, rank_1_image, input_image)
@@ -243,7 +263,7 @@ function create_preview_image(rank_0_image, rank_1_image, input_image)
                   rank_1_image = rank_1_image}
     self:DoMultiProcess(create_preview_image_init,
                         args, 
-                        input_image.DataWindow.top - input_image.DataWindow.bottom,
+                        preview_image.DataWindow.top - preview_image.DataWindow.bottom,
                         create_preview_image_scanline)
     return preview_image
 end
@@ -335,6 +355,52 @@ function exr_read_channel_part(exr, cryptomatte_channels, partnum)
     end
 
     return cryptomatte_images
+end
+
+function is_position_in_rect(rect, x, y)
+    --[[
+    Validates if the given x and y coordinates are in the given rect bounds.
+    
+    :param rect: integer rectangle position to validate x and y position  with
+    :type rect: FuRectInt
+    
+    :param x: x position to validate
+    :type x: int
+    
+    :param y: y position to validate
+    :type y: int
+    
+    :return: true if the given position is inside the given rect, false if not
+    :rtype: bool
+    ]]
+    if x < rect.left or x > rect.right then
+        return false
+    end
+    if y > rect.top or y < rect.bottom then
+        return false
+    end
+    return true
+end
+
+function get_absolute_position(image, relative_x, relative_y)
+    --[[
+    Gets the absolute values for given relative coordinates in given image.
+
+    :param image: image to use as reference to calcuate absolute values from
+    :type image: Image
+
+    :param relative_x: relative x coordinate
+    :type relative_x: float
+
+    :param relative_y: relative y coordinate in image to get absolute value for
+    :type relative_y: float
+
+    :return: absolute values for given relative coordinates in given image
+    :rtype: tuple(int, int)
+    ]]
+    local abs_x = math.floor(image.Width / (1 / relative_x))
+    local abs_y = math.floor(image.Height / (1 / relative_y))
+    return abs_x, abs_y
 end
 
 -- =============================================================================
@@ -484,21 +550,30 @@ function cryptomatte_utilities:create_cryptomatte_info(metadata, layer_name)
     return cInfo
 end
 
-function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, crypto_images, input_image)
-    -- get the pixel at the given location for all the given crypto images (ranks)
+function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, rank_images, input_image)
+    -- get the pixel at the given location for all the given rank images
     -- if an R, G, B or A channel value is different than zero, the id float value was found
+
+    -- get absolute pixel position from relative screen position
+    local abs_x, abs_y = get_absolute_position(input_image, screen_pos.X, screen_pos.Y)
+
+    -- validate if absolute pixel position is in dod or not
+    local is_position_valid = is_position_in_rect(input_image.DataWindow, abs_x, abs_y)
+    if not is_position_valid then
+        return nil
+    end
     local id_float_value = nil
 
     -- sort keys
     local keys = {}
-    for k in pairs(crypto_images) do
+    for k in pairs(rank_images) do
         table.insert(keys, tonumber(k))
     end
     table.sort(keys)
 
     for _, index in ipairs(keys) do
-        local image = crypto_images[tostring(index)]
-        local pixel = get_screen_pixel(image, screen_pos.X, screen_pos.Y)
+        local rank_image = rank_images[tostring(index)]
+        local pixel = get_screen_pixel(rank_image, abs_x, abs_y)
 
         -- matte value
         for _, val in ipairs({pixel.R, pixel.G, pixel.B, pixel.A}) do
@@ -514,7 +589,7 @@ function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, crypto_imag
 
     if id_float_value == nil then
         -- check if the background is being parsed (RGB=0,0,0)
-        local pixel = get_screen_pixel(input_image, screen_pos.X, screen_pos.Y)
+        local pixel = get_screen_pixel(input_image, abs_x, abs_y)
         if pixel.R == 0.0 and pixel.G == 0.0 and pixel.B == 0.0 then
             id_float_value = 0.0
         end
@@ -523,7 +598,7 @@ function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, crypto_imag
     return id_float_value
 end
 
-function cryptomatte_utilities:create_matte_image(cInfo, matte_names, crypto_images, output_image)
+function cryptomatte_utilities:create_matte_image(cInfo, matte_names, rank_images, output_image)
     -- build a set from the ids of the given matte names
     local ids = {}
     local name_to_id = cInfo.cryptomattes[cInfo.selection]["name_to_id"]
@@ -537,7 +612,7 @@ function cryptomatte_utilities:create_matte_image(cInfo, matte_names, crypto_ima
     -- create the combined matte image
     local combined_matte = nil
     if ids then
-        combined_matte = create_matte_image(crypto_images, ids, output_image)
+        combined_matte = create_matte_image(rank_images, ids, output_image)
     end
     return combined_matte
 end
@@ -559,7 +634,7 @@ end
 
 function cryptomatte_utilities:get_all_rank_images(cInfo, layer_name)
     local partnum = 1
-    local crypto_images = {}
+    local rank_images = {}
 
     -- create EXRIO pointer
     local exr = EXRIO()
@@ -573,7 +648,7 @@ function cryptomatte_utilities:get_all_rank_images(cInfo, layer_name)
         -- filter channels and rearrange data by rank index
         local cryptomatte_channels = get_channels_by_index(exr_channel_names)
         -- create image by rank
-        crypto_images = exr_read_channel_part(exr, cryptomatte_channels, partnum)
+        rank_images = exr_read_channel_part(exr, cryptomatte_channels, partnum)
     end
 
     -- close the context manager
@@ -585,7 +660,7 @@ function cryptomatte_utilities:get_all_rank_images(cInfo, layer_name)
         print(string.format("ERROR: %s", exrio_error))
     end
 
-    return crypto_images
+    return rank_images
 end
 
 function cryptomatte_utilities:get_mattes_from_string(cInfo, matte_selection_str)

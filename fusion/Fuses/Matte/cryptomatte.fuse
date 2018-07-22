@@ -387,9 +387,13 @@ function set_name_checker(cInfo, crypto_images, input_image)
         -- get screen pixel at locator position
         local screen_pos = LocatorNameChecker:GetSource(0)
         local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, crypto_images, input_image)
-
+        
         -- get matte name matching id float value
-        if id_float_value == 0.0 then
+        if id_float_value == nil then
+            -- picking out of bounds
+            return
+        elseif id_float_value == 0.0 then
+            -- no match
             text_to_set = "Background (Value is 0.0)"
         else
             text_to_set = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
@@ -465,10 +469,10 @@ function Process(req)
     layer_name = get_selected_layer()
 
     -- get all crypto images
-    local crypto_images = cryptoutils:get_all_rank_images(cInfo, layer_name)
+    local rank_images = cryptoutils:get_all_rank_images(cInfo, layer_name)
 
     -- set the name checker
-    -- set_name_checker(cInfo, crypto_images, input_image)
+    -- set_name_checker(cInfo, rank_images, input_image)
 
     -- add matte callback
     -- remove matte callback
@@ -480,19 +484,19 @@ function Process(req)
     if add_triggered == 1 or remove_triggered == 1 or toggle_triggered == 1 then
         -- get the id float value from the pixel at locator coordinates
         local screen_pos = Locator:GetSource(0)
-        local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, crypto_images, input_image)
+        local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, rank_images, input_image)
 
-        if toggle_triggered == 1 then
+        if toggle_triggered == 1 and id_float_value ~= nil then
             toggle_matte(cInfo, id_float_value, matte_selection_str)
             -- reset the callback
             CallbackBtnToggle:SetSource(Number(0), 0, 0)
         end
-        if add_triggered == 1 then
+        if add_triggered == 1 and id_float_value ~= nil then
             add_matte(cInfo, id_float_value, matte_selection_str)
             -- reset the callback
             CallbackBtnAdd:SetSource(Number(0), 0, 0)
         end
-        if remove_triggered == 1 then
+        if remove_triggered == 1 and id_float_value ~= nil then
             remove_matte(cInfo, id_float_value, matte_selection_str)
             -- reset the callback
             CallbackBtnRemove:SetSource(Number(0), 0, 0)
@@ -501,11 +505,11 @@ function Process(req)
 
     -- create output image depending on view mode
     local view_mode = get_view_mode()
-    local output_image = apply_view_mode(view_mode, input_image, crypto_images)
+    local output_image = apply_view_mode(view_mode, input_image, rank_images)
 
     -- create matte
     local matte_names = cryptoutils:get_mattes_from_string(cInfo, matte_selection_str)
-    -- local matte = cryptoutils:create_matte_image(cInfo, matte_names, crypto_images, output_image)
+    local matte = cryptoutils:create_matte_image(cInfo, matte_names, rank_images, output_image)
 
     -- apply matte to output image
     if matte ~= nil then
