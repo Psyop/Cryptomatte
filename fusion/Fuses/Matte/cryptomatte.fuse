@@ -248,13 +248,13 @@ function get_selected_layer()
     return TextCryptoLayer:GetSource(0).Value
 end
 
-function get_matte_list_input()
+function get_matte_selection_string()
     -- returns the text inside the matte list line edit
-    local matte_selection_str = TextMatteList:GetSource(0).Value
-    if matte_selection_str == nil then
+    local matte_selection = TextMatteList:GetSource(0).Value
+    if matte_selection == nil then
         return ""
     end
-    return matte_selection_str
+    return matte_selection
 end
 
 function set_layer_selection_slider(cInfo, default_layer)
@@ -285,10 +285,10 @@ function set_slider_attributes(slider, min, max)
                       INP_MaxScale = max})
 end
 
-function update_matte_list(cInfo, matte_name, remove, toggle, matte_selection_str)
+function update_matte_list(cInfo, matte_name, remove, toggle, matte_selection)
     -- updates the matte list line edit text with given data
     -- get valid matte names cross matches from manifest
-    local matte_set = cryptoutils:get_mattes_from_string(cInfo, matte_selection_str)
+    local matte_set = cryptoutils:get_matte_names_from_selection(cInfo, matte_selection)
 
     -- check if the matte to add/remove is present in the set
     local matte_present = matte_set[matte_name]
@@ -329,7 +329,7 @@ function update_matte_list(cInfo, matte_name, remove, toggle, matte_selection_st
     return new_content_str
 end
 
-function toggle_matte(cInfo, id_float_value, matte_selection_str)
+function toggle_matte(cInfo, id_float_value, matte_selection)
     -- gets the matte name for given id float value and toggles it to add/remove the matte selection string if necessary
     
     -- get matte name of id float value
@@ -339,13 +339,13 @@ function toggle_matte(cInfo, id_float_value, matte_selection_str)
     end
 
     -- create an updated version of the matte list str
-    local new_matte_list = update_matte_list(cInfo, matte_name, false, true, matte_selection_str)
+    local new_matte_list = update_matte_list(cInfo, matte_name, false, true, matte_selection)
     if new_matte_list ~= nil then
         TextMatteList:SetSource(Text(new_matte_list), 0, 0)
     end
 end
 
-function add_matte(cInfo, id_float_value, matte_selection_str)
+function add_matte(cInfo, id_float_value, matte_selection)
     -- gets the matte name for given id float value and adds it to the matte selection string if necessary
     
     -- get matte name of id float value
@@ -355,13 +355,13 @@ function add_matte(cInfo, id_float_value, matte_selection_str)
     end
 
     -- create an updated version of the matte list str
-    local new_matte_list = update_matte_list(cInfo, matte_name, false, false, matte_selection_str)
+    local new_matte_list = update_matte_list(cInfo, matte_name, false, false, matte_selection)
     if new_matte_list ~= nil then
         TextMatteList:SetSource(Text(new_matte_list), 0, 0)
     end
 end
 
-function remove_matte(cInfo, id_float_value, matte_selection_str)
+function remove_matte(cInfo, id_float_value, matte_selection)
     -- gets the matte name for given id float value and removes it from the matte selection string if necessary
 
     -- get matte name of id float value
@@ -371,13 +371,13 @@ function remove_matte(cInfo, id_float_value, matte_selection_str)
     end
 
     -- create an updated version of the matte list str
-    local new_matte_list = update_matte_list(cInfo, matte_name, true, false, matte_selection_str)
+    local new_matte_list = update_matte_list(cInfo, matte_name, true, false, matte_selection)
     if new_matte_list ~= nil then
         TextMatteList:SetSource(Text(new_matte_list), 0, 0)
     end
 end
 
-function set_name_checker(cInfo, crypto_images, input_image)
+function set_name_checker(cInfo, rank_images, input_image)
     -- activates the name checker if the locator control is visible
     local text_to_set = ""
     
@@ -386,12 +386,12 @@ function set_name_checker(cInfo, crypto_images, input_image)
     if locator_visible then
         -- get screen pixel at locator position
         local screen_pos = LocatorNameChecker:GetSource(0)
-        local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, crypto_images, input_image)
+        local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, rank_images, input_image)
         
         -- get matte name matching id float value
         if id_float_value == nil then
             -- picking out of bounds
-            return
+            text_to_set = ""
         elseif id_float_value == 0.0 then
             -- no match
             text_to_set = "Background (Value is 0.0)"
@@ -420,26 +420,26 @@ function get_view_mode()
     return VIEW_MODE_NONE
 end
 
-function apply_view_mode(view_mode, input_image, crypto_images)
+function apply_view_mode(view_mode, input_image, rank_images)
     local result
 
     if view_mode == VIEW_MODE_EDGES then
         -- edge mode
         -- output.R + rank_00.A * 2
         -- output.G + rank_00.A * 2
-        local coverage = crypto_images["0"]:CopyOf()
+        local coverage = rank_images["0"]:CopyOf()
         coverage:Gain(1.0, 1.0, 1.0, 2.0)
         result = input_image:ChannelOpOf("Add", coverage, { G = "fg.A", B = "fg.A" })
     elseif view_mode == VIEW_MODE_COLORS then
         -- colors mode generates an "ID" colored image based on an algorithm using the first two ranks
-        result = cryptoutils:create_preview_image(crypto_images["0"], 
-                                                  crypto_images["1"], 
+        result = cryptoutils:create_preview_image(rank_images["0"], 
+                                                  rank_images["1"], 
                                                   input_image)
     elseif view_mode == VIEW_MODE_NONE then
         -- pass input copy as output
         result = input_image:CopyOf()
     else
-        print(string.format("ERROR: %s", "unknown view mode "..view_mode))
+        error(string.format("ERROR: unknown view mode "..view_mode))
     end
     return result
 end
@@ -469,10 +469,10 @@ function Process(req)
     layer_name = get_selected_layer()
 
     -- get all crypto images
-    local rank_images = cryptoutils:get_all_rank_images(cInfo, layer_name)
+    local rank_images = cryptoutils:get_rank_images(cInfo, layer_name)
 
     -- set the name checker
-    -- set_name_checker(cInfo, rank_images, input_image)
+    set_name_checker(cInfo, rank_images, input_image)
 
     -- add matte callback
     -- remove matte callback
@@ -480,24 +480,24 @@ function Process(req)
     local add_triggered = CallbackBtnAdd:GetValue(req).Value
     local remove_triggered = CallbackBtnRemove:GetValue(req).Value
     local toggle_triggered = CallbackBtnToggle:GetValue(req).Value
-    local matte_selection_str = get_matte_list_input()
+    local matte_selection = get_matte_selection_string()
     if add_triggered == 1 or remove_triggered == 1 or toggle_triggered == 1 then
         -- get the id float value from the pixel at locator coordinates
         local screen_pos = Locator:GetSource(0)
         local id_float_value = cryptoutils:get_id_float_value(cInfo, screen_pos, rank_images, input_image)
 
         if toggle_triggered == 1 and id_float_value ~= nil then
-            toggle_matte(cInfo, id_float_value, matte_selection_str)
+            toggle_matte(cInfo, id_float_value, matte_selection)
             -- reset the callback
             CallbackBtnToggle:SetSource(Number(0), 0, 0)
         end
         if add_triggered == 1 and id_float_value ~= nil then
-            add_matte(cInfo, id_float_value, matte_selection_str)
+            add_matte(cInfo, id_float_value, matte_selection)
             -- reset the callback
             CallbackBtnAdd:SetSource(Number(0), 0, 0)
         end
         if remove_triggered == 1 and id_float_value ~= nil then
-            remove_matte(cInfo, id_float_value, matte_selection_str)
+            remove_matte(cInfo, id_float_value, matte_selection)
             -- reset the callback
             CallbackBtnRemove:SetSource(Number(0), 0, 0)
         end
@@ -508,7 +508,7 @@ function Process(req)
     local output_image = apply_view_mode(view_mode, input_image, rank_images)
 
     -- create matte
-    local matte_names = cryptoutils:get_mattes_from_string(cInfo, matte_selection_str)
+    local matte_names = cryptoutils:get_matte_names_from_selection(cInfo, matte_selection)
     local matte = cryptoutils:create_matte_image(cInfo, matte_names, rank_images, output_image)
 
     -- apply matte to output image
