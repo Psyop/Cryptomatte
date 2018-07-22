@@ -68,12 +68,15 @@ Decoders:
 
 Fusion (by C&eacute;dric Duriau)
 
+* Support for EXR images with a data window smaller than display window (builtin DoD)
+  * Fixed crash for Redshift frames with DoD
+  * Fixed crash for Mantra frames with DoD
 * Updated README install documentation
-* Minimum Fusion version is now 9.0.2.
-* Changed directory structure
+* Minimum Fusion version is now 9.0.2
+* Changed repo structure to match Fusion directory structure
 * Added Fuse registry information (help, company, version, ...)
-* Code improvements
-  * removed unused function
+* Added dosctrings
+* Cleaned up code
 
 1.2.0:
 
