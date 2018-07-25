@@ -15,7 +15,7 @@ cryptomatte_utilities = {}
 -- =============================================================================
 REGEX_METADATA = "%a+/([a-z0-9]+)/(.+)"
 REGEX_MATTE_LIST = "([^,]+),?%s*"
-REGEX_RANK_CHANNEL = "(.+)[.](.+)"
+REGEX_LAYER_CHANNEL = "(.+)[.](.+)"
 METADATA_PREFIX = "cryptomatte/"
 METADATA_KEY_NAME = "name"
 METADATA_KEY_MANIFEST = "manifest"
@@ -159,34 +159,34 @@ end
 function create_matte_image_init()
     --[[
     Initializer function for scanline function "create_matte_image_scanline".
-    
+
     This function initializes pixel objects and pointers to re-use in scanline
     function. This avoids the creation of these objects at every X or Y pass,
     improving the overall performance.
 
     ! FOLLOWING PARAMTERS ARE PASSED INDIRECTLY, SEE `DoMultiProcess` USAGE !
-    
+
     :param dod: domain of definition passed to restrict the scanline process
                 to this rectangle
     :type dod: FuRectInt
 
-    :param rank_image: cryptomatte image of a rank, containing the source image
-                       "{RANK}.{RGBA}" channel information in respective RBGA 
+    :param layer_image: cryptomatte image of a layer, containing the source image
+                       "{LAYER}.{RGBA}" channel information in respective RBGA 
                        channels.
-                       Example: - CryptoAsset00.R -> rank_image.R
-                                - CryptoAsset00.G -> rank_image.G
-                                - CryptoAsset00.B -> rank_image.B
-                                - CryptoAsset00.A -> rank_image.A
-    :type rank_image: Image
+                       Example: - CryptoAsset00.R -> layer_image.R
+                                - CryptoAsset00.G -> layer_image.G
+                                - CryptoAsset00.B -> layer_image.B
+                                - CryptoAsset00.A -> layer_image.A
+    :type layer_image: Image
 
-    :param rank_intermediate_image: intermediate image containing all filtered
+    :param layer_intermediate_image: intermediate image containing all filtered
                                     G and A channel information needed to build
-                                    a matte for the rank
-    :type rank_intermediate_image: string
+                                    a matte for the layer
+    :type layer_intermediate_image: string
 
     :param id_float_values: table of id float values built as a set, containing
                             all float id values of name hashes used to filter 
-                            G and A channel information to build a rank matte
+                            G and A channel information to build a layer matte
                             Example: manifest = {"bunny": 13851a76}
                                      (hash) 13851a76 = (float) 3.3600012625093e-27
                                      If R or B match this float value, G or A 
@@ -195,8 +195,8 @@ function create_matte_image_init()
     -- ]]
     global_p = Pixel()
     local_p = Pixel()
-    pixptr_in = PixPtr(rank_image, global_p)
-    pixptr_out = PixPtr(rank_intermediate_image, local_p)
+    pixptr_in = PixPtr(layer_image, global_p)
+    pixptr_out = PixPtr(layer_intermediate_image, local_p)
 end
 
 function create_matte_image_scanline(n)
@@ -207,28 +207,27 @@ function create_matte_image_scanline(n)
     :type n: int
 
     ! FOLLOWING PARAMTERS ARE PASSED INDIRECTLY, SEE `DoMultiProcess` USAGE !
-    
+
     :param dod: domain of definition passed to restrict the scanline process
                 to this rectangle
     :type dod: FuRectInt
 
-    :param rank_image: cryptomatte image of a rank, containing the source image
-                       "{RANK}.{RGBA}" channel information in respective RBGA 
-                       channels.
-                       Example: - CryptoAsset00.R -> rank_image.R
-                                - CryptoAsset00.G -> rank_image.G
-                                - CryptoAsset00.B -> rank_image.B
-                                - CryptoAsset00.A -> rank_image.A
-    :type rank_image: Image
+    :param layer_image: cryptomatte image of a layer, containing the source image 
+                        "{LAYER}.{RGBA}" channel information in respective RBGA channels.
+                        Example: - CryptoAsset00.R -> layer_image.R
+                                 - CryptoAsset00.G -> layer_image.G
+                                 - CryptoAsset00.B -> layer_image.B
+                                 - CryptoAsset00.A -> layer_image.A
+    :type layer_image: Image
 
-    :param rank_intermediate_image: intermediate image containing all filtered
+    :param layer_intermediate_image: intermediate image containing all filtered
                                     G and A channel information needed to build
-                                    a matte for the rank
-    :type rank_intermediate_image: string
+                                    a matte for the layer
+    :type layer_intermediate_image: string
 
     :param id_float_values: table of id float values built as a set, containing
                             all float id values of name hashes used to filter 
-                            G and A channel information to build a rank matte
+                            G and A channel information to build a layer matte
                             Example: manifest = {"bunny": 13851a76}
                                      (hash) 13851a76 = (float) 3.3600012625093e-27
                                      If R or B match this float value, G or A 
@@ -257,11 +256,11 @@ function create_matte_image_scanline(n)
         local r_in_array = id_float_values[global_p.R]
         local b_in_array = id_float_values[global_p.B]
         if r_in_array or b_in_array then
-            -- rank pair match R counterpart is G
+            -- rank match in R, counterpart is G
             if r_in_array then
                 local_p.G = global_p.G
             end
-            -- rank pair match B counterpart is A
+            -- rank match in B, counterpart is A
             if b_in_array then
                 local_p.A = global_p.A
             end
@@ -277,7 +276,7 @@ end
 function create_preview_image_init()
     --[[
     Initializer function for the scanline function "create_preview_image". 
-    
+
     This function initializes pixel objects and pointers to re-use in scanline
     function. This avoids the creation of these objects at every X or Y pass,
     improving the overall performance.
@@ -287,18 +286,18 @@ function create_preview_image_init()
     :param preview_image: preview image to write pixel information to
     :type preview_image: Image
 
-    :param rank_0_image: image for the cryptomatte rank 0
-    :type rank_0_image: Image
+    :param layer_0_image: image for the layer 0
+    :type layer_0_image: Image
 
-    :param rank_1_image: image for the cryptomatte rank 1
-    :type rank_1_image: Image
+    :param layer_1_image: image for the layer 1
+    :type layer_1_image: Image
     -- ]]
     global_p_c00 = Pixel()
     global_p_c01 = Pixel()
     local_p = Pixel()
 
-    pixptr_00 = PixPtr(rank_0_image, global_p_c00)
-    pixptr_01 = PixPtr(rank_1_image, global_p_c01)
+    pixptr_00 = PixPtr(layer_0_image, global_p_c00)
+    pixptr_01 = PixPtr(layer_1_image, global_p_c01)
     pixptr_out = PixPtr(preview_image, local_p)
 end
 
@@ -318,11 +317,11 @@ function create_preview_image_scanline(n)
     :param preview_image: preview image to write pixel information to
     :type preview_image: Image
 
-    :param rank_0_image: image for the cryptomatte rank 0
-    :type rank_0_image: Image
+    :param layer_0_image: image for the layer 0
+    :type layer_0_image: Image
 
-    :param rank_1_image: image for the cryptomatte rank 1
-    :type rank_1_image: Image
+    :param layer_1_image: image for the layer 1
+    :type layer_1_image: Image
     -- ]]
     -- calculate real scanline y position
     local y = n + preview_image.DataWindow.bottom
@@ -337,7 +336,7 @@ function create_preview_image_scanline(n)
         pixptr_00:GetNextPixel(global_p_c00)
         pixptr_01:GetNextPixel(global_p_c01)
 
-        -- get mantissa of R and B channels of both rank 0 and 1
+        -- get mantissa of R and B channels of both layer 0 and 1
         m00_rg, _ = math.frexp(math.abs(global_p_c00.R))
         m00_ba, _ = math.frexp(math.abs(global_p_c00.B))
         m01_rg, _ = math.frexp(math.abs(global_p_c01.R))
@@ -375,17 +374,17 @@ function create_preview_image_scanline(n)
     end
 end
 
-function create_matte_image(rank_images, id_float_values, output_image)
+function create_matte_image(layer_images, id_float_values, output_image)
     --[[
     Creates an image containing all mattes built from given id float values.
 
-    :param rank_images: cryptomatte rank images by rank index as string
-                        Example: rank_images["1"] = (Image)CrytpoAsset01(RGBA)
-    :type rank_images: table[string, Image]
+    :param layer_images: cryptomatte layer images by layer index as string
+                        Example: layer_images["1"] = (Image)CrytpoAsset01(RGBA)
+    :type layer_images: table[string, Image]
 
     :param id_float_values: table of id float values built as a set, containing
                             all float id values of name hashes used to filter 
-                            G and A channel information to build a rank matte
+                            G and A channel information to build a layer matte
                             Example: manifest = {"bunny": 13851a76}
                                      (hash) 13851a76 = (float) 3.3600012625093e-27
                                      id_float_values = {3.3600012625093e-27 = true}
@@ -398,7 +397,7 @@ function create_matte_image(rank_images, id_float_values, output_image)
     :return: mono channel image containing all mattes built from id float values
     :rtype: Image
     -- ]]
-    -- create monochannel combined matte image from all rank matte images and
+    -- create monochannel combined matte image from all layer matte images and
     -- keep the input resolution and DoD
     local combined_matte_image = Image({IMG_Like = output_image,
                                         IMG_CopyChannels = false,
@@ -406,45 +405,45 @@ function create_matte_image(rank_images, id_float_values, output_image)
     combined_matte_image:Clear()
     local dod = output_image.DataWindow
 
-    for _, rank_image in pairs(rank_images) do
-        -- create an intermediate image from the rank image holding the data 
-        -- to build a rank matte
-        local rank_intermediate_image = Image({IMG_Like = rank_image})
-        rank_intermediate_image:Clear()
+    for _, layer_image in pairs(layer_images) do
+        -- create an intermediate image from the layer image holding the data 
+        -- to build a layer matte
+        local layer_intermediate_image = Image({IMG_Like = layer_image})
+        layer_intermediate_image:Clear()
 
         -- process pixels to retrieve the pixels matching the id float value
         local args = {dod = dod,
-                      rank_image = rank_image,
-                      rank_intermediate_image = rank_intermediate_image, 
+                      layer_image = layer_image,
+                      layer_intermediate_image = layer_intermediate_image, 
                       id_float_values = id_float_values}
         self:DoMultiProcess(create_matte_image_init,
                             args,
                             dod.top - dod.bottom,
                             create_matte_image_scanline)
 
-        -- create mono channel matte image for current rank
-        local rank_matte_image = Image({IMG_Like = rank_image, 
+        -- create mono channel matte image for current layer
+        local layer_matte_image = Image({IMG_Like = layer_image, 
                                         IMG_CopyChannels = false, 
                                         {IMG_Channel = "Alpha"}})
-        rank_matte_image = rank_matte_image:ChannelOpOf("Add", rank_intermediate_image, {A = "fg.G"})
-        rank_matte_image = rank_matte_image:ChannelOpOf("Add", rank_intermediate_image, {A = "fg.A"})
+        layer_matte_image = layer_matte_image:ChannelOpOf("Add", layer_intermediate_image, {A = "fg.G"})
+        layer_matte_image = layer_matte_image:ChannelOpOf("Add", layer_intermediate_image, {A = "fg.A"})
 
-        -- add rank matte image to combined matte image
-        combined_matte_image = combined_matte_image:ChannelOpOf("Add", rank_matte_image, {A = "fg.A"})
+        -- add layer matte image to combined matte image
+        combined_matte_image = combined_matte_image:ChannelOpOf("Add", layer_matte_image, {A = "fg.A"})
     end
 
     return combined_matte_image
 end
 
-function create_preview_image(rank_0_image, rank_1_image, input_image)
+function create_preview_image(layer_0_image, layer_1_image, input_image)
     --[[
     Creates the keyable surface preview image.
-    
-    :param rank_0_image: image for the cryptomatte rank 0
-    :type rank_0_image: Image
 
-    :param rank_1_image: image for the cryptomatte rank 1
-    :type rank_1_image: Image
+    :param layer_0_image: image for the cryptomatte layer 0
+    :type layer_0_image: Image
+
+    :param layer_1_image: image for the cryptomatte layer 1
+    :type layer_1_image: Image
 
     :param input_image: image used to build output preview image to match 
                         resolution and dod
@@ -456,8 +455,8 @@ function create_preview_image(rank_0_image, rank_1_image, input_image)
     local preview_image = input_image:CopyOf()
     preview_image:Clear()
     local args = {preview_image = preview_image,
-                  rank_0_image = rank_0_image,
-                  rank_1_image = rank_1_image}
+                  layer_0_image = layer_0_image,
+                  layer_1_image = layer_1_image}
     self:DoMultiProcess(create_preview_image_init,
                         args, 
                         preview_image.DataWindow.top - preview_image.DataWindow.bottom,
@@ -465,9 +464,9 @@ function create_preview_image(rank_0_image, rank_1_image, input_image)
     return preview_image
 end
 
-function exr_get_channels(exr, partnum, crypto_layer)
+function exr_get_channels(exr, partnum, type_name)
     --[[
-    Gets the channels for given cryptomatte layer.
+    Gets the channels matching given type name.
 
     :param exr: EXRIO module
     :type exr: table
@@ -475,58 +474,51 @@ function exr_get_channels(exr, partnum, crypto_layer)
     :param partnum: part of the exr to read data from
     :type partnum: int
 
-    :param crypto_layer: name of the layer to get channels from (channel prefix)
-                         Example: crypto_layer = "CryptoAsset"
-                                  channels = {"CryptoAsset.R", 
-                                              "CryptoAsset.G", 
-                                              "CryptoAsset.B", 
-                                              "CryptoAsset.A", 
-                                              "CryptoAsset00.R", 
+    :param type_name: name of the layer to get channels from (channel prefix)
+                         Example: type_name = "CryptoAsset"
+                                              "CryptoAsset00.R",  -- rank 0
                                               "CryptoAsset00.G",
-                                              "CryptoAsset00.B",
+                                              "CryptoAsset00.B",  -- rank 1
                                               "CryptoAsset00.A"
-                                              "CryptoAsset01.R", 
+                                              "CryptoAsset01.R",  -- rank 2
                                               "CryptoAsset01.G",
-                                              "CryptoAsset01.B",
+                                              "CryptoAsset01.B",  -- rank 3
                                               "CryptoAsset01.A"
-                                              "CryptoAsset02.R", 
+                                              "CryptoAsset02.R",  -- rank 4
                                               "CryptoAsset02.G",
-                                              "CryptoAsset02.B",
+                                              "CryptoAsset02.B",  -- rank 5
                                               "CryptoAsset02.A"}
-    :type crypto_layer: string
+    :type type_name: string
 
     :return: channels for the given crytomatte layer
     :rtype: table[string]
     --]]
-    -- retrieve all exr channels filtering on given layer name
     local channel_names = {}
+    -- get all channels
     local channels = exr:GetChannels(partnum)
     for i, channel in ipairs(channels) do
         local channel_name = channel["Name"]
-        if string.find(channel_name, crypto_layer) then
+        -- store channels matching type name prefix
+        if string.find(channel_name, type_name) then
             table.insert(channel_names, channel_name)
         end
     end
     return channel_names
 end
 
-function sort_channels_by_rank_index(channels)
+function sort_channels_by_layer_index(channels)
     --[[
-    Sorts the array of channels in a table by rank layer index.
+    Sorts the array of channels in a table by layer index.
 
-    Example: channels = {"CryptoAsset.R", 
-                         "CryptoAsset.G", 
-                         "CryptoAsset.B", 
-                         "CryptoAsset.A", 
-                         "CryptoAsset00.R", 
+    Example: channels = {"CryptoAsset00.R",
                          "CryptoAsset00.G",
                          "CryptoAsset00.B",
                          "CryptoAsset00.A"
-                         "CryptoAsset01.R", 
+                         "CryptoAsset01.R",
                          "CryptoAsset01.G",
                          "CryptoAsset01.B",
                          "CryptoAsset01.A"
-                         "CryptoAsset02.R", 
+                         "CryptoAsset02.R",
                          "CryptoAsset02.G",
                          "CryptoAsset02.B",
                          "CryptoAsset02.A"}
@@ -543,61 +535,61 @@ function sort_channels_by_rank_index(channels)
                                 "b" = "CryptoAsset02.B"
                                 "a" = "CryptoAsset02.A"}}
 
-    :return: table with rank index string as key and RGBA channel name maping
+    :return: table with layer index string as key and RGBA channel name maping
              table as value
     :rtype: table[string, table[string, string]]
     --]]
-    local by_index = {}
+    local layers_by_index = {}
     for i, channel in ipairs(channels) do
-        -- get rank and channel name from channel
-        local rank, name = string.match(channel, REGEX_RANK_CHANNEL)
+        -- get layer and channel name from channel
+        local layer, name = string.match(channel, REGEX_LAYER_CHANNEL)
 
-        if rank ~= nil and name ~= nil then
-            -- get rank index
-            local index = string.match(rank, "[0-9]+$")
+        if layer ~= nil and name ~= nil then
+            -- get layer index
+            local index = string.match(layer, "[0-9]+$")
 
             if index ~= nil then
                 -- first tonumber to avoid leading numbers, then tostring again
                 -- to ensure string keys
                 index = tostring(tonumber(index))
-                if not is_key_in_table(index, by_index) then
-                    by_index[index] = {}
+                if not is_key_in_table(index, layers_by_index) then
+                    layers_by_index[index] = {}
                 end
 
-                -- store the rank channels under respective lowercase short form
+                -- store the layer channels under respective lowercase short form
                 local _channel = string.lower(name)
                 if _channel == "r" or _channel == "red" then
-                    by_index[index]["r"] = channel
+                    layers_by_index[index]["r"] = channel
                 elseif _channel == "g" or _channel == "green" then
-                    by_index[index]["g"] = channel
+                    layers_by_index[index]["g"] = channel
                 elseif _channel == "b" or _channel == "blue" then
-                    by_index[index]["b"] = channel
+                    layers_by_index[index]["b"] = channel
                 elseif _channel == "a" or _channel == "alpha" then
-                    by_index[index]["a"] = channel
+                    layers_by_index[index]["a"] = channel
                 end
             end
         end
     end
-    return by_index
+    return layers_by_index
 end
 
-function exr_get_rank_images_by_index(exr, channels_by_index, partnum)
+function exr_get_layer_images_by_index(exr, channels_by_index, partnum)
     --[[
-    Gets the rank images by rank index.
+    Gets the layer images by layer index.
 
     :param exr: EXRIO module
     :type exr: table
 
-    :param channels_by_index: rank channels by rank index
+    :param channels_by_index: layer channels by layer index
     :type channels_by_index: table[string]
 
     :param partnum: part of the exr to read data from
     :type partnum: int
 
-    :return: rank image by rank index as string
+    :return: layer image by layer index as string
     :rtype: table[string, Image]
     --]]
-    local rank_images_by_index = {}
+    local layer_images_by_index = {}
     local dispw = exr:DisplayWindow(partnum)
     local dataw = exr:DataWindow(partnum)
     local ox, oy = dispw.left, dispw.bottom
@@ -618,33 +610,33 @@ function exr_get_rank_images_by_index(exr, channels_by_index, partnum)
                              IMG_DataWindow = imgw,
                              IMG_YScale = 1.0 / pixel_aspect_ratio})
 
-        -- read rank RGBA channels
+        -- read layer RGBA channels
         exr:Channel(channels["r"], ANY_TYPE, image, CHAN_RED)
         exr:Channel(channels["g"], ANY_TYPE, image, CHAN_GREEN)
         exr:Channel(channels["b"], ANY_TYPE, image, CHAN_BLUE)
         exr:Channel(channels["a"], ANY_TYPE, image, CHAN_ALPHA)
 
-        -- store the image as value to the rank index in string format as key
+        -- store the image as value to the layer index in string format as key
         exr:ReadPart(partnum, {image})
-        rank_images_by_index[tostring(index)] = image
+        layer_images_by_index[tostring(index)] = image
     end
 
-    return rank_images_by_index
+    return layer_images_by_index
 end
 
 function is_position_in_rect(rect, x, y)
     --[[
     Validates if the given x and y coordinates are in the given rect bounds.
-    
+
     :param rect: integer rectangle position to validate x and y position  with
     :type rect: FuRectInt
-    
+
     :param x: x position to validate
     :type x: int
-    
+
     :param y: y position to validate
     :type y: int
-    
+
     :return: true if the given position is inside the given rect, false if not
     :rtype: bool
     --]]
@@ -853,7 +845,7 @@ end
 function CryptomatteInfo:parse_manifest(manifest)
     --[[
     Parse the manifest to store matte id and name information for fast lookup.
-    
+
     :param manifest: manifest to parse
     :type manifest: table
     --]]
@@ -907,7 +899,7 @@ function cryptomatte_utilities:create_cryptomatte_info(metadata, layer_name)
     return cinfo
 end
 
-function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, rank_images, input_image)
+function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, layer_images, input_image)
     --[[
     Gets the id float value for given relative screen position.
 
@@ -917,8 +909,8 @@ function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, rank_images
     :param screen_pos: relative screen position to get id float value from
     :type screen_pos: Point
 
-    :param rank_images: rank images by index to find id float value in
-    :type rank_images: table[string, Image]
+    :param layer_images: layer images by index to find id float value in
+    :type layer_images: table[string, Image]
 
     :param input_image: image the screen position is relative to
     :type input_image: Image
@@ -936,23 +928,23 @@ function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, rank_images
     end
     local id_float_value = nil
 
-    -- sort rank indices to loop over rank images with rank index ascending
+    -- sort layer indices to loop over layer images with layer index ascending
     local keys = {}
-    for k, _ in pairs(rank_images) do
+    for k, _ in pairs(layer_images) do
         table.insert(keys, tonumber(k))
     end
     table.sort(keys)
 
-    -- check for every rank image, index ascending, if the pixel at absolute 
+    -- check for every layer image, index ascending, if the pixel at absolute 
     -- position has RGBA channel information which is present in the set of id 
     -- float values inside the manifest
     local known_id_float_values = cInfo.cryptomattes[cInfo.selection]["ids"]
     for _, index in ipairs(keys) do
-        -- get rank image
-        local rank_image = rank_images[tostring(index)]
+        -- get layer image
+        local layer_image = layer_images[tostring(index)]
 
-        -- get pixel from rank image at absolute position
-        local pixel = get_screen_pixel(rank_image, abs_x, abs_y)
+        -- get pixel from layer image at absolute position
+        local pixel = get_screen_pixel(layer_image, abs_x, abs_y)
 
         -- check if one of the RGBA pixel values are present inside the total 
         -- list of ids found in the manifest
@@ -979,7 +971,7 @@ function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, rank_images
     return id_float_value
 end
 
-function cryptomatte_utilities:create_matte_image(cInfo, matte_names, rank_images, output_image)
+function cryptomatte_utilities:create_matte_image(cInfo, matte_names, layer_images, output_image)
     --[[
     Creates an image containing all mattes of given matte names.
 
@@ -989,9 +981,9 @@ function cryptomatte_utilities:create_matte_image(cInfo, matte_names, rank_image
     :param matte_names: matte name set to build combined matte image from
     :type matte_names: table[str, boolean]
 
-    :param rank_images: cryptomatte rank images by rank index as string
-                        Example: rank_images["1"] = (Image)CrytpoAsset01(RGBA)
-    :type rank_images: table[string, Image]
+    :param layer_images: cryptomatte layer images by layer index as string
+                         Example: layer_images["1"] = (Image)CrytpoAsset01(RGBA)
+    :type layer_images: table[string, Image]
 
     :param output_image: image used to build output combined matte image to 
                          match resolution and dod
@@ -1013,12 +1005,12 @@ function cryptomatte_utilities:create_matte_image(cInfo, matte_names, rank_image
     -- create the combined matte image
     local combined_matte = nil
     if ids then
-        combined_matte = create_matte_image(rank_images, ids, output_image)
+        combined_matte = create_matte_image(layer_images, ids, output_image)
     end
     return combined_matte
 end
 
-function cryptomatte_utilities:create_preview_image(rank_0_image, rank_1_image, input_image)
+function cryptomatte_utilities:create_preview_image(layer_0_image, layer_1_image, input_image)
     --[[
     Creates the keyable surface preview image.
 
@@ -1029,15 +1021,15 @@ function cryptomatte_utilities:create_preview_image(rank_0_image, rank_1_image, 
     preview image using the Fuse scanline multi threaded function 
     "DoMultiProcess". This function cannot be called from the current function 
     due to the "self" being the module, does not have this function. 
-        
+
     Long story short, I wanted this function to be public, so I had to make two
     of them to avoid any clashes.
 
-    :param rank_0_image: image for the cryptomatte rank 0
-    :type rank_0_image: Image
+    :param layer_0_image: image for the cryptomatte layer 0
+    :type layer_0_image: Image
 
-    :param rank_1_image: image for the cryptomatte rank 1
-    :type rank_1_image: Image
+    :param layer_1_image: image for the cryptomatte layer 1
+    :type layer_1_image: Image
 
     :param input_image: image used to build output preview image to match 
                         resolution and dod
@@ -1046,26 +1038,26 @@ function cryptomatte_utilities:create_preview_image(rank_0_image, rank_1_image, 
     :return: keyable surface preview image
     :rtype: Image
     --]]
-    return create_preview_image(rank_0_image, rank_1_image, input_image)
+    return create_preview_image(layer_0_image, layer_1_image, input_image)
 end
 
-function cryptomatte_utilities:get_rank_images(cInfo, layer_name)
+function cryptomatte_utilities:get_exr_layer_images(cInfo, type_name)
     --[[
-    Gets the rank images by index for given layer.
+    Gets the numbered exr layer images by index matching given type name.
 
     :param cInfo: CryptomatteInfo object
     :type cInfo: table
 
-    :param layer_name: cryptomatte exr layer to get rank images for
-    :type layer_name: string
+    :param type_name: prefix of the exr layer to get layer images for
+    :type type_name: string
 
     :raises error: if any error occured within the EXRIO module
 
-    :return: rank images by rank index as string
+    :return: numbered exr layer images by index matching given type name
     :rtype: table[string, Image]
     --]]
     local partnum = 1
-    local rank_images = {}
+    local layer_images = {}
 
     -- create EXRIO pointer
     local exr = EXRIO()
@@ -1075,11 +1067,11 @@ function cryptomatte_utilities:get_rank_images(cInfo, layer_name)
 
     if exr:ReadHeader() then
         -- get the channel names
-        local channels = exr_get_channels(exr, partnum, layer_name)
-        -- filter channels and rearrange data by rank index
-        local channels_by_index = sort_channels_by_rank_index(channels)
-        -- create image by rank
-        rank_images = exr_get_rank_images_by_index(exr, channels_by_index, partnum)
+        local channels = exr_get_channels(exr, partnum, type_name)
+        -- sort channels by layer index
+        local channels_by_layer_index = sort_channels_by_layer_index(channels)
+        -- create image by layer index
+        layer_images = exr_get_layer_images_by_index(exr, channels_by_layer_index, partnum)
     end
 
     -- close the context manager
@@ -1091,7 +1083,7 @@ function cryptomatte_utilities:get_rank_images(cInfo, layer_name)
         error(string.format("ERROR: could not read EXR data (EXRIO ERROR: %s)", exrio_error))
     end
 
-    return rank_images
+    return layer_images
 end
 
 function cryptomatte_utilities:get_matte_names_from_selection(cInfo, matte_selection)
