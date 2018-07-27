@@ -414,7 +414,7 @@ function create_matte_image(layer_images, id_float_values, output_image)
         -- process pixels to retrieve the pixels matching the id float value
         local args = {dod = dod,
                       layer_image = layer_image,
-                      layer_intermediate_image = layer_intermediate_image, 
+                      layer_intermediate_image = layer_intermediate_image,
                       id_float_values = id_float_values}
         self:DoMultiProcess(create_matte_image_init,
                             args,
@@ -422,8 +422,8 @@ function create_matte_image(layer_images, id_float_values, output_image)
                             create_matte_image_scanline)
 
         -- create mono channel matte image for current layer
-        local layer_matte_image = Image({IMG_Like = layer_image, 
-                                        IMG_CopyChannels = false, 
+        local layer_matte_image = Image({IMG_Like = layer_image,
+                                        IMG_CopyChannels = false,
                                         {IMG_Channel = "Alpha"}})
         layer_matte_image = layer_matte_image:ChannelOpOf("Add", layer_intermediate_image, {A = "fg.G"})
         layer_matte_image = layer_matte_image:ChannelOpOf("Add", layer_intermediate_image, {A = "fg.A"})
@@ -458,7 +458,7 @@ function create_preview_image(layer_0_image, layer_1_image, input_image)
                   layer_0_image = layer_0_image,
                   layer_1_image = layer_1_image}
     self:DoMultiProcess(create_preview_image_init,
-                        args, 
+                        args,
                         preview_image.DataWindow.top - preview_image.DataWindow.bottom,
                         create_preview_image_scanline)
     return preview_image
@@ -573,7 +573,7 @@ function sort_channels_by_layer_index(channels)
     return layers_by_index
 end
 
-function exr_get_layer_images_by_index(exr, channels_by_index, partnum)
+function exr_get_layer_images_by_index(exr, channels_by_index, partnum, input_image)
     --[[
     Gets the layer images by layer index.
 
@@ -586,6 +586,9 @@ function exr_get_layer_images_by_index(exr, channels_by_index, partnum)
     :param partnum: part of the exr to read data from
     :type partnum: int
 
+    :param input_image: input image to get resolution information from
+    :type input_image: Image
+
     :return: layer image by layer index as string
     :rtype: table[string, Image]
     --]]
@@ -594,10 +597,8 @@ function exr_get_layer_images_by_index(exr, channels_by_index, partnum)
     local dataw = exr:DataWindow(partnum)
     local ox, oy = dispw.left, dispw.bottom
     local w, h = dispw.right - dispw.left, dispw.top - dispw.bottom
-
     local imgw = ImgRectI(dataw)
     imgw:Offset(-ox, -oy)
-
     local pixel_aspect_ratio = exr:PixelAspectRatio(partnum)
 
     -- read part with given index
@@ -611,14 +612,27 @@ function exr_get_layer_images_by_index(exr, channels_by_index, partnum)
                              IMG_YScale = 1.0 / pixel_aspect_ratio})
 
         -- read layer RGBA channels
-        exr:Channel(channels["r"], ANY_TYPE, image, CHAN_RED)
-        exr:Channel(channels["g"], ANY_TYPE, image, CHAN_GREEN)
-        exr:Channel(channels["b"], ANY_TYPE, image, CHAN_BLUE)
-        exr:Channel(channels["a"], ANY_TYPE, image, CHAN_ALPHA)
+        exr:Channel(channels["r"], ANY_TYPE, 1, CHAN_RED)
+        exr:Channel(channels["g"], ANY_TYPE, 1, CHAN_GREEN)
+        exr:Channel(channels["b"], ANY_TYPE, 1, CHAN_BLUE)
+        exr:Channel(channels["a"], ANY_TYPE, 1, CHAN_ALPHA)
 
         -- store the image as value to the layer index in string format as key
         exr:ReadPart(partnum, {image})
-        layer_images_by_index[tostring(index)] = image
+
+        -- if proxy mode is enabled, resize the EXR image to the affacted input
+        -- image size, EXRIO does not take proxy into consideration
+        local result = image
+        if input_image.ProxyScale ~= 1 then
+            local resized_image = Image({IMG_Like = image,
+                                         IMG_Width = input_image.Width,
+                                         IMG_Height = input_image.Height})
+            image:Resize(resized_image, {RSZ_Filter = "Nearest",
+                                         RSZ_Width = input_image.Width,
+                                         RSZ_Height = input_image.Height})
+            result = resized_image
+        end
+        layer_images_by_index[tostring(index)] = result
     end
 
     return layer_images_by_index
@@ -755,7 +769,7 @@ function CryptomatteInfo:get_cryptomatte_metadata(metadata, layer_name)
                 layer_name_to_index[v] = index
             end
 
-            -- if the given selected layer name was found inside the metadata, 
+            -- if the given selected layer name was found inside the metadata,
             -- store the id to set as default selection, else store current 
             -- metadata layer id as fallback selection
             fallback_selection = metadata_id
@@ -1041,7 +1055,7 @@ function cryptomatte_utilities:create_preview_image(layer_0_image, layer_1_image
     return create_preview_image(layer_0_image, layer_1_image, input_image)
 end
 
-function cryptomatte_utilities:get_exr_layer_images(cInfo, type_name)
+function cryptomatte_utilities:get_exr_layer_images(cInfo, type_name, input_image)
     --[[
     Gets the numbered exr layer images by index matching given type name.
 
@@ -1050,6 +1064,9 @@ function cryptomatte_utilities:get_exr_layer_images(cInfo, type_name)
 
     :param type_name: prefix of the exr layer to get layer images for
     :type type_name: string
+
+    :param input_image: input image to get resolution information from
+    :type input_image: Image
 
     :raises error: if any error occured within the EXRIO module
 
@@ -1071,7 +1088,7 @@ function cryptomatte_utilities:get_exr_layer_images(cInfo, type_name)
         -- sort channels by layer index
         local channels_by_layer_index = sort_channels_by_layer_index(channels)
         -- create image by layer index
-        layer_images = exr_get_layer_images_by_index(exr, channels_by_layer_index, partnum)
+        layer_images = exr_get_layer_images_by_index(exr, channels_by_layer_index, partnum, input_image)
     end
 
     -- close the context manager

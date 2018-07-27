@@ -233,7 +233,7 @@ end
 function create_separator()
     --[[
     Creates a separator input control.
-    
+
     :rtype: Input
     ]]
     SEPARATOR_INDEX = SEPARATOR_INDEX + 1
@@ -495,7 +495,7 @@ function Process(req)
     set_layer_selection_display(cInfo)
 
     -- get EXR layer images
-    local layer_images = cryptoutils:get_exr_layer_images(cInfo, layer_name)
+    local layer_images = cryptoutils:get_exr_layer_images(cInfo, layer_name, input_image)
 
     -- set the name checker
     set_name_checker(cInfo, layer_images, input_image)
@@ -564,6 +564,7 @@ function Process(req)
         ComboViewMode:SetAttrs({ INP_Disabled = false })
 
         -- output preview mode with matte applied
+        -- OutImage:Set(req, output_image)
         OutImage:Set(req, output_image)
     end
 end
