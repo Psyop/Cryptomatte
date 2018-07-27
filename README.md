@@ -324,7 +324,7 @@ os.environ["CRYPTOMATTE_TESTING_SAMPLES"] = "" #  < specify sample_images dir he
 
 ![Cryptomatte for Fusion](/docs/fusionScreenshot.png)
 
-The Cryptomatte Fuse works in Fusion (Free) and Fusion Studio v9.0.1+. The Fuse allows you to create matte selections using a Cryptomatte "Matte Locator" control that is positioned using transform control the Fusion Viewer window.
+The Cryptomatte Fuse works in Fusion (Free) and Fusion Studio v9.0.2+. The Fuse allows you to create matte selections using a Cryptomatte "Matte Locator" control that is positioned using transform control the Fusion Viewer window.
 
 To get started:
 
