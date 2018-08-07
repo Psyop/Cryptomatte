@@ -258,7 +258,7 @@ function get_matte_selection_string()
     --[[
     Gets the matte selection input string.
 
-    :rtype: str
+    :rtype: string
     ]]
     local matte_selection = TextMatteList:GetSource(0).Value
     if matte_selection == nil then
@@ -275,7 +275,7 @@ function set_layer_selection_slider(cInfo, default_layer)
     :type: CryptomatteInfo
 
     :param default_layer: layer to set as default and current value of the slider
-    :type default_layer: str
+    :type default_layer: string
     ]]
     set_slider_attributes(SliderCryptoLayer, 1, cInfo.nr_of_metadata_layers)
     local index = cInfo.layer_name_to_index[default_layer]
@@ -299,10 +299,14 @@ end
 
 function set_slider_attributes(slider, min, max)
     --[[
+    Sets the minimum and maximum range of the given slider.
 
+    :param min: minimum allowed range of the slider
+    :type min: float
+
+    :param max: maximum allowed range of the slider
+    :type max: float
     ]]
-    -- sets the attributes of the given slider with given min and max to be able to
-    -- dynamically change the slider's range correctly
     slider:SetAttrs({INP_MinAllowed = min,
                      INP_MaxAllowed = max,
                      INP_MinScale = min,
@@ -310,7 +314,30 @@ function set_slider_attributes(slider, min, max)
 end
 
 function update_matte_list(cInfo, matte_name, remove, toggle, matte_selection)
-    -- updates the matte list line edit text with given data
+    --[[
+    Updates the matte selection list based.
+
+    :param cInfo: cryptomatte info object
+    :type cInfo: CryptomatteInfo
+
+    :param matte_name: name of the matte to add or remove
+    :type matte_name: string
+
+    :param remove: If set to true, the matte_name will be removed from the
+                   matte selection string. If set to false, it will be added
+                   to the matte selection string.
+    :type remove: bool
+
+    :param toggle: Removes the matte name from the matte selection string if it
+                   is present, otherwise adds it to the matte selection string.
+    :type toggle: bool
+
+    :param matte_selection: current matte selection string to update
+    :type matte_selection: string
+
+    :return: updated matte selection string
+    :rtype: string
+    ]]
     -- get valid matte names cross matches from manifest
     local matte_set = cryptoutils:get_matte_names_from_selection(cInfo, matte_selection)
 
@@ -349,20 +376,30 @@ function update_matte_list(cInfo, matte_name, remove, toggle, matte_selection)
 
     -- concatenate the set into a string
     -- string concat .. operator allocates more memory than table.concat
-    local new_content_str = table.concat(new_content, ", ")
-    return new_content_str
+    -- https://stackoverflow.com/questions/1405583/concatenation-of-strings-in-lua
+    return table.concat(new_content, ", ")
 end
 
 function toggle_matte(cInfo, id_float_value, matte_selection)
-    -- gets the matte name for given id float value and toggles it to add/remove the matte selection string if necessary
+    --[[
+    Toggles (adds or removes) the matte with given id from the matte selection.
 
+    :param cInfo: cryptomatte info object
+    :type cInfo: CryptomatteInfo
+
+    :param id_float_value: id float value of the matte to toggle
+    :type id_float_value: CryptomatteInfo
+
+    :param matte_selection: current matte selection string to update
+    :type matte_selection: string
+    ]]
     -- get matte name of id float value
     local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
-    if not matte_name then 
-        return 
+    if not matte_name then
+        return
     end
 
-    -- create an updated version of the matte list str
+    -- create an updated version of the matte list string
     local new_matte_list = update_matte_list(cInfo, matte_name, false, true, matte_selection)
     if new_matte_list ~= nil then
         TextMatteList:SetSource(Text(new_matte_list), 0, 0)
@@ -370,15 +407,25 @@ function toggle_matte(cInfo, id_float_value, matte_selection)
 end
 
 function add_matte(cInfo, id_float_value, matte_selection)
-    -- gets the matte name for given id float value and adds it to the matte selection string if necessary
+    --[[
+    Adds the matte with given id from the matte selection.
 
+    :param cInfo: cryptomatte info object
+    :type cInfo: CryptomatteInfo
+
+    :param id_float_value: id float value of the matte to add
+    :type id_float_value: CryptomatteInfo
+
+    :param matte_selection: current matte selection string to update
+    :type matte_selection: string
+    ]]
     -- get matte name of id float value
     local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
-    if not matte_name then 
-        return 
+    if not matte_name then
+        return
     end
 
-    -- create an updated version of the matte list str
+    -- create an updated version of the matte list string
     local new_matte_list = update_matte_list(cInfo, matte_name, false, false, matte_selection)
     if new_matte_list ~= nil then
         TextMatteList:SetSource(Text(new_matte_list), 0, 0)
@@ -386,15 +433,25 @@ function add_matte(cInfo, id_float_value, matte_selection)
 end
 
 function remove_matte(cInfo, id_float_value, matte_selection)
-    -- gets the matte name for given id float value and removes it from the matte selection string if necessary
+    --[[
+    Removes the matte with given id from the matte selection.
 
+    :param cInfo: cryptomatte info object
+    :type cInfo: CryptomatteInfo
+
+    :param id_float_value: id float value of the matte to remove
+    :type id_float_value: CryptomatteInfo
+
+    :param matte_selection: current matte selection string to update
+    :type matte_selection: string
+    ]]
     -- get matte name of id float value
     local matte_name = cInfo.cryptomattes[cInfo.selection]["id_to_name"][id_float_value]
-    if not matte_name then 
-        return 
+    if not matte_name then
+        return
     end
 
-    -- create an updated version of the matte list str
+    -- create an updated version of the matte list string
     local new_matte_list = update_matte_list(cInfo, matte_name, true, false, matte_selection)
     if new_matte_list ~= nil then
         TextMatteList:SetSource(Text(new_matte_list), 0, 0)
@@ -402,6 +459,19 @@ function remove_matte(cInfo, id_float_value, matte_selection)
 end
 
 function set_name_checker(cInfo, layer_images, input_image)
+    --[[
+    Sets the name checker value of object at current locator position.
+
+    :param cInfo: cryptomatte info object
+    :type cInfo: CryptomatteInfo
+
+    :param layer_images: cryptomatte layer images by layer index as string
+                         Example: layer_images["1"] = (Image)CrytpoAsset01(RGBA)
+    :type layer_images: table[string, Image]
+
+    :param input_image: input image the locator position is relative to
+    :type input_image: Image
+    ]]
     -- activates the name checker if the locator control is visible
     local text_to_set = ""
 
@@ -436,6 +506,14 @@ function set_name_checker(cInfo, layer_images, input_image)
 end
 
 function get_view_mode()
+    --[[
+    Gets the current view mode.
+
+    If the "Keyable Surface" is checked, the set view mode will be returned.
+    If the "Keyable Surface" is unchecked, view mode "None" will be returned.
+
+    :rtype: string
+    ]]
     -- returns the selected view mode if the preview checbkbox is checked
     -- else return default view mode "None"
     if CbPreview:GetSource(0).Value == 1  then
@@ -445,6 +523,22 @@ function get_view_mode()
 end
 
 function apply_view_mode(view_mode, input_image, layer_images)
+    --[[
+    Builds an image based on the given view mode.
+
+    :param view_mode: view mode to build image for
+    :type view_mode: string
+
+    :param input_image: input image used to build view mode image
+    :type input_image: Image
+
+    :param layer_images: cryptomatte layer images by layer index as string
+                         Example: layer_images["1"] = (Image)CrytpoAsset01(RGBA)
+    :type layer_images: table[string, Image]
+
+    :return: image based on given view mode
+    :rtype: Image
+    ]]
     local result
     if view_mode == VIEW_MODE_EDGES then
         -- edge mode
@@ -564,7 +658,6 @@ function Process(req)
         ComboViewMode:SetAttrs({ INP_Disabled = false })
 
         -- output preview mode with matte applied
-        -- OutImage:Set(req, output_image)
         OutImage:Set(req, output_image)
     end
 end

@@ -171,7 +171,7 @@ function create_matte_image_init()
     :type dod: FuRectInt
 
     :param layer_image: cryptomatte image of a layer, containing the source image
-                       "{LAYER}.{RGBA}" channel information in respective RBGA 
+                       "{LAYER}.{RGBA}" channel information in respective RBGA
                        channels.
                        Example: - CryptoAsset00.R -> layer_image.R
                                 - CryptoAsset00.G -> layer_image.G
@@ -185,11 +185,11 @@ function create_matte_image_init()
     :type layer_intermediate_image: string
 
     :param id_float_values: table of id float values built as a set, containing
-                            all float id values of name hashes used to filter 
+                            all float id values of name hashes used to filter
                             G and A channel information to build a layer matte
                             Example: manifest = {"bunny": 13851a76}
                                      (hash) 13851a76 = (float) 3.3600012625093e-27
-                                     If R or B match this float value, G or A 
+                                     If R or B match this float value, G or A
                                      will be stored respectively.
     :type id_float_values: table
     -- ]]
@@ -212,7 +212,7 @@ function create_matte_image_scanline(n)
                 to this rectangle
     :type dod: FuRectInt
 
-    :param layer_image: cryptomatte image of a layer, containing the source image 
+    :param layer_image: cryptomatte image of a layer, containing the source image
                         "{LAYER}.{RGBA}" channel information in respective RBGA channels.
                         Example: - CryptoAsset00.R -> layer_image.R
                                  - CryptoAsset00.G -> layer_image.G
@@ -226,11 +226,11 @@ function create_matte_image_scanline(n)
     :type layer_intermediate_image: string
 
     :param id_float_values: table of id float values built as a set, containing
-                            all float id values of name hashes used to filter 
+                            all float id values of name hashes used to filter
                             G and A channel information to build a layer matte
                             Example: manifest = {"bunny": 13851a76}
                                      (hash) 13851a76 = (float) 3.3600012625093e-27
-                                     If R or B match this float value, G or A 
+                                     If R or B match this float value, G or A
                                      will be stored respectively.
     :type id_float_values: table
     -- ]]
@@ -275,7 +275,7 @@ end
 
 function create_preview_image_init()
     --[[
-    Initializer function for the scanline function "create_preview_image". 
+    Initializer function for the scanline function "create_preview_image".
 
     This function initializes pixel objects and pointers to re-use in scanline
     function. This avoids the creation of these objects at every X or Y pass,
@@ -305,7 +305,7 @@ function create_preview_image_scanline(n)
     --[[
     Scanline function that creates the keyable surface preview image.
 
-    This function builds the keyable surface preview image. The algorithm used 
+    This function builds the keyable surface preview image. The algorithm used
     to calculate the pixel information was provided by Jonah Friedman in a Nuke
     sample which I translated to Lua.
 
@@ -383,14 +383,14 @@ function create_matte_image(layer_images, id_float_values, output_image)
     :type layer_images: table[string, Image]
 
     :param id_float_values: table of id float values built as a set, containing
-                            all float id values of name hashes used to filter 
+                            all float id values of name hashes used to filter
                             G and A channel information to build a layer matte
                             Example: manifest = {"bunny": 13851a76}
                                      (hash) 13851a76 = (float) 3.3600012625093e-27
                                      id_float_values = {3.3600012625093e-27 = true}
     :type id_float_values: table[float, boolean]
 
-    :param output_image: image used to build output combined matte image to 
+    :param output_image: image used to build output combined matte image to
                          match resolution and dod
     :type output_image: Image
 
@@ -406,7 +406,7 @@ function create_matte_image(layer_images, id_float_values, output_image)
     local dod = output_image.DataWindow
 
     for _, layer_image in pairs(layer_images) do
-        -- create an intermediate image from the layer image holding the data 
+        -- create an intermediate image from the layer image holding the data
         -- to build a layer matte
         local layer_intermediate_image = Image({IMG_Like = layer_image})
         layer_intermediate_image:Clear()
@@ -445,7 +445,7 @@ function create_preview_image(layer_0_image, layer_1_image, input_image)
     :param layer_1_image: image for the cryptomatte layer 1
     :type layer_1_image: Image
 
-    :param input_image: image used to build output preview image to match 
+    :param input_image: image used to build output preview image to match
                         resolution and dod
     :type input_image: Image
 
@@ -770,7 +770,7 @@ function CryptomatteInfo:get_cryptomatte_metadata(metadata, layer_name)
             end
 
             -- if the given selected layer name was found inside the metadata,
-            -- store the id to set as default selection, else store current 
+            -- store the id to set as default selection, else store current
             -- metadata layer id as fallback selection
             fallback_selection = metadata_id
             if partial_key == METADATA_KEY_NAME and v == layer_name then
@@ -949,8 +949,8 @@ function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, layer_image
     end
     table.sort(keys)
 
-    -- check for every layer image, index ascending, if the pixel at absolute 
-    -- position has RGBA channel information which is present in the set of id 
+    -- check for every layer image, index ascending, if the pixel at absolute
+    -- position has RGBA channel information which is present in the set of id
     -- float values inside the manifest
     local known_id_float_values = cInfo.cryptomattes[cInfo.selection]["ids"]
     for _, index in ipairs(keys) do
@@ -960,7 +960,7 @@ function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, layer_image
         -- get pixel from layer image at absolute position
         local pixel = get_screen_pixel(layer_image, abs_x, abs_y)
 
-        -- check if one of the RGBA pixel values are present inside the total 
+        -- check if one of the RGBA pixel values are present inside the total
         -- list of ids found in the manifest
         for _, val in ipairs({pixel.R, pixel.G, pixel.B, pixel.A}) do
             if val ~= 0.0 and known_id_float_values[val] then
@@ -993,13 +993,13 @@ function cryptomatte_utilities:create_matte_image(cInfo, matte_names, layer_imag
     :type cInfo: table
 
     :param matte_names: matte name set to build combined matte image from
-    :type matte_names: table[str, boolean]
+    :type matte_names: table[string, boolean]
 
     :param layer_images: cryptomatte layer images by layer index as string
                          Example: layer_images["1"] = (Image)CrytpoAsset01(RGBA)
     :type layer_images: table[string, Image]
 
-    :param output_image: image used to build output combined matte image to 
+    :param output_image: image used to build output combined matte image to
                          match resolution and dod
     :type output_image: Image
 
@@ -1009,6 +1009,7 @@ function cryptomatte_utilities:create_matte_image(cInfo, matte_names, layer_imag
     -- build set of ids from given set of matte names
     local ids = {}
     local name_to_id = cInfo.cryptomattes[cInfo.selection]["name_to_id"]
+
     for name, _ in pairs(matte_names) do
         local id = name_to_id[name]
         if id then
@@ -1017,24 +1018,23 @@ function cryptomatte_utilities:create_matte_image(cInfo, matte_names, layer_imag
     end
 
     -- create the combined matte image
-    local combined_matte = nil
     if ids then
-        combined_matte = create_matte_image(layer_images, ids, output_image)
+        return create_matte_image(layer_images, ids, output_image)
     end
-    return combined_matte
+    return nil
 end
 
 function cryptomatte_utilities:create_preview_image(layer_0_image, layer_1_image, input_image)
     --[[
     Creates the keyable surface preview image.
 
-    There are two functions called "create_preview_image", this one which is 
-    inside the cryptomatte_utilities module and one standalone. The reason for 
-    this is that "self" in standalone context is the Fuse, and "self" in a 
-    module context is the module. Inside the standalone function we build the 
-    preview image using the Fuse scanline multi threaded function 
-    "DoMultiProcess". This function cannot be called from the current function 
-    due to the "self" being the module, does not have this function. 
+    There are two functions called "create_preview_image", this one which is
+    inside the cryptomatte_utilities module and one standalone. The reason for
+    this is that "self" in standalone context is the Fuse, and "self" in a
+    module context is the module. Inside the standalone function we build the
+    preview image using the Fuse scanline multi threaded function
+    "DoMultiProcess". This function cannot be called from the current function
+    due to the "self" being the module, does not have this function.
 
     Long story short, I wanted this function to be public, so I had to make two
     of them to avoid any clashes.
@@ -1045,7 +1045,7 @@ function cryptomatte_utilities:create_preview_image(layer_0_image, layer_1_image
     :param layer_1_image: image for the cryptomatte layer 1
     :type layer_1_image: Image
 
-    :param input_image: image used to build output preview image to match 
+    :param input_image: image used to build output preview image to match
                         resolution and dod
     :type input_image: Image
 
@@ -1114,7 +1114,7 @@ function cryptomatte_utilities:get_matte_names_from_selection(cInfo, matte_selec
     :type matte_selection: string
 
     :return: matte names from the given selection string
-    :rtype: table[str, boolean]
+    :rtype: table[string, boolean]
     --]]
     -- returns the a set of mattes from the matte list input string
     local mattes = {}
