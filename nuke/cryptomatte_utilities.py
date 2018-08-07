@@ -5,7 +5,7 @@
 #
 #
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 GIZMO_CHANNEL_KNOBS = [
     "in00", "in01", "in02", "in03", 
@@ -29,11 +29,11 @@ import struct
 def setup_cryptomatte_ui():
     if nuke.GUI:
         toolbar = nuke.menu("Nodes")
-        automatte_menu = toolbar.addMenu("Cryptomatte", "cryptomatte_logo.png",index=-1)
-        automatte_menu.addCommand("Cryptomatte", "import cryptomatte_utilities as cu; cu.cryptomatte_create_gizmo();")
-        automatte_menu.addCommand("Decryptomatte All", "import cryptomatte_utilities as cu; cu.decryptomatte_all();")
-        automatte_menu.addCommand("Decryptomatte Selection", "import cryptomatte_utilities as cu; cu.decryptomatte_selected();")
-        automatte_menu.addCommand("Encryptomatte", "import cryptomatte_utilities as cu; cu.encryptomatte_create_gizmo();")
+        menu = toolbar.addMenu("Cryptomatte", "cryptomatte_logo.png",index=-1)
+        menu.addCommand("Cryptomatte", "import cryptomatte_utilities as cu; cu.cryptomatte_create_gizmo();")
+        menu.addCommand("Decryptomatte All", "import cryptomatte_utilities as cu; cu.decryptomatte_all();")
+        menu.addCommand("Decryptomatte Selection", "import cryptomatte_utilities as cu; cu.decryptomatte_selected();")
+        menu.addCommand("Encryptomatte", "import cryptomatte_utilities as cu; cu.encryptomatte_create_gizmo();")
 
 def setup_cryptomatte():
     nuke.addKnobChanged(lambda: cryptomatte_knob_changed_event(
@@ -59,13 +59,13 @@ class CryptomatteTesting(object):
         failfast -- (bool) will stop after a failure, and skip cleanup of the nodes that were created. 
     """
 
-    def get_all_unit_tests(self, test_filter=""):
+    def get_all_unit_tests(self):
         import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.get_all_unit_tests(test_filter=test_filter)
+        return cu_tests.get_all_unit_tests()
 
-    def get_all_nuke_tests(self, test_filter=""):
+    def get_all_nuke_tests(self):
         import cryptomatte_utilities_tests as cu_tests
-        return cu_tests.get_all_nuke_tests(test_filter=test_filter)
+        return cu_tests.get_all_nuke_tests()
 
     def run_unit_tests(self, test_filter="", failfast=False):
         import cryptomatte_utilities_tests as cu_tests
@@ -692,6 +692,67 @@ def encryptomatte_add_manifest_id():
 
 
 #############################################
+# Utils - Troubleshooting
+#############################################
+
+def _troubleshoot_gizmo(gizmo):
+    MSG_WRONGTYPE = 'Troubleshooting: Cannot troubleshoot non-Cryptomatte nodes'
+    MSG_UNCONNECTED = 'Cryptomatte gizmo is not plugged into anything'
+    MSG_NONE_FOUND = 'No Cryptomattes found in input. '
+    MSG_LYR_UNSET = ('Gizmo needs updating, layer is not set. '
+                     'Press "force update" or reconnect.')
+    MSG_LYR_UNPOP = ('Gizmo needs updating, layer menu is not populated. '
+                     'Press "force update" or reconnect.')
+    MSG_ODD_STATE = ('Gizmo is in an odd state and needs updating. '
+                     'Press "force update" or reconnect.')
+    MSG_INVALID_SEL = ('Layer is set to "%s", which is unavailable. '
+                       'Select another layer.')
+    if gizmo.Class() != "Cryptomatte":
+        return [MSG_WRONGTYPE]
+
+    issues = []
+    if not gizmo.input(0):
+        issues.append(MSG_UNCONNECTED)
+    else:
+        cinfo = CryptomatteInfo(gizmo)
+        available = cinfo.get_cryptomatte_names()
+        selection = gizmo.knob('cryptoLayer').value()
+        menu_selection = gizmo.knob('cryptoLayerChoice').value()
+        if not cinfo.cryptomattes:
+            issues.append(MSG_NONE_FOUND)
+        else:
+            if not selection or not menu_selection:
+                issues.append(MSG_LYR_UNSET)
+            if menu_selection not in available:
+                issues.append(MSG_LYR_UNPOP)
+            elif selection not in gizmo.knob(GIZMO_CHANNEL_KNOBS[0]).value():
+                issues.append(MSG_ODD_STATE)
+            elif selection not in available:
+                issues.append(MSG_INVALID_SEL % selection)
+    return issues
+
+def _troubleshoot_setup():
+    MSG_BAD_INSTALL = ("Installation is wrong, callbacks were not found. "
+                       "setup_cryptomatte() did not run, init.py may "
+                       "not be set up properly. ")
+    PROXY_MODE = "Proxy mode is on, this can cause artifacts. "
+    issues = []
+    expected_knob_changeds = ["Cryptomatte", "Encryptomatte"]
+    if any(x not in nuke.callbacks.knobChangeds for x in expected_knob_changeds):
+        issues.append(BAD_INSTALL)
+    if nuke.root().knob('proxy').value():
+        issues.append(PROXY_MODE)
+    return issues
+
+def troubleshoot_gizmo(node):
+    issues = _troubleshoot_gizmo(node) + _troubleshoot_setup()
+    if issues:
+        nuke.message("Troubleshooting: Found the following issues: %s" %
+                     "\n    - ".join([""] + issues))
+    else:
+        nuke.message("Troubleshooting: All good!")
+
+#############################################
 # Utils - Unload Manifest
 #############################################
 
@@ -875,64 +936,48 @@ def _id_from_matte_name(name):
         return mm3hash_float(name)
 
 def _get_knob_channel_value(knob, recursive_mode=None):
-    # todo(jonah): Why is this in a try/except? 
-    try:
-        bbox = knob.getValue()[4:]
-        node = knob.node()
-        upstream_node = node.input(0)
-        if not upstream_node:
-            return 0.0
-
-        if recursive_mode is None:
-            id_list = []
-        else:
-            matte_list = get_mattelist_as_set(node)
-            id_list = map(_id_from_matte_name, matte_list)
-
-        saw_bg = False
-
-        for layer_knob in GIZMO_CHANNEL_KNOBS:
-            layer = node.knob(layer_knob).value()
-
-            if layer == "none":
-                return 0.0
-
-            for sub_channel in ['.red', '.blue']:
-                channel = layer + sub_channel
-                selected_id = upstream_node.sample(channel, bbox[0], bbox[1])
-                
-                if recursive_mode == "add":
-                    if selected_id == 0.0:
-                        # Seen bg twice?  Select bg.
-                        if saw_bg:
-                            return 0.0
-
-                        # Skip bg the first time
-                        saw_bg = True
-
-                    elif not selected_id in id_list:
-                        return selected_id
-
-                elif recursive_mode == "remove":
-                    if selected_id == 0.0:                        
-                        # Seen bg twice?  Select bg.
-                        if saw_bg:
-                            return 0.0
-                        
-                        # Skip bg the first time
-                        saw_bg = True         
-
-                    elif selected_id in id_list:
-                        return selected_id
-
-                else:
-
-                    # Non-recursive.  Just return the first id found.
-                    return selected_id
-    
-    except:
+    bbox = knob.getValue()[4:]
+    node = knob.node()
+    upstream_node = node.input(0)
+    if not upstream_node:
         return 0.0
 
+    if recursive_mode is None:
+        id_list = []
+    else:
+        matte_list = get_mattelist_as_set(node)
+        id_list = map(_id_from_matte_name, matte_list)
+
+    saw_bg = False
+    add_mode = recursive_mode == "add"
+    rm_mode = recursive_mode == "remove"
+
+    for layer_knob in GIZMO_CHANNEL_KNOBS:
+        layer = node.knob(layer_knob).value()
+
+        if layer == "none":
+            return 0.0
+
+        for id_suffix, cov_suffix in [('.red', '.green'), ('.blue', '.alpha')]:
+            id_chan = layer + id_suffix
+            cov_chan = layer + cov_suffix
+            selected_id = upstream_node.sample(id_chan, bbox[0], bbox[1])
+            selected_coverage = upstream_node.sample(cov_chan, bbox[0], bbox[1])
+
+            if add_mode or rm_mode:
+                if selected_id == 0.0 or selected_coverage == 0.0:
+                    # Seen bg twice?  Select bg.
+                    if saw_bg:
+                        break
+                    saw_bg = True
+                    continue
+
+                in_list = selected_id in id_list
+                if (add_mode and not in_list) or (rm_mode and in_list):
+                    return selected_id
+            else:
+                # Non-recursive.  Just return the first id found.
+                return selected_id
 
 
 #############################################
@@ -1052,11 +1097,8 @@ def decryptomatte_button(node):
 
 
 def decryptomatte_nodes(nodes, ask):
-    gizmos = []
-
-    for node in nodes:
-        if node.Class() == "Cryptomatte":
-            gizmos.append(node)
+    """ Replaces Cryptomatte gizmos with equivelant nodes. """
+    gizmos = [n for n in nodes if n.Class() == "Cryptomatte"]
     if not gizmos:
         return
 
@@ -1079,78 +1121,61 @@ def decryptomatte_nodes(nodes, ask):
 
 
 def _decryptomatte(gizmo):
-    def _decryptomatte_get_name(gizmo):
-        name_out = gizmo.knob("matteList").value()
-        name_out.replace(", ", "_")
-        if len(name_out) > 16:
-            name_out = "%s_._%s" % (name_out[:16], hex(mmh3.hash(name_out))[2:8])
-        return name_out
-
-    matte_name = _decryptomatte_get_name(gizmo)
-
-    expr_setting = gizmo.knob("expression").value()
-    rm_channels_setting = gizmo.knob("RemoveChannels").value()
-    matte_only_setting = gizmo.knob("matteOnly").value()
-    output_setting = gizmo.knob("matteOutput").value()
-    unpremult_setting = gizmo.knob("unpremultiply").value()
-    disabled_setting = gizmo.knob("disable").getValue()
+    """ Returns list of new nodes, in order of connections. """
+    orig_name = gizmo.name()
+    disabled = gizmo.knob("disable").getValue()
+    matte_list = gizmo.knob("matteList").value()
+    matte_only = gizmo.knob("matteOnly").value()
+    expression = gizmo.knob("expression").value()
+    matte_output = gizmo.knob("matteOutput").value()
+    unpremultiply = gizmo.knob("unpremultiply").value()
+    remove_channels = gizmo.knob("RemoveChannels").value()
 
     # compile list immediate outputs to connect to
     connect_to = []
     for node in gizmo.dependent():
-        for input_index in xrange(node.inputs()):
-            inode = node.input(input_index)
-            if inode and inode.fullName() == gizmo.fullName():
-                connect_to.append((node, input_index))
+        for i in xrange(node.inputs()):
+            input_node = node.input(i)
+            if input_node and input_node.fullName() == gizmo.fullName():
+                connect_to.append((i, input_node))
 
-    start_dot = nuke.nodes.Dot(inputs=[gizmo])
+    # Modifiy expression to perform premult.
+    if unpremultiply and expression:
+        expression = "(%s) / (alpha ? alpha : 1)" % expression
+
+    # Setup expression node.
     expr_node = nuke.nodes.Expression(
-        inputs=[start_dot], channel0="red", expr0=expr_setting, 
-        name="CryptExpr_%s"%matte_name, disable=disabled_setting
-    )
-    new_nodes = [start_dot, expr_node]
-
+        inputs=[gizmo], channel0=matte_output, expr0=expression,
+        name="%sExtract" % orig_name, disable=disabled)
+    expr_node.addKnob(nuke.nuke.String_Knob(
+        'origMatteList', 'Original Matte List', matte_list))
     for knob_name in GIZMO_CHANNEL_KNOBS:
         expr_node.addKnob(nuke.nuke.Channel_Knob(knob_name, "none") )
         expr_node.knob(knob_name).setValue(gizmo.knob(knob_name).value())
         expr_node.knob(knob_name).setVisible(False)
+    new_nodes = [expr_node]
 
-    shufflecopy_main, shufflecopy_side = start_dot, expr_node
+    # Add remove channels node, if needed.
+    if remove_channels:
+        channels2 = matte_output if matte_output != "alpha" else ""
+        remove = nuke.nodes.Remove(
+            inputs=[expr_node], operation="keep", channels="rgba",
+            channels2=channels2, name="%sRemove" % orig_name,
+            disable=disabled)
+        new_nodes.append(remove)
 
-    if rm_channels_setting:
-        channels2 = output_setting if output_setting != "alpha" else ""
-        shufflecopy_main = nuke.nodes.Remove(
-            inputs=[shufflecopy_main], operation="keep", channels="rgba", 
-            channels2=channels2, name="CryptRemove_%s"%matte_name, 
-            disable=disabled_setting
-        )
-        new_nodes.append(shufflecopy_main)
+    # If "matte only" is used, add shuffle node.
+    if matte_only:
+        shuffle = nuke.nodes.Shuffle(
+            name="%sMatteOnly" % orig_name, inputs=[new_nodes[-1]],
+            disable=disabled)
+        shuffle.knob("in").setValue(matte_output)
+        new_nodes.append(shuffle)        
 
-    if unpremult_setting:
-        shufflecopy_side = nuke.nodes.Unpremult(
-            inputs=[shufflecopy_side], channels="red", 
-            name="CryptUnpremul_%s"%matte_name, disable=disabled_setting
-        )
-        new_nodes.append(shufflecopy_side)
-
-    shufflecopy = nuke.nodes.ShuffleCopy(
-        inputs=[shufflecopy_main, shufflecopy_side], out="rgb",
-        alpha="alpha2", red2="red", green2="red", white="red", black="red",
-        out2=output_setting, name="CryptShufCpy_%s"%matte_name,
-        disable=disabled_setting
-    )
-    new_nodes.append(shufflecopy)
-    
-    if matte_only_setting:
-        if output_setting != "alpha":
-            shufflecopy.knob("out").setValue("rgba")
-        shufflecopy.knob("red").setValue("red")
-        shufflecopy.knob("green").setValue("red")
-        shufflecopy.knob("blue").setValue("red")
-        shufflecopy.knob("alpha").setValue("red")
-
+    # Disable original
     gizmo.knob("disable").setValue(True)
 
-    for node, inputID in connect_to:
-        node.setInput(inputID, shufflecopy)
+    # Reconnect outputs
+    for inputID, node in connect_to:
+        node.setInput(inputID, new_nodes[-1])
     return new_nodes

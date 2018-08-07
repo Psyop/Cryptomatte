@@ -1121,7 +1121,7 @@ push $N9949c00
  }
  Switch {
   inputs 2
-  which {{"\[python (nuke.thisParent().input(0))\\ is\\ None\\ or\\ (nuke.thisParent().input(1)\\ is\\ None)]"}}
+  which {{"\[python (nuke.thisParent().input(0)\\ is\\ None)\\ and\\ (nuke.thisParent().input(1)\\ is\\ None)\\ and\\ not\\ nuke.thisParent()\\\['setupLayers'\\].value()]"}}
   name Switch2
   xpos 227
   ypos 1950
