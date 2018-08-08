@@ -1,3 +1,17 @@
+### 1.2.2:
+
+Fusion (by C&eacute;dric Duriau):
+
+* Support for EXR images with a data window smaller than display window (builtin DoD)
+  * Fixed crash for Redshift frames with DoD [#80](https://github.com/Psyop/Cryptomatte/issues/80)
+  * Fixed crash for Mantra frames with DoD [#64](https://github.com/Psyop/Cryptomatte/issues/64)
+* Updated README install documentation [#62](https://github.com/Psyop/Cryptomatte/issues/62)
+* Minimum Fusion version is now 9.0.2
+* Changed repo structure to match Fusion directory structure
+* Added Fuse registry information (help, company, version, ...)
+* Added dosctrings
+* Cleaned up code
+
 ### 1.2.1:
 
 A reorganization of this repo, and a minor update to the Nuke plugins.
@@ -14,17 +28,6 @@ Nuke:
 * Fixed some test issues in Nuke 11.3
 * Cleaner decryptomatte results, with maximum of 3 nodes in sequence, no dots, and better naming
 
-Fusion (by C&eacute;dric Duriau):
-
-* Support for EXR images with a data window smaller than display window (builtin DoD)
-  * Fixed crash for Redshift frames with DoD [#80](https://github.com/Psyop/Cryptomatte/issues/80)
-  * Fixed crash for Mantra frames with DoD [#64](https://github.com/Psyop/Cryptomatte/issues/64)
-* Updated README install documentation [#62](https://github.com/Psyop/Cryptomatte/issues/62)
-* Minimum Fusion version is now 9.0.2
-* Changed repo structure to match Fusion directory structure
-* Added Fuse registry information (help, company, version, ...)
-* Added dosctrings
-* Cleaned up code
 
 ### 1.2.0:
 
