@@ -1,3 +1,9 @@
+### 1.2.3:
+
+Nuke:
+
+* Fixed bug with hierarchical names (contributed by Jens Lindgren)
+
 ### 1.2.2:
 
 Fusion (by C&eacute;dric Duriau):
