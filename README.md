@@ -69,3 +69,4 @@ Decoders:
 * Vladimir Koylazov
 * Peter Loveday
 * Andrew Hazelden
+* Jens Lindgren
