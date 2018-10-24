@@ -1,3 +1,13 @@
+### 1.3.0:
+
+A update to the Nuke plugins.
+
+Nuke:
+
+* Added support for wildcard searches of mattes. 
+* The "Expand Wildcards" knob controls whether the wildcards are expanded or not.
+  * If the wildcards are not expanded, the manifest is recomputed at every frame.  
+
 ### 1.2.1:
 
 A reorganization of this repo, and a minor update to the Nuke plugins.
