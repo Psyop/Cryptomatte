@@ -1,6 +1,6 @@
 ### 1.3.0:
 
-A update to the Nuke plugins.
+An update to the Nuke plugins.
 
 Nuke:
 
