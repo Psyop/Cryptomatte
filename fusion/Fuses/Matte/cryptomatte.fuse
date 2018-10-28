@@ -10,7 +10,7 @@ Version    : 1.2.8
 -- =============================================================================
 -- modules
 -- =============================================================================
-local cryptoutils = require("cryptomatte_utilities")
+local cryptoutils = self and require("cryptomatte_utilities") or nil
 
 -- =============================================================================
 -- constants
