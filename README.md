@@ -53,7 +53,7 @@ Decoders:
 * [Houdini 16.5 Compositor (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html), [Demo](https://vimeo.com/241036613#t=2862s)
 * Blender 2.8.0 Compositor (By Tangent Animation and Blender Foundation): [Cryptomatte in Blender 2.8 Alpha 2! demo](https://www.youtube.com/watch?v=lTJJqAGnWFM), [Tutorial by Zacharias Reinhardt](https://zachariasreinhardt.com/blender-2-8-cryptomatte-tutorial), [Cycles for Animated Feature Film Production by Stefan Werner](https://www.youtube.com/watch?v=_2Ia4h8q3xs), [Docs](https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Cycles#Cryptomatte)
 * [Autodesk Flame (By Lewis Saunders)](https://logik-matchbook.org/shader/Cryptomatte)
-* After Effects (Fnordware ProEXR plugin): 2.0 Release Candidate [Windows](http://www.fnordware.com/ProEXR/ProEXR_v2.0_win.zip), [Mac](http://www.fnordware.com/ProEXR/ProEXR_v2.0_mac.dmg)
+* [After Effects (Fnordware ProEXR plugin 2.0)](https://www.fnordware.com/ProEXR/)
 
 
 ## Acknowledgements 
