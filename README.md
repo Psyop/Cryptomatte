@@ -34,12 +34,12 @@ A list of released implementations and links:
 
 Encoders:
 
-* [Isotropix Clarisse 3.5 (By Isotropix)](http://www.isotropix.com/products/clarisse-3.5) [Demo](https://www.youtube.com/watch?v=V_ov8B24jq0)
-* [Chaos Group V-Ray 3.6 (By Chaos Group)](https://docs.chaosgroup.com/display/VRAY3MAX/Cryptomatte+%7C+VRayCryptomatte) [3DSMax demo](https://www.youtube.com/watch?v=tlahITki4xg) [Maya demo](https://www.youtube.com/watch?v=iVHcuke_aWk) [Nuke demo](https://www.youtube.com/watch?v=Vb4OX7UNIMw)
+* [Isotropix Clarisse 3.5 (By Isotropix)](http://www.isotropix.com/products/clarisse-3.5), [Demo](https://www.youtube.com/watch?v=V_ov8B24jq0)
+* [Chaos Group V-Ray 3.6 (By Chaos Group)](https://docs.chaosgroup.com/display/VRAY3MAX/Cryptomatte+%7C+VRayCryptomatte), [3DSMax demo](https://www.youtube.com/watch?v=tlahITki4xg), [Maya demo](https://www.youtube.com/watch?v=iVHcuke_aWk), [Nuke demo](https://www.youtube.com/watch?v=Vb4OX7UNIMw)
 * [3Delight for Katana and Maya 9.0](https://3delight.atlassian.net/wiki/spaces/3DFK/pages/220135565/Exporting+CryptoMatte+IDs)
-* [Houdini 16.5 Mantra (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html) [Demo](https://vimeo.com/241036613#t=2862s)
-* [Pixar RenderMan 21.7](https://rmanwiki.pixar.com/display/REN/RenderMan+21.7) [Docs](https://rmanwiki.pixar.com/display/REN/PxrCryptomatte)
-* Blender 2.8.0 Cycles (By Tangent Animation and Blender Foundation): [Cryptomatte in Blender 2.8 Alpha 2! demo,](https://www.youtube.com/watch?v=lTJJqAGnWFM) [Tutorial by Zacharias Reinhardt,](https://zachariasreinhardt.com/blender-2-8-cryptomatte-tutorial) [Cycles for Animated Feature Film Production by Stefan Werner,](https://www.youtube.com/watch?v=_2Ia4h8q3xs) [Docs](https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Cycles#Cryptomatte)
+* [Houdini 16.5 Mantra (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html), [Demo](https://vimeo.com/241036613#t=2862s)
+* Blender 2.8.0 Cycles (By Tangent Animation and Blender Foundation): [Cryptomatte in Blender 2.8 Alpha 2! demo](https://www.youtube.com/watch?v=lTJJqAGnWFM), [Tutorial by Zacharias Reinhardt](https://zachariasreinhardt.com/blender-2-8-cryptomatte-tutorial), [Cycles for Animated Feature Film Production by Stefan Werner](https://www.youtube.com/watch?v=_2Ia4h8q3xs), [Docs](https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Cycles#Cryptomatte)
+* [Pixar RenderMan 21.7](https://rmanwiki.pixar.com/display/REN/RenderMan+21.7), [Docs](https://rmanwiki.pixar.com/display/REN/PxrCryptomatte)
 * LightWave 3D 2018 ([DB&W EXRTrader plugin](https://www.db-w.com/products/exrtrader))
 * [Redshift 2.6.11](https://www.redshift3d.com)
 * [Arnold 4 (AlShaders), by Jonah Friedman, Andy Jones, Anders Langlands.](http://www.anderslanglands.com/alshaders/index.html)
@@ -50,10 +50,10 @@ Decoders:
 
 * Nuke 7+, by Jonah Friedman, Andy Jones. In this repo.
 * Fusion: by C&eacute;dric Duriau and Kristof Indeherberge at Grid. In this repo.
-* [Houdini 16.5 Compositor (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html) [Demo](https://vimeo.com/241036613#t=2862s)
-* Blender 2.8.0 Compositor (By Tangent Animation and Blender Foundation): [Cryptomatte in Blender 2.8 Alpha 2! demo,](https://www.youtube.com/watch?v=lTJJqAGnWFM) [Tutorial by Zacharias Reinhardt,](https://zachariasreinhardt.com/blender-2-8-cryptomatte-tutorial) [Cycles for Animated Feature Film Production by Stefan Werner,](https://www.youtube.com/watch?v=_2Ia4h8q3xs) [Docs](https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Cycles#Cryptomatte)
+* [Houdini 16.5 Compositor (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html), [Demo](https://vimeo.com/241036613#t=2862s)
+* Blender 2.8.0 Compositor (By Tangent Animation and Blender Foundation): [Cryptomatte in Blender 2.8 Alpha 2! demo](https://www.youtube.com/watch?v=lTJJqAGnWFM), [Tutorial by Zacharias Reinhardt](https://zachariasreinhardt.com/blender-2-8-cryptomatte-tutorial), [Cycles for Animated Feature Film Production by Stefan Werner](https://www.youtube.com/watch?v=_2Ia4h8q3xs), [Docs](https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Cycles#Cryptomatte)
 * [Autodesk Flame (By Lewis Saunders)](https://logik-matchbook.org/shader/Cryptomatte)
-* After Effects (Fnordware ProEXR plugin): 2.0 Release Candidate [Windows,](http://www.fnordware.com/ProEXR/ProEXR_v2.0_win.zip) [Mac](http://www.fnordware.com/ProEXR/ProEXR_v2.0_mac.dmg)
+* After Effects (Fnordware ProEXR plugin): 2.0 Release Candidate [Windows](http://www.fnordware.com/ProEXR/ProEXR_v2.0_win.zip), [Mac](http://www.fnordware.com/ProEXR/ProEXR_v2.0_mac.dmg)
 
 
 ## Acknowledgements 
