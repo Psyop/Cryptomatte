@@ -5,7 +5,7 @@
 #
 #
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 
 GIZMO_CHANNEL_KNOBS = [
     "in00", "in01", "in02", "in03", 
