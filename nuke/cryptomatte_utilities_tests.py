@@ -1186,6 +1186,34 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.key_on_image(self.triangle_pkr)
         self.assertMatteList("triangle", "Encryptomatte did not produce a keyable triangle")
 
+    def test_channel_identification(self):
+        """Makes sure multiple Cryptomattes can have sub-channels identified properly, 
+        even if one's name starts with the others. """
+        import cryptomatte_utilities as cu
+        lyr_a_name, lyr_b_name = "cryLyr", "cryLyrSecond"
+        lyr_a_result = ['cryLyr00', 'cryLyr01', 'cryLyr02']
+        lyr_b_result = ['cryLyrSecond00', 'cryLyrSecond01', 'cryLyrSecond02']
+
+        encrypt_a = self.tempNode("Encryptomatte", setupLayers=True, cryptoLayer=lyr_a_name)
+        encrypt_b = self.tempNode("Encryptomatte", setupLayers=True, cryptoLayer=lyr_b_name)
+
+        encrypt_b.setInput(0, encrypt_a)
+        self.gizmo.setInput(0, encrypt_b)
+        cinfo = cu.CryptomatteInfo(self.gizmo)
+
+        identified_a = cinfo._identify_channels(lyr_a_name)
+        identified_b = cinfo._identify_channels(lyr_b_name)
+
+        self.assertEqual(lyr_a_result, identified_a)
+        self.assertEqual(lyr_b_result, identified_b)
+
+        cinfo.set_selection(lyr_a_name)
+        self.assertEqual(cinfo.get_channels(), identified_a)
+
+        cinfo.set_selection(lyr_b_name)
+        self.assertEqual(cinfo.get_channels(), identified_b)
+
+
 #############################################
 # Ad hoc test running
 #############################################

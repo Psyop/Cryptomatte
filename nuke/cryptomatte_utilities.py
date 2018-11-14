@@ -25,6 +25,7 @@ CRYPTO_METADATA_DEFAULT_PREFIX = CRYPTO_METADATA_LEGAL_PREFIX[1]
 
 import nuke
 import struct
+import re
 import fnmatch
 
 def setup_cryptomatte_ui():
@@ -218,7 +219,7 @@ class CryptomatteInfo(object):
 
     def _identify_channels(self, name):
         """from a name like "cryptoObject", 
-        gets sorted channels, such as cryptoObject, cryptoObject00, cryptoObject01
+        gets sorted channels, such as cryptoObject00, cryptoObject01, cryptoObject02
         """
 
         channel_list = []
@@ -229,15 +230,13 @@ class CryptomatteInfo(object):
             # nuke_node might a read node
             channel_list = self.nuke_node.channels()
 
-        relevant_channels = [x for x in channel_list if x.startswith(name)]
+        # regex for "cryptoObject" + digits + ending with .red or .r
+        channel_regex = re.compile(r'({name}\d+)\.(?:red|r)$'.format(name=name))
         pure_channels = []
-        for channel in relevant_channels:
-            suffix = ".red"
-            if not channel.endswith(suffix):
-                continue
-            pure_channel = channel[:-len(suffix)]
-            if pure_channel != name: # ignore the human readable ones
-                pure_channels.append(pure_channel)
+        for channel in channel_list:
+            match = channel_regex.match(channel)
+            if match:
+                pure_channels.append(match.group(1))
 
         return sorted(pure_channels)
 
