@@ -28,7 +28,6 @@ Fusion (by C&eacute;dric Duriau):
 * Added Fuse registry information (help, company, version, ...)
 * Added dosctrings
 * Cleaned up code
->>>>>>> 1.2.3
 
 ### 1.2.1:
 
