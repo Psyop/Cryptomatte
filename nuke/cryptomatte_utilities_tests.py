@@ -801,7 +801,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.gizmo.knob("expandWildcards").setValue(False)
         self.gizmo.knob("matteList").setValue(wildcard_str)
         self.assertMatteList(wildcard_str, "Wildcard not expanded.")
-        
+
     def test_picker_add_to_wildcard_matte_list(self):
         wildcard_str = "*flower*"
         self.gizmo.knob("expandWildcards").setValue(False)
