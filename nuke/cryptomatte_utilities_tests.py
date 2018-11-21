@@ -792,6 +792,36 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.key_on_image(self.bunny_pkr, self.set_pkr)
         self.assertMatteList("bunny, set", "Could not re-add by picking.")
 
+    def test_wildcard_matte_list_expansion(self):
+        wildcard_str = "*flower*"
+        self.gizmo.knob("expandWildcards").setValue(True)
+        self.gizmo.knob("matteList").setValue(wildcard_str)
+        self.assertMatteList("flowerA, flowerB, heroflower", "Wildcard expanded.")
+
+        self.gizmo.knob("expandWildcards").setValue(False)
+        self.gizmo.knob("matteList").setValue(wildcard_str)
+        self.assertMatteList(wildcard_str, "Wildcard not expanded.")
+
+    def test_picker_add_to_wildcard_matte_list(self):
+        wildcard_str = "*flower*"
+        self.gizmo.knob("expandWildcards").setValue(False)
+        self.gizmo.knob("matteList").setValue(wildcard_str)
+        self.key_on_image(self.bunny_pkr)
+        self.assertMatteList("*flower*, bunny", "Wildcard not expanded.")
+
+    def test_picker_remove_from_wildcard_matte_list(self):
+        rm_flowerB = ("remove", (900.0, 500.0))
+        rm_grass = ("remove", (820.0, 68.0))
+        mattelist_str = "*flower*, grass_mat"
+        self.gizmo.setInput(0, self.read_material)
+        self.gizmo.knob("expandWildcards").setValue(False)
+        self.gizmo.knob("matteList").setValue(mattelist_str)
+        self.key_on_image(rm_grass)
+        self.assertMatteList("*flower*", "Wildcard not expanded.")
+        self.key_on_image(rm_flowerB)
+        self.assertMatteList("flowerA_petal, flowerStem_mat", 
+                             "Wildcard forcibly expanded.")
+
     #############################################
     # Decryptomatte
     #############################################
