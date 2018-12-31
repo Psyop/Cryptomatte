@@ -123,11 +123,14 @@ def layer_hash(layer_name):
 # Cryptomatte file processing
 ############################################# 
 
-global g_cryptomatte_manf_from_names
-global g_cryptomatte_manf_from_IDs
+def reset_manifest_cache():
+    global g_cryptomatte_manf_from_names
+    global g_cryptomatte_manf_from_IDs
 
-g_cryptomatte_manf_from_names = {}
-g_cryptomatte_manf_from_IDs = {}
+    g_cryptomatte_manf_from_names = {}
+    g_cryptomatte_manf_from_IDs = {}
+
+reset_manifest_cache()
 
 
 class CryptomatteInfo(object):

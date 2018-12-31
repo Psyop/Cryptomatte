@@ -329,6 +329,7 @@ class CryptomatteNukeTests(unittest.TestCase):
 
     def setUp(self):
         import nuke
+        import cryptomatte_utilities as cu
         if self.canceled():
             self.skipTest("Remaining tests canceled.")
             return
@@ -338,6 +339,7 @@ class CryptomatteNukeTests(unittest.TestCase):
             # We can still create everything and run tests in Nuke 7,
             # They'll just scatter some nodes about.
             self.setUpClass()
+        cu.reset_manifest_cache()
         self._remove_later = []
         self.gizmo = self.tempNode("Cryptomatte", inputs=[self.read_asset])
         self.merge = self.tempNode(
@@ -1154,18 +1156,19 @@ class CryptomatteNukeTests(unittest.TestCase):
         roto_hash_720 = self.hash_channel(merge, None, "alpha", num_scanlines=16)
 
         encryptomatte = self.tempNode(
-            "Encryptomatte", matteName="triangle")
-        encryptomatte.setInput(0, constant2k)
-        encryptomatte.setInput(1, roto1k)
+            "Encryptomatte", inputs=[constant2k, roto1k], matteName="triangle")
         encryptomatte.knob("cryptoLayer").setValue("customCrypto")
         encryptomatte.knob("setupLayers").setValue(True)
 
         self.gizmo.setInput(0, encryptomatte)
         self.key_on_image(self.triangle_pkr)
         self.assertMatteList("triangle", "Encryptomatte did not produce a keyable triangle")
+        self.gizmo.knob("forceUpdate").execute() # needed for some reason. 
         decrypto_hash = self.hash_channel(self.gizmo, None, "alpha", num_scanlines=16)
-        self.assertEqual(roto_hash_720, decrypto_hash, ("Alpha did not survive round trip through "
-                                                        "Encryptomatte and then Cryptomatte. "))
+        self.assertEqual(
+            roto_hash_720, decrypto_hash, 
+            ("Alpha did not survive round trip through "
+            "Encryptomatte (%s) and then Cryptomatte (%s). ") % (roto_hash_720, decrypto_hash))
 
     def test_encrypt_manifest(self):
         """Gets it into a weird state where it has a manifest but no cryptomatte."""
