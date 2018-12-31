@@ -268,7 +268,7 @@ class CryptomatteInfo(object):
             if match:
                 pure_channels.append(match.group(1))
 
-        return sorted(pure_channels)
+        return sorted(pure_channels)[:len(GIZMO_CHANNEL_KNOBS)]
 
     def resolve_manifest_paths(self, exr_path, sidecar_path):
         import os
