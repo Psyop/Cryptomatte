@@ -132,7 +132,7 @@ g_cryptomatte_manf_from_IDs = {}
 
 class CryptomatteInfo(object):
 
-    def __init__(self, node_in, reload_metadata=True):
+    def __init__(self, node_in, reload_metadata=False):
         """Take a nuke node, such as a read node or a Cryptomatte gizmo,
         and Reformat metadata into a dictionary, and collect channel
         information."""
@@ -164,7 +164,7 @@ class CryptomatteInfo(object):
                 numbered_key = key[len(prefix):] # ex: "exr/cryptomatte/ae93ba3/name" --> "ae93ba3/name"
                 metadata_id, partial_key = numbered_key.split("/")  # ex: "ae93ba3/name" --> ae93ba3, "name"
                 if metadata_id not in self.cryptomattes:
-                    self.cryptomattes[metadata_id] = {'name':'_unnamed_cryptomatte'}
+                    self.cryptomattes[metadata_id] = {}
                 self.cryptomattes[metadata_id][partial_key] = value
                 self.cryptomattes[metadata_id]['md_prefix'] = prefix
                 if partial_key != "manifest":
@@ -236,6 +236,8 @@ class CryptomatteInfo(object):
         and no manifest (which may be large). 
         """
         import json
+        if not "metadataCache" in self.nuke_node.knobs():
+            return {}
         metadata_cache = self.nuke_node.knob("metadataCache").getValue()
         if metadata_cache:
             return json.loads(metadata_cache)
@@ -416,10 +418,10 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
     if knob.name() == "inputChange":
         if unsafe_to_do_inputChange(node):
             return # see comment in #unsafe_to_do_inputChange. 
-        cinfo = CryptomatteInfo(node)
+        cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_cryptomatte_gizmo(node, cinfo)
     elif knob.name() in ["cryptoLayer", "cryptoLayerLock"]:
-        cinfo = CryptomatteInfo(node, False)
+        cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo)
     elif knob.name() in ["cryptoLayerChoice"]:
         if not node.knob('cryptoLayerLock').value():
@@ -427,7 +429,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
             new_crypto_layer = knob.values()[int(knob.getValue())]
             if prev_crypto_layer != new_crypto_layer:
                 node.knob('cryptoLayer').setValue(new_crypto_layer)
-                cinfo = CryptomatteInfo(node, False)
+                cinfo = CryptomatteInfo(node)
                 _update_cryptomatte_gizmo(node, cinfo)
         
         # Undo user action
@@ -438,7 +440,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         ID_value = _get_knob_channel_value(node.knob("pickerAdd"), recursive_mode="add")
         if ID_value == 0.0:
             return
-        cinfo = CryptomatteInfo(node, False)
+        cinfo = CryptomatteInfo(node)
         keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
         node.knob("pickerRemove").setValue([0] * 8)
         _matteList_modify(node, keyed_object, False)
@@ -448,30 +450,30 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         ID_value = _get_knob_channel_value(node.knob("pickerRemove"), recursive_mode="remove")
         if ID_value == 0.0:
             return
-        cinfo = CryptomatteInfo(node, False)
+        cinfo = CryptomatteInfo(node)
         keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
         node.knob("pickerAdd").setValue([0] * 8)
         _matteList_modify(node, keyed_object, True)
         _update_cryptomatte_gizmo(node, cinfo)  
 
     elif knob.name() == "matteList":
-        cinfo = CryptomatteInfo(node, False)
+        cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo)
         node.knob("pickerRemove").setValue([0] * 8)
         node.knob("pickerAdd").setValue([0] * 8)
 
     elif knob.name() in ["previewMode", "previewEnabled"]:
-        cinfo = CryptomatteInfo(node, False)
+        cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo)
 
     elif knob.name() == "forceUpdate":
-        cinfo = CryptomatteInfo(node)
+        cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_cryptomatte_gizmo(node, cinfo, True)
 
 
 def encryptomatte_knob_changed_event(node=None, knob=None):
     if knob.name() in ["matteName", "cryptoLayerLock"]:
-        cinfo = CryptomatteInfo(node)
+        cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_encryptomatte_gizmo(node, cinfo)
 
     if knob.name() in ["setupLayers", "cryptoLayer", "inputChange", "cryptoLayers"]:
@@ -479,7 +481,7 @@ def encryptomatte_knob_changed_event(node=None, knob=None):
             if unsafe_to_do_inputChange(node):
                 return # see comment in #unsafe_to_do_inputChange. 
         _update_encyptomatte_setup_layers(node)
-        cinfo = CryptomatteInfo(node)
+        cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_encryptomatte_gizmo(node, cinfo)
 
 
@@ -499,7 +501,7 @@ def update_cryptomatte_gizmo(node, force=False):
     The gizmo button relies on knob changed callbacks, to avoid 
     recursive evaluation of callbacks.
     """
-    cinfo = CryptomatteInfo(node)
+    cinfo = CryptomatteInfo(node, reload_metadata=True)
     _update_cryptomatte_gizmo(node, cinfo, force=force)
 
 
@@ -514,7 +516,7 @@ def update_all_cryptomatte_gizmos():
 
 
 def update_encryptomatte_gizmo(node, force=False):
-    cinfo = CryptomatteInfo(node)
+    cinfo = CryptomatteInfo(node, reload_metadata=True)
     _update_encryptomatte_gizmo(node, cinfo, force)
 
 
@@ -547,7 +549,7 @@ def _force_update_all():
         for node in nuke.allNodes():
             if node.Class() == "Cryptomatte":
                 node_count = node_count + 1
-                cinfo = CryptomatteInfo(node)
+                cinfo = CryptomatteInfo(node, reload_metadata=True)
                 _update_cryptomatte_gizmo(node, cinfo, force=True)
 
         nuke.message("Updated %s cryptomatte gizmos." % node_count)
@@ -752,7 +754,7 @@ def _troubleshoot_gizmo(gizmo):
     if not gizmo.input(0):
         issues.append(MSG_UNCONNECTED)
     else:
-        cinfo = CryptomatteInfo(gizmo)
+        cinfo = CryptomatteInfo(gizmo, reload_metadata=True)
         available = cinfo.get_cryptomatte_names()
         selection = gizmo.knob('cryptoLayer').value()
         menu_selection = gizmo.knob('cryptoLayerChoice').value()
@@ -805,7 +807,7 @@ def unload_manifest(node):
     else:
         source_node = node
 
-    cinfo = CryptomatteInfo(node)
+    cinfo = CryptomatteInfo(node, reload_metadata=True)
     if not cinfo.is_valid():
         nuke.message("Gizmo's cryptomatte selection is not valid or no cryptomattes are available. ")
         return
