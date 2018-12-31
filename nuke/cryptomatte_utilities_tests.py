@@ -484,6 +484,18 @@ class CryptomatteNukeTests(unittest.TestCase):
                             "%s manifest not loaded. " % read.knob("file").getValue())
             self.assertEqual(mismatches, [], "%s manifest mismatch" % read.knob("file").getValue())
 
+    def test_load_manifests_lazy(self):
+        import cryptomatte_utilities as cu
+        gizmo = self.tempNode("Cryptomatte", inputs=[self.read_asset])
+        cinfo = cu.CryptomatteInfo(gizmo, False)
+        self.assertNotIn("manifest", cinfo.cryptomattes[cinfo.selection])
+
+    def test_load_manifests_nonlazy(self):
+        import cryptomatte_utilities as cu
+        gizmo = self.tempNode("Cryptomatte", inputs=[self.read_asset])
+        cinfo = cu.CryptomatteInfo(gizmo)
+        self.assertIn("manifest", cinfo.cryptomattes[cinfo.selection])
+
     #############################################
     # Layer Selection
     #############################################
@@ -514,6 +526,24 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.assertEqual(
             gizmo.knob("cryptoLayer").value(), "uCryptoObject",
             "Input change to multi should not have switch layers")
+
+    def test_layer_selection_after_keying(self):
+        """ Tests all layer selection options are still available after keying.  
+        """
+        def assert_choices_present():
+            self.assertEqual(
+                set(choice.values()),
+                set(layers))
+        layers = ["uCryptoAsset", "uCryptoObject"]
+        choice = self.gizmo.knob("cryptoLayerChoice")
+        self.gizmo.setInput(0, self.copyMetadata) # set to multi
+
+        for layer in layers:
+            choice.setValue(layer)
+            self.assertEqual(self.gizmo.knob("cryptoLayer").value(), layer)
+            assert_choices_present()
+            self.key_on_gizmo(self.gizmo, self.triangle_pkr, self.set_pkr)
+            assert_choices_present()
 
     def test_layer_lock(self, node=None):
         gizmo = node if node else self.gizmo

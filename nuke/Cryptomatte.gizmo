@@ -38,7 +38,8 @@ Gizmo {
 
  addUserKnob {26 ""}
  addUserKnob {4 cryptoLayerChoice l "Layer Selection" t "Choose which Cryptomatte layer to key." M {"                               " ""} +DO_NOT_WRITE}
- addUserKnob {1 cryptoLayer l INVISIBLE t "If there are multiple cryptomattes, this is how you select the layer." -STARTLINE +INVISIBLE}
+ addUserKnob {1 cryptoLayer l INVISIBLE t "Internal storage of selection between multiple cryptomattes." -STARTLINE +INVISIBLE}
+ addUserKnob {1 metadataCache l INVISIBLE t "Internal storage of selection between multiple cryptomatte metadata keys." -STARTLINE +INVISIBLE +DO_NOT_WRITE}
  addUserKnob {6 cryptoLayerLock l "Lock Layer Selection" t "Stops the automatic update of the layer selection." -STARTLINE}
  addUserKnob {41 expression l "Keyer Expression" t "The built expression. This knob is set automatically and is only left exposed as information for the user. " T Expression_key.expr0}
 
