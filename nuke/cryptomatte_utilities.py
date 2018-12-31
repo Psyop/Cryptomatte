@@ -9,7 +9,8 @@ __version__ = "1.2.3"
 
 GIZMO_CHANNEL_KNOBS = [
     "in00", "in01", "in02", "in03", 
-    "in04", "in05", "in06", "in07"
+    "in04", "in05", "in06", "in07",
+    "in08", "in09", "in10", "in11"
 ]
 GIZMO_REMOVE_CHANNEL_KNOBS = [
     "remove00", "remove01", "remove02", "remove03", 

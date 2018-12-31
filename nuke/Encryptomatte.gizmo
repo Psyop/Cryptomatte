@@ -35,6 +35,10 @@ Gizmo {
  addUserKnob {41 in05 l INVISIBLE +INVISIBLE T Shuffle_05.in}
  addUserKnob {41 in06 l INVISIBLE +INVISIBLE T Shuffle_06.in}
  addUserKnob {41 in07 l INVISIBLE +INVISIBLE T Shuffle_07.in}
+ addUserKnob {41 in08 l INVISIBLE +INVISIBLE T Shuffle_08.in}
+ addUserKnob {41 in09 l INVISIBLE +INVISIBLE T Shuffle_09.in}
+ addUserKnob {41 in10 l INVISIBLE +INVISIBLE T Shuffle_10.in}
+ addUserKnob {41 in11 l INVISIBLE +INVISIBLE T Shuffle_11.in}
  addUserKnob {41 removePreviewChannel l INVISIBLE +INVISIBLE T Remove_previewChannel.channels}
  addUserKnob {41 remove00 l INVISIBLE +INVISIBLE T Remove_00_03.channels}
  addUserKnob {41 remove01 l INVISIBLE +INVISIBLE T Remove_00_03.channels2}
