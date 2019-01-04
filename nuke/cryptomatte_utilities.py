@@ -96,7 +96,7 @@ def mm3hash_float(name):
     exp = hash_32 >> 23 & 255 
     if (exp == 0) or (exp == 255):
         hash_32 ^= 1 << 23 
-      
+
     packed = struct.pack('<L', hash_32 & 0xffffffff)
     return struct.unpack('<f', packed)[0]
 
@@ -284,7 +284,9 @@ class CryptomatteInfo(object):
         import json
         if 'manifest' not in self.cryptomattes[self.selection]:
             manif_key = self.get_selection_metadata_key('manifest')
-            self.cryptomattes[self.selection]['manifest'] = self.nuke_node.metadata(manif_key)
+            current_frame = self.nuke_node.knob('frame').value()
+            self.cryptomattes[self.selection]['manifest'] = self.nuke_node.metadata(manif_key,
+                                                                                    current_frame)
         try:
             return json.loads(self.cryptomattes[self.selection]['manifest'])
         except ValueError:
@@ -447,6 +449,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
             return
         cinfo = CryptomatteInfo(node)
         keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
+        keyed_object = make_name_wildcard_friendly(keyed_object)
         node.knob("pickerRemove").setValue([0] * 8)
         _matteList_modify(node, keyed_object, False)
         _update_cryptomatte_gizmo(node, cinfo)
@@ -479,6 +482,12 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo, True)
 
+    elif knob.name() == "frame":
+        if has_wildcards(node.knob("matteList").getValue()):
+            cinfo = CryptomatteInfo(node)
+            _update_cryptomatte_gizmo(node, cinfo, True)
+
+
 def encryptomatte_knob_changed_event(node=None, knob=None):
     if knob.name() in ["matteName", "cryptoLayerLock"]:
         cinfo = CryptomatteInfo(node, reload_metadata=True)
@@ -495,21 +504,6 @@ def encryptomatte_knob_changed_event(node=None, knob=None):
 
 def encryptomatte_on_create_event(node = None, knob = None):
     node.knob('cryptoLayers').setEnabled(node.knob('setupLayers').value())
-
-
-def cryptomatte_time_changed(node):
-    """
-    This gets run from the expression on the updateFrame knob.
-    If the expandWildcards knob isn't checked, this allows the manifest
-    to be properly reloaded when frames change.
-
-    """
-    frame = node.knob('frame').value()
-    current_frame = int(nuke.frame())
-    if frame != current_frame:
-        node.knob('frame').setValue(current_frame)
-        cinfo = CryptomatteInfo(node)
-        _update_cryptomatte_gizmo(node, cinfo, force=True)
 
 #############################################
 # Public - cryptomatte functions
@@ -617,19 +611,24 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     _set_metadata_cache(gizmo, cinfo)
     if not cinfo.is_valid():
         return
-    cinfo.parse_manifest()
     cryptomatte_channels = cinfo.get_channels()
     if not cryptomatte_channels:
         return
     _set_ui(gizmo)
-    _update_mattelist(gizmo)
     _set_channels(gizmo, cryptomatte_channels, cinfo.get_selection_name())
+    _setup_wildcards(gizmo, cinfo)
     _set_expression(gizmo, cryptomatte_channels)
     _set_preview_expression(gizmo, cryptomatte_channels)
     _set_crypto_layer_choice(gizmo, cinfo)
 
 
-def _update_mattelist(gizmo):
+def _setup_wildcards(gizmo, cinfo):
+    """ Does wildcard resolution, both expanded and non-expanded.
+    Updates manifest in case of any wild cards.
+    """
+    if not has_wildcards(gizmo.knob("matteList").getValue()):
+        return
+    cinfo.parse_manifest()
     if gizmo.knob("expandWildcards").value():
         matte_set = get_mattelist_as_set(gizmo)
         set_mattelist_from_set(gizmo, matte_set)
@@ -884,10 +883,11 @@ def _is_number(s):
 
 
 def _set_expression(gizmo, cryptomatte_channels):
-    matte_list_str = gizmo.knob("matteList").getValue()
     ID_list = []
-
-    matte_list = get_mattelist_as_set(gizmo)
+    if gizmo.knob('expandWildcards').value():
+        matte_list = get_mattelist_as_set(gizmo, ignore_wildcards=True)
+    else:
+        matte_list = get_mattelist_as_set(gizmo)
 
     for item in matte_list:
         if item.startswith("<") and item.endswith(">"):
@@ -911,7 +911,7 @@ def _build_condition(condition, IDs):
 def _build_extraction_expression(channel_list, IDs):
     if not IDs:
         return ""
-        
+    IDs.sort()
     iterated_expression = "({red_condition} ? sub_channel.green : 0.0) + ({blue_condition} ? sub_channel.alpha : 0.0) + more_work_needed"
     
     subcondition_red =  "sub_channel.red == ID"
@@ -991,8 +991,8 @@ def _set_preview_expression(gizmo, cryptomatte_channels):
         expressions = ["", "", "", ""]
     for i in range(4):
         gizmo.knob('previewExpression' + str(i)).setValue(expressions[i])
-    
-    
+
+
 
 #############################################
 # Utils - Manifest Processing Helpers
@@ -1015,7 +1015,10 @@ def _get_knob_channel_value(knob, recursive_mode=None):
     if recursive_mode is None:
         id_list = []
     else:
-        matte_list = get_mattelist_as_set(node)
+        if node.knob('expandWildcards').value():
+            matte_list = get_mattelist_as_set(node, ignore_wildcards=True)
+        else:
+            matte_list = get_mattelist_as_set(node)
         id_list = map(_id_from_matte_name, matte_list)
 
     saw_bg = False
@@ -1055,14 +1058,18 @@ def _get_knob_channel_value(knob, recursive_mode=None):
 #############################################
 
 
-def _encode_csv(iterable_items):
+def _encode_csv(iterable_items, escape_wildcards=False):
     """
     Encodes CSVs with special characters escaped, and surrounded in quotes
     if it contains any of these or spaces, with a space after each comma. 
     """
     cleaned_items = []
-    need_escape_chars = '"\\'
+    need_escape_chars = '[]"\\'
     need_space_chars = ' ,'
+
+    if escape_wildcards:
+        need_escape_chars += '*?'
+
     for item in iterable_items:
         need_escape = any(x in item for x in need_escape_chars)
         need_quotes = need_escape or any(x in item for x in need_space_chars)
@@ -1101,38 +1108,66 @@ def _glob_wildcard_names(wildcard_str):
     """
     match_set = set()
     for manf in g_cryptomatte_manf_from_names.keys():
-        if fnmatch.fnmatch(manf, wildcard_str):
+        if fnmatch.fnmatchcase(manf, wildcard_str):
             manf = manf.encode("utf-8") if type(manf) is unicode else str(manf)
             match_set.add(manf)
     return match_set
 
 
-def get_mattelist_as_set(gizmo, combined=True):
+def has_wildcards(name):
+    """ Checks for wildcards in string that aren't escaped.
+    Returns True if a wildcard is found, else False.
+    """
+    if re.search(r"(?<!\\)([*?\[\]])", name):
+        return True
+    else:
+        return False
+
+
+def make_name_wildcard_friendly(name):
+    """ Returns fnmatch friendly str to allow for mattes with names
+    containing *, ?, [, ] special characters.
+    """
+    wildcard_matte = re.sub(r"([*?\[\]])", "[\g<1>]", name)
+
+    return wildcard_matte
+
+
+def get_mattelist_as_set(gizmo, combined=True, ignore_wildcards=False):
     matte_list = gizmo.knob("matteList").getValue()
+    # so literal '*?' in matte names stay escaped
+    matte_list = re.sub(r"(\\)(?=[*?])", r"\\\\", matte_list)
     matte_list = _decode_csv(matte_list)
     matte_set = set()
-    wildcard_matte_set = set()
+    wildcard_matte_dict = {'mattes': {},
+                           'wildcards': {}}
     wildcards = set()
 
     for matte in matte_list:
-        if "*" in matte or "?" in matte:
+        if has_wildcards(matte) and not ignore_wildcards:
+            matte = re.sub(r"(\\)(?=[*?])", "", matte)
             wildcards.add(matte)
-            wildcard_matte_set.update(_glob_wildcard_names(matte))
+            globbed_wildcard_mattes = _glob_wildcard_names(matte)
+            wildcard_matte_dict['wildcards'][matte] = globbed_wildcard_mattes
+            for globbed_matte in globbed_wildcard_mattes:
+                wildcard_matte_dict['mattes'][globbed_matte] = matte
         else:
+            matte = re.sub(r"(\\)(?=[*?])", "", matte)
             matte_set.add(matte.encode("utf-8") if type(matte) is unicode else str(matte))
 
     if combined:
-        return matte_set.union(wildcard_matte_set)
+        wildcard_mattes = [matte for matte in wildcard_matte_dict['mattes'].keys()]
+        return matte_set.union(set(wildcard_mattes))
     else:
-        return matte_set, wildcard_matte_set, wildcards
+        return matte_set, wildcard_matte_dict, wildcards
 
 
-def set_mattelist_from_set(gizmo, matte_items):
+def set_mattelist_from_set(gizmo, matte_items, escape_wildcards=True):
     " Creates a CSV matte list. "
     matte_names_list = list(matte_items)
     matte_names_list.sort(key=lambda x: x.lower())
-    matte_list_str = _encode_csv(matte_names_list)
-    matte_list_str = matte_list_str.replace("\\", "\\\\")
+    matte_list_str = _encode_csv(matte_names_list, escape_wildcards=escape_wildcards)
+    matte_list_str = re.sub(r"(\\)(?![\[\]])", r"\\\\", matte_list_str)
     gizmo.knob("matteList").setValue(matte_list_str)
 
 def _matteList_modify(gizmo, name, remove):
@@ -1163,18 +1198,37 @@ def _matteList_modify(gizmo, name, remove):
         return
 
     force_expand = False
-    matte_names, wildcard_mattes, wildcards = get_mattelist_as_set(gizmo, combined=False)
+    expand_wildcard_matte = ""
+    if gizmo.knob("expandWildcards").value():
+        matte_names, wildcard_mattes_dict, wildcards = get_mattelist_as_set(gizmo,
+                                                                       combined=False,
+                                                                       ignore_wildcards=True)
+    else:
+        matte_names, wildcard_mattes_dict, wildcards = get_mattelist_as_set(gizmo,
+                                                                       combined=False)
     if remove:
-        if name in wildcard_mattes:
+        wildcard_mattes = wildcard_mattes_dict['mattes'].keys()
+        if name in wildcard_mattes_dict['mattes'].keys():
             force_expand = True
+            expand_wildcard_matte = wildcard_mattes_dict['mattes'][name]
+            wildcard_mattes_dict['mattes'].pop(name)
+            wildcard_mattes = wildcard_mattes_dict['wildcards'][expand_wildcard_matte]
         _matteList_set_remove(name, matte_names, wildcard_mattes)
     else:
         _matteList_set_add(name, matte_names)
 
     if gizmo.knob("expandWildcards").value() or force_expand:
-        set_mattelist_from_set(gizmo, matte_names.union(wildcard_mattes))
+        if expand_wildcard_matte:
+            wildcards.remove(expand_wildcard_matte)
+            wildcard_mattes_dict['wildcards'][expand_wildcard_matte].update(wildcard_mattes)
+            matte_names.update(wildcards)
+            matte_names.update(wildcard_mattes_dict['wildcards'][expand_wildcard_matte])
+            set_mattelist_from_set(gizmo, matte_names, escape_wildcards=False)
+        else:
+            matte_names.update(set(wildcard_mattes_dict['mattes'].keys()))
+            set_mattelist_from_set(gizmo, matte_names)
     else:
-        set_mattelist_from_set(gizmo, matte_names.union(wildcards))
+        set_mattelist_from_set(gizmo, matte_names.union(wildcards), escape_wildcards=False)
 
 #############################################
 # Public - Decryption

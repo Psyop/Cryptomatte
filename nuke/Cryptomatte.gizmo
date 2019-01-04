@@ -99,9 +99,10 @@ except Exception, err:
   import traceback
   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())
 "}
- addUserKnob {3 frame l INVISIBLE +INVISIBLE}
- addUserKnob {3 updateFrame l INVISIBLE +INVISIBLE}
- updateFrame {{"\[python -execlocal \{\nif nuke.thisNode().inputs() and not nuke.thisNode().knob('expandWildcards').value():\n    import cryptomatte_utilities as cu\n    cu.cryptomatte_time_changed(nuke.thisNode())\n    ret = 1\nelse:\n    ret = 0\n\}]\n\n"}}
+ addUserKnob {3 frame l "frame"}
+ addUserKnob {3 updateFrame l "updateFrame"}
+ updateFrame {{"\[python nuke.thisNode().knob('frame').setValue(nuke.frame())]"}}
+ addUserKnob {1 manifestKey l INVISIBLE +INVISIBLE}
 
  addUserKnob {41 previewExpression0 l INVISIBLE +INVISIBLE T Expression_preview.expr0}
  addUserKnob {41 previewExpression1 l INVISIBLE +INVISIBLE T Expression_preview.expr1}

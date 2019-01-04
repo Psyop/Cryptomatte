@@ -283,6 +283,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         material_path = os.path.join(sample_images, "bunny_CryptoMaterial.exr").replace("\\", "/")
         sidecar_path = os.path.join(sample_images, "sidecar_manifest",
                                     "bunny_CryptoObject.exr").replace("\\", "/")
+        wildcard_path = os.path.join(sample_images, "cornellBox_CryptoWildcard.%04d.exr").replace("\\", "/")
         for file_path in [obj_path, asset_path, material_path, sidecar_path]:
             if not os.path.isfile(file_path):
                 raise IOError(
@@ -293,6 +294,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         cls.read_asset = nuke.nodes.Read(file=asset_path)
         cls.read_material = nuke.nodes.Read(file=material_path)
         cls.read_sidecar = nuke.nodes.Read(file=sidecar_path)
+        cls.read_wildcard = nuke.nodes.Read(file=wildcard_path, first=1, last=2)
 
         cls.constant = nuke.nodes.Constant(color=0.5)
         cls.set_canceled(False)
@@ -306,6 +308,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         nuke.delete(cls.read_asset)
         nuke.delete(cls.read_material)
         nuke.delete(cls.read_sidecar)
+        nuke.delete(cls.read_wildcard)
         nuke.delete(cls.constant)
 
     @classmethod
@@ -857,6 +860,75 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.assertMatteList("flowerA_petal, flowerStem_mat", 
                              "Wildcard forcibly expanded.")
 
+    def test_wildcard_case_sensitive_matching(self):
+        wildcard_uppercase_str = "*Rect*"
+        wildcard_lowercase_str = "*rect*"
+        self.gizmo.setInput(0, self.read_wildcard)
+        self.gizmo.knob("expandWildcards").setValue(True)
+        self.gizmo.knob("matteList").setValue(wildcard_uppercase_str)
+        self.assertMatteList(r'"Rect_[]_right", "Rect_]_left"',
+                             "Wildcard case sensitive matching.")
+
+        self.gizmo.knob("matteList").setValue(wildcard_lowercase_str)
+        self.assertMatteList(r'"rect_[_top", "rect_][_bot"',
+                             "Wildcard case sensitive matching.")
+        self.gizmo.setInput(0, self.read_asset)
+
+    def test_keying_mattes_with_wildcards_in_name_expanded(self):
+        add_asterisk_rect = ("add", (600.0, 150.0))
+        rm_asterisk_rect = ("remove", (600.0, 150.0))
+        add_question_circle = ("add", (350.0, 150.0))
+        self.gizmo.setInput(0, self.read_wildcard)
+        self.gizmo.knob("expandWildcards").setValue(True)
+        self.key_on_image(add_asterisk_rect)
+        self.assertMatteList(r'"has_\*_asterisk"', "Wildcard expanded.")
+
+        self.key_on_image(rm_asterisk_rect)
+        self.key_on_image(add_question_circle)
+        self.assertMatteList(r'"sphere_\?_2"', "Wildcard expanded.")
+
+    def test_keying_mattes_with_wildcards_in_name_unexpanded(self):
+        add_asterisk_rect = ("add", (600.0, 150.0))
+        add_question_circle = ("add", (350.0, 150.0))
+        self.gizmo.setInput(0, self.read_wildcard)
+        self.gizmo.knob("expandWildcards").setValue(False)
+        self.key_on_image(add_asterisk_rect)
+        self.key_on_image(add_question_circle)
+        self.assertMatteList(r'"has_[*]_asterisk", "sphere_[?]_2"',
+                             "Wildcard unexpanded.")
+
+    def test_wildcard_selection_update_each_frame(self):
+        import nuke
+        first_frame_expr = (
+            "((uCryptoWildcard00.red == -8.36323478609e-35) ? uCryptoWildcard00.green : 0.0) + "
+            "((uCryptoWildcard00.blue == -8.36323478609e-35) ? uCryptoWildcard00.alpha : 0.0) + "
+            "((uCryptoWildcard01.red == -8.36323478609e-35) ? uCryptoWildcard01.green : 0.0) + "
+            "((uCryptoWildcard01.blue == -8.36323478609e-35) ? uCryptoWildcard01.alpha : 0.0) + "
+            "((uCryptoWildcard02.red == -8.36323478609e-35) ? uCryptoWildcard02.green : 0.0) + "
+            "((uCryptoWildcard02.blue == -8.36323478609e-35) ? uCryptoWildcard02.alpha : 0.0) + 0"
+        )
+        last_frame_expr = (
+            "((uCryptoWildcard00.red == -2.14896060135e+17) ? uCryptoWildcard00.green : 0.0) + "
+            "((uCryptoWildcard00.blue == -2.14896060135e+17) ? uCryptoWildcard00.alpha : 0.0) + "
+            "((uCryptoWildcard01.red == -2.14896060135e+17) ? uCryptoWildcard01.green : 0.0) + "
+            "((uCryptoWildcard01.blue == -2.14896060135e+17) ? uCryptoWildcard01.alpha : 0.0) + "
+            "((uCryptoWildcard02.red == -2.14896060135e+17) ? uCryptoWildcard02.green : 0.0) + "
+            "((uCryptoWildcard02.blue == -2.14896060135e+17) ? uCryptoWildcard02.alpha : 0.0) + 0"
+        )
+        mattelist_str = "*sphere*"
+        self.gizmo.setInput(0, self.read_wildcard)
+        self.gizmo.knob("expandWildcards").setValue(False)
+        self.gizmo.knob("matteList").setValue(mattelist_str)
+        nuke.executeInMainThreadWithResult(self.gizmo.knob('frame').setValue, args=1)
+        self.assertEqual(
+            self.gizmo.knob("expression").getValue(), first_frame_expr,
+            "Frame changed to 0001.\n")
+
+        nuke.executeInMainThreadWithResult(self.gizmo.knob('frame').setValue, args=2)
+        self.assertEqual(
+            self.gizmo.knob("expression").getValue(), last_frame_expr,
+            "Frame changed to 0002.\n")
+
     #############################################
     # Decryptomatte
     #############################################
@@ -1294,7 +1366,7 @@ def run_tests(test_cases, test_filter="", failfast=False):
     if test_filter:
         filtered_suite = unittest.TestSuite()
         for test in suite:
-            if any(fnmatch.fnmatch(x, test_filter) for x in test.id().split(".")):
+            if any(fnmatch.fnmatchcase(x, test_filter) for x in test.id().split(".")):
                 filtered_suite.addTest(test)
         if not any(True for _ in filtered_suite):
             raise RuntimeError("Filter %s selected no tests. " % test_filter)
