@@ -329,6 +329,7 @@ class CryptomatteNukeTests(unittest.TestCase):
 
     def setUp(self):
         import nuke
+        import cryptomatte_utilities as cu
         if self.canceled():
             self.skipTest("Remaining tests canceled.")
             return
@@ -338,6 +339,7 @@ class CryptomatteNukeTests(unittest.TestCase):
             # We can still create everything and run tests in Nuke 7,
             # They'll just scatter some nodes about.
             self.setUpClass()
+        cu.reset_manifest_cache()
         self._remove_later = []
         self.gizmo = self.tempNode("Cryptomatte", inputs=[self.read_asset])
         self.merge = self.tempNode(
@@ -442,6 +444,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         if channel not in ["red", "green", "blue", "alpha"] and channel not in node.channels():
             raise RuntimeError("Incorrect channel specified. %s" % channel)
 
+        anything = False
         m = hashlib.md5()
         width, height = node.width(), node.height()
         if pkr:
@@ -450,15 +453,17 @@ class CryptomatteNukeTests(unittest.TestCase):
                 sample = node.sample(channel, x, y)
                 if precision:
                     sample = round(sample, precision)
+                anything = anything or bool(sample)
                 m.update(str(sample))
         for y_index in xrange(num_scanlines):
             y = (float(y_index) + 0.5) * height / (num_scanlines)
             for x in xrange(width):
                 sample = node.sample(channel, x, y)
+                anything = anything or bool(sample)
                 if precision:
                     sample = round(sample, precision)
                 m.update(str(sample))
-        return m.hexdigest()
+        return m.hexdigest() if anything else 0
 
     def hash_channel_layer(self, node, layer, channel, num_scanlines=16):
         """Hashes some scanlines of a layer other than rgba, by shuffling first. """
@@ -483,6 +488,18 @@ class CryptomatteNukeTests(unittest.TestCase):
             self.assertTrue(cinfo.parse_manifest(),
                             "%s manifest not loaded. " % read.knob("file").getValue())
             self.assertEqual(mismatches, [], "%s manifest mismatch" % read.knob("file").getValue())
+
+    def test_load_manifests_lazy(self):
+        import cryptomatte_utilities as cu
+        gizmo = self.tempNode("Cryptomatte", inputs=[self.read_asset])
+        cinfo = cu.CryptomatteInfo(gizmo)
+        self.assertNotIn("manifest", cinfo.cryptomattes[cinfo.selection])
+
+    def test_load_manifests_nonlazy(self):
+        import cryptomatte_utilities as cu
+        gizmo = self.tempNode("Cryptomatte", inputs=[self.read_asset])
+        cinfo = cu.CryptomatteInfo(gizmo, True)
+        self.assertIn("manifest", cinfo.cryptomattes[cinfo.selection])
 
     #############################################
     # Layer Selection
@@ -514,6 +531,24 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.assertEqual(
             gizmo.knob("cryptoLayer").value(), "uCryptoObject",
             "Input change to multi should not have switch layers")
+
+    def test_layer_selection_after_keying(self):
+        """ Tests all layer selection options are still available after keying.  
+        """
+        def assert_choices_present():
+            self.assertEqual(
+                set(choice.values()),
+                set(layers))
+        layers = ["uCryptoAsset", "uCryptoObject"]
+        choice = self.gizmo.knob("cryptoLayerChoice")
+        self.gizmo.setInput(0, self.copyMetadata) # set to multi
+
+        for layer in layers:
+            choice.setValue(layer)
+            self.assertEqual(self.gizmo.knob("cryptoLayer").value(), layer)
+            assert_choices_present()
+            self.key_on_gizmo(self.gizmo, self.triangle_pkr, self.set_pkr)
+            assert_choices_present()
 
     def test_layer_lock(self, node=None):
         gizmo = node if node else self.gizmo
@@ -1049,24 +1084,22 @@ class CryptomatteNukeTests(unittest.TestCase):
         roto_hash = self.hash_channel(self._setup_rotomask(), None, "alpha", num_scanlines=16)
 
         id0_hash = self.hash_channel_layer(self.read_asset, "uCryptoAsset00", "red")
-
         encryptomatte = self.tempNode(
             "Encryptomatte", inputs=[self.read_asset, self._setup_rotomask()], matteName="triangle")
         second_cryptomatte = self.tempNode(
-            "Cryptomatte", inputs=[encryptomatte], matteList="triangle")
-
+            "Cryptomatte", matteList="triangle")
+        second_cryptomatte.setInput(0, encryptomatte)
         self.assertEqual(encryptomatte.knob("cryptoLayer").getValue(), "uCryptoAsset", "Layer was not set")
 
         new_id0_hash = self.hash_channel_layer(encryptomatte, "uCryptoAsset00", "red")
         self.assertNotEqual(id0_hash, new_id0_hash, "ID channel did not change. ")
 
         decrypto_hash = self.hash_channel(second_cryptomatte, None, "alpha", num_scanlines=16)
-        mod_keysurf_hash = self.hash_channel(second_cryptomatte, None, "blue", num_scanlines=16)
-
+        mod_keysurf_hash = self.hash_channel(second_cryptomatte, None, "alpha", num_scanlines=16)
+        
         self.assertEqual(roto_hash, decrypto_hash, ("Alpha did not survive round trip through "
                                                     "Encryptomatte and then Cryptomatte. "))
         self.assertNotEqual(keysurf_hash, mod_keysurf_hash, "preview image did not change. ")
-
         cinfo = cu.CryptomatteInfo(second_cryptomatte)
         names_to_IDs = cinfo.parse_manifest()
         self.assertTrue("set" in names_to_IDs, "Manifest doesn't contain original manifest")
@@ -1096,11 +1129,10 @@ class CryptomatteNukeTests(unittest.TestCase):
         exception = None
         try:
             self.test_encrypt_roundtrip_setup()
-        except Exception, e:
-            exception = e
-        self.read_asset.knob("noprefix").setValue(False)
-        if exception:
-            raise exception
+        except:
+            raise
+        finally:
+            self.read_asset.knob("noprefix").setValue(False)
 
     def test_encrypt_bogus_manifest(self):
         import cryptomatte_utilities as cu
@@ -1160,11 +1192,13 @@ class CryptomatteNukeTests(unittest.TestCase):
 
         self.gizmo.setInput(0, encryptomatte)
         self.key_on_image(self.triangle_pkr)
-        self.gizmo.knob("forceUpdate").execute() # needed for some reason
         self.assertMatteList("triangle", "Encryptomatte did not produce a keyable triangle")
+        self.gizmo.knob("forceUpdate").execute() # needed for some reason. 
         decrypto_hash = self.hash_channel(self.gizmo, None, "alpha", num_scanlines=16)
-        self.assertEqual(roto_hash_720, decrypto_hash, ("Alpha did not survive round trip through "
-                                                        "Encryptomatte and then Cryptomatte. "))
+        self.assertEqual(
+            roto_hash_720, decrypto_hash, 
+            ("Alpha did not survive round trip through "
+            "Encryptomatte (%s) and then Cryptomatte (%s). ") % (roto_hash_720, decrypto_hash))
 
     def test_encrypt_manifest(self):
         """Gets it into a weird state where it has a manifest but no cryptomatte."""
@@ -1173,7 +1207,7 @@ class CryptomatteNukeTests(unittest.TestCase):
             "Encryptomatte", inputs=[self.gizmo, self.constant], matteName="test")
         cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
         encryptomatte.knob("setupLayers").setValue(True)
-        encryptomatte.knob("cryptoLayer").setValue("sdfsd")
+        encryptomatte.knob("cryptoLayer").setValue("customCrypto")
         encryptomatte.knob("setupLayers").setValue(False)
         cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
 
@@ -1181,7 +1215,8 @@ class CryptomatteNukeTests(unittest.TestCase):
         """Tests fresh Encryptomatte setup where there is no input constant."""
         import cryptomatte_utilities as cu
         encryptomatte = self.tempNode(
-            "Encryptomatte", inputs=[None, self._setup_rotomask()], matteName="triangle", setupLayers=True)
+            "Encryptomatte", inputs=[None, self._setup_rotomask()], matteName="triangle", 
+            setupLayers=True, cryptoLayer="customCrypto")
         self.gizmo.setInput(0, encryptomatte)
         self.key_on_image(self.triangle_pkr)
         self.assertMatteList("triangle", "Encryptomatte did not produce a keyable triangle")

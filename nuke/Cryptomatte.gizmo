@@ -40,7 +40,8 @@ Gizmo {
 
  addUserKnob {26 ""}
  addUserKnob {4 cryptoLayerChoice l "Layer Selection" t "Choose which Cryptomatte layer to key." M {"                               " ""} +DO_NOT_WRITE}
- addUserKnob {1 cryptoLayer l INVISIBLE t "If there are multiple cryptomattes, this is how you select the layer." -STARTLINE +INVISIBLE}
+ addUserKnob {1 cryptoLayer l INVISIBLE t "Internal storage of selection between multiple cryptomattes." -STARTLINE +INVISIBLE}
+ addUserKnob {1 metadataCache l INVISIBLE t "Internal storage of selection between multiple cryptomatte metadata keys." -STARTLINE +INVISIBLE +DO_NOT_WRITE}
  addUserKnob {6 cryptoLayerLock l "Lock Layer Selection" t "Stops the automatic update of the layer selection." -STARTLINE}
  addUserKnob {41 expression l "Keyer Expression" t "The built expression. This knob is set automatically and is only left exposed as information for the user. " T Expression_key.expr0}
 
@@ -110,21 +111,17 @@ except Exception, err:
  addUserKnob {11 previewChannel +HIDDEN}
  previewChannel none
  addUserKnob {11 in00 +HIDDEN}
- in00 none
  addUserKnob {11 in01 +HIDDEN}
- in01 none
  addUserKnob {11 in02 +HIDDEN}
- in02 none
  addUserKnob {11 in03 +HIDDEN}
- in03 none
  addUserKnob {11 in04 +HIDDEN}
- in04 none
  addUserKnob {11 in05 +HIDDEN}
- in05 none
  addUserKnob {11 in06 +HIDDEN}
- in06 none
  addUserKnob {11 in07 +HIDDEN}
- in07 none
+ addUserKnob {11 in08 +HIDDEN}
+ addUserKnob {11 in09 +HIDDEN}
+ addUserKnob {11 in10 +HIDDEN}
+ addUserKnob {11 in11 +HIDDEN}
  addUserKnob {26 "" +HIDDEN}
 
 }
