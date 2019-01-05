@@ -29,6 +29,13 @@ import struct
 import re
 import fnmatch
 
+# Wildcard Regex
+has_wildcards_re = re.compile(r"(?<!\\)([*?\[\]])")
+wildcard_friendly_re = re.compile(r"([*?\[\]])")
+get_mattelist_wildcard_re = re.compile(r"(\\)(?=[*?])")
+set_mattelist_wildcard_re = re.compile(r"(\\)(?![\[\]])")
+
+
 def setup_cryptomatte_ui():
     if nuke.GUI:
         toolbar = nuke.menu("Nodes")
@@ -1118,7 +1125,7 @@ def has_wildcards(name):
     """ Checks for wildcards in string that aren't escaped.
     Returns True if a wildcard is found, else False.
     """
-    if re.search(r"(?<!\\)([*?\[\]])", name):
+    if has_wildcards_re.search(name):
         return True
     else:
         return False
@@ -1128,7 +1135,7 @@ def make_name_wildcard_friendly(name):
     """ Returns fnmatch friendly str to allow for mattes with names
     containing *, ?, [, ] special characters.
     """
-    wildcard_matte = re.sub(r"([*?\[\]])", "[\g<1>]", name)
+    wildcard_matte = wildcard_friendly_re.sub("[\g<1>]", name)
 
     return wildcard_matte
 
@@ -1136,7 +1143,7 @@ def make_name_wildcard_friendly(name):
 def get_mattelist_as_set(gizmo, combined=True, ignore_wildcards=False):
     matte_list = gizmo.knob("matteList").getValue()
     # so literal '*?' in matte names stay escaped
-    matte_list = re.sub(r"(\\)(?=[*?])", r"\\\\", matte_list)
+    matte_list = get_mattelist_wildcard_re.sub(r"\\\\", matte_list)
     matte_list = _decode_csv(matte_list)
     matte_set = set()
     wildcard_matte_dict = {'mattes': {},
@@ -1145,14 +1152,14 @@ def get_mattelist_as_set(gizmo, combined=True, ignore_wildcards=False):
 
     for matte in matte_list:
         if has_wildcards(matte) and not ignore_wildcards:
-            matte = re.sub(r"(\\)(?=[*?])", "", matte)
+            matte = get_mattelist_wildcard_re.sub("", matte)
             wildcards.add(matte)
             globbed_wildcard_mattes = _glob_wildcard_names(matte)
             wildcard_matte_dict['wildcards'][matte] = globbed_wildcard_mattes
             for globbed_matte in globbed_wildcard_mattes:
                 wildcard_matte_dict['mattes'][globbed_matte] = matte
         else:
-            matte = re.sub(r"(\\)(?=[*?])", "", matte)
+            matte = get_mattelist_wildcard_re.sub("", matte)
             matte_set.add(matte.encode("utf-8") if type(matte) is unicode else str(matte))
 
     if combined:
@@ -1167,7 +1174,7 @@ def set_mattelist_from_set(gizmo, matte_items, escape_wildcards=True):
     matte_names_list = list(matte_items)
     matte_names_list.sort(key=lambda x: x.lower())
     matte_list_str = _encode_csv(matte_names_list, escape_wildcards=escape_wildcards)
-    matte_list_str = re.sub(r"(\\)(?![\[\]])", r"\\\\", matte_list_str)
+    matte_list_str = set_mattelist_wildcard_re.sub(r"\\\\", matte_list_str)
     gizmo.knob("matteList").setValue(matte_list_str)
 
 def _matteList_modify(gizmo, name, remove):
