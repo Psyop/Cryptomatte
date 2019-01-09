@@ -918,7 +918,7 @@ def _build_condition(condition, IDs):
 def _build_extraction_expression(channel_list, IDs):
     if not IDs:
         return ""
-    IDs.sort()
+    sorted_ids = sorted(IDs)
     iterated_expression = "({red_condition} ? sub_channel.green : 0.0) + ({blue_condition} ? sub_channel.alpha : 0.0) + more_work_needed"
     
     subcondition_red =  "sub_channel.red == ID"
@@ -926,8 +926,8 @@ def _build_extraction_expression(channel_list, IDs):
 
     expression = ""
     for channel in channel_list:
-        condition_r = _build_condition(subcondition_red, IDs)
-        condition_b = _build_condition(subcondition_blue, IDs)
+        condition_r = _build_condition(subcondition_red, sorted_ids)
+        condition_b = _build_condition(subcondition_blue, sorted_ids)
 
         channel_expression = iterated_expression.replace("red_condition", condition_r).replace("blue_condition", condition_b)
         channel_expression = channel_expression.replace("sub_channel", channel)
@@ -1140,12 +1140,14 @@ def make_name_wildcard_friendly(name):
     return wildcard_matte
 
 
-def get_mattelist_as_set(gizmo, combined=True, ignore_wildcards=False):
+def get_mattelist_as_set(gizmo, split_wildcards=False, ignore_wildcards=False):
     matte_list = gizmo.knob("matteList").getValue()
     # so literal '*?' in matte names stay escaped
     matte_list = get_mattelist_wildcard_re.sub(r"\\\\", matte_list)
     matte_list = _decode_csv(matte_list)
     matte_set = set()
+    # wildcard_matte_dict['wildcards'][wildcard] gets a list of mattes associated with the wildcard
+    # wildcard_matte_dict['mattes'][matte] gets the wildcard associated with the matte
     wildcard_matte_dict = {'mattes': {},
                            'wildcards': {}}
     wildcards = set()
@@ -1162,7 +1164,7 @@ def get_mattelist_as_set(gizmo, combined=True, ignore_wildcards=False):
             matte = get_mattelist_wildcard_re.sub("", matte)
             matte_set.add(matte.encode("utf-8") if type(matte) is unicode else str(matte))
 
-    if combined:
+    if split_wildcards:
         wildcard_mattes = [matte for matte in wildcard_matte_dict['mattes'].keys()]
         return matte_set.union(set(wildcard_mattes))
     else:
@@ -1208,11 +1210,11 @@ def _matteList_modify(gizmo, name, remove):
     expand_wildcard_matte = ""
     if gizmo.knob("expandWildcards").value():
         matte_names, wildcard_mattes_dict, wildcards = get_mattelist_as_set(gizmo,
-                                                                       combined=False,
-                                                                       ignore_wildcards=True)
+                                                                            split_wildcards=True,
+                                                                            ignore_wildcards=True)
     else:
         matte_names, wildcard_mattes_dict, wildcards = get_mattelist_as_set(gizmo,
-                                                                       combined=False)
+                                                                            split_wildcards=True)
     if remove:
         wildcard_mattes = wildcard_mattes_dict['mattes'].keys()
         if name in wildcard_mattes_dict['mattes'].keys():
