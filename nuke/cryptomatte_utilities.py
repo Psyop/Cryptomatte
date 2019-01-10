@@ -1165,10 +1165,10 @@ def get_mattelist_as_set(gizmo, split_wildcards=False, ignore_wildcards=False):
             matte_set.add(matte.encode("utf-8") if type(matte) is unicode else str(matte))
 
     if split_wildcards:
+        return matte_set, wildcard_matte_dict, wildcards
+    else:
         wildcard_mattes = [matte for matte in wildcard_matte_dict['mattes'].keys()]
         return matte_set.union(set(wildcard_mattes))
-    else:
-        return matte_set, wildcard_matte_dict, wildcards
 
 
 def set_mattelist_from_set(gizmo, matte_items, escape_wildcards=True):
