@@ -899,35 +899,21 @@ class CryptomatteNukeTests(unittest.TestCase):
 
     def test_wildcard_selection_update_each_frame(self):
         import nuke
-        first_frame_expr = (
-            "((uCryptoWildcard00.red == -8.36323478609e-35) ? uCryptoWildcard00.green : 0.0) + "
-            "((uCryptoWildcard00.blue == -8.36323478609e-35) ? uCryptoWildcard00.alpha : 0.0) + "
-            "((uCryptoWildcard01.red == -8.36323478609e-35) ? uCryptoWildcard01.green : 0.0) + "
-            "((uCryptoWildcard01.blue == -8.36323478609e-35) ? uCryptoWildcard01.alpha : 0.0) + "
-            "((uCryptoWildcard02.red == -8.36323478609e-35) ? uCryptoWildcard02.green : 0.0) + "
-            "((uCryptoWildcard02.blue == -8.36323478609e-35) ? uCryptoWildcard02.alpha : 0.0) + 0"
-        )
-        last_frame_expr = (
-            "((uCryptoWildcard00.red == -2.14896060135e+17) ? uCryptoWildcard00.green : 0.0) + "
-            "((uCryptoWildcard00.blue == -2.14896060135e+17) ? uCryptoWildcard00.alpha : 0.0) + "
-            "((uCryptoWildcard01.red == -2.14896060135e+17) ? uCryptoWildcard01.green : 0.0) + "
-            "((uCryptoWildcard01.blue == -2.14896060135e+17) ? uCryptoWildcard01.alpha : 0.0) + "
-            "((uCryptoWildcard02.red == -2.14896060135e+17) ? uCryptoWildcard02.green : 0.0) + "
-            "((uCryptoWildcard02.blue == -2.14896060135e+17) ? uCryptoWildcard02.alpha : 0.0) + 0"
-        )
+        first_id, second_id = "-8.36323478609e-35", "-2.14896060135e+17"
         mattelist_str = "*sphere*"
         self.gizmo.setInput(0, self.read_wildcard)
         self.gizmo.knob("expandWildcards").setValue(False)
         self.gizmo.knob("matteList").setValue(mattelist_str)
-        nuke.executeInMainThreadWithResult(self.gizmo.knob('frame').setValue, args=1)
-        self.assertEqual(
-            self.gizmo.knob("expression").getValue(), first_frame_expr,
-            "Frame changed to 0001.\n")
+        nuke.executeInMainThread(self.gizmo.knob('frame').setValue, args=1)
 
-        nuke.executeInMainThreadWithResult(self.gizmo.knob('frame').setValue, args=2)
-        self.assertEqual(
-            self.gizmo.knob("expression").getValue(), last_frame_expr,
-            "Frame changed to 0002.\n")
+        exp = self.gizmo.knob("expression").getValue()
+        self.assertIn(first_id, exp, "Frame changed to 0001.\n")
+        self.assertNotIn(second_id, exp, "Frame changed to 0001.\n")
+
+        nuke.executeInMainThread(self.gizmo.knob('frame').setValue, args=2)
+        exp = self.gizmo.knob("expression").getValue()
+        self.assertIn(second_id, exp, "Frame changed to 0002.\n")
+        self.assertNotIn(first_id, exp, "Frame changed to 0002.\n")
 
     #############################################
     # Decryptomatte
