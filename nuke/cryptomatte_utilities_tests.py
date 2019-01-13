@@ -1125,7 +1125,6 @@ class CryptomatteNukeTests(unittest.TestCase):
         """ Tests that when setting up layers, entering the name before pressing "setup layers"
         doesn't spew python errors but fails gracefully. 
         """
-        import cryptomatte_utilities as cu
         encryptomatte = self.tempNode("Encryptomatte", matteName="triangle")
         encryptomatte.knob("setupLayers").setValue(True)
         encryptomatte.knob("cryptoLayer").setValue("customCrypto")
@@ -1177,18 +1176,16 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.assertTrue("set" in names_to_IDs, "Manifest doesn't contain original manifest")
         self.assertTrue("triangle" in names_to_IDs, "Manifest doesn't contain new members")
 
-    def test_encrypt_roundtrip_keyable(self):
-        import cryptomatte_utilities as cu
-        global g_cryptomatte_manf_from_names
-        global g_cryptomatte_manf_from_IDs
-        g_cryptomatte_manf_from_names = {}
-        g_cryptomatte_manf_from_IDs = {}
-        
+    def test_encrypt_roundtrip_keyable(self):        
         encryptomatte = self.tempNode(
             "Encryptomatte", inputs=[self.read_asset, self._setup_rotomask()], matteName="triangle")
 
         self.gizmo.setInput(0, encryptomatte)
-        self.key_on_gizmo(self.gizmo, self.triangle_pkr, self.set_pkr)
+        self.key_on_image(self.set_pkr)
+        self.gizmo.knob("forceUpdate").execute()
+        self.key_on_image(self.triangle_pkr)
+        self.gizmo.knob("forceUpdate").execute()
+
         mlist = self.gizmo.knob("matteList").getValue()
         self.assertEqual(mlist, "set, triangle",
                          "Encrypto-modified manifest not properly keyable. {0}".format(mlist))
@@ -1209,11 +1206,8 @@ class CryptomatteNukeTests(unittest.TestCase):
     def test_encrypt_bogus_manifest(self):
         import cryptomatte_utilities as cu
         mod_md_node = self._create_bogus_asset_manifest()
-
         encryptomatte = self.tempNode(
             "Encryptomatte", inputs=[mod_md_node, self._setup_rotomask()], matteName="triangle")
-        # ensure graceful failure (throwing errors will result in error'd test)
-        cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("matteName"))
         self.gizmo.setInput(0, encryptomatte)
         self.key_on_image(self.triangle_pkr)
         self.gizmo.knob("forceUpdate").execute()
