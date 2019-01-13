@@ -101,7 +101,6 @@ except Exception, err:
 "}
  addUserKnob {3 frame l INVISIBLE +INVISIBLE}
  addUserKnob {3 updateFrame l INVISIBLE +INVISIBLE}
- updateFrame {{"\[python nuke.thisNode().knob('frame').setValue(nuke.frame())]"}}
  addUserKnob {1 manifestKey l INVISIBLE +INVISIBLE}
 
  addUserKnob {41 previewExpression0 l INVISIBLE +INVISIBLE T Expression_preview.expr0}

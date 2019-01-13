@@ -24,6 +24,10 @@ GIZMO_ADD_CHANNEL_KNOBS = [
 CRYPTO_METADATA_LEGAL_PREFIX = ["exr/cryptomatte/", "cryptomatte/"]
 CRYPTO_METADATA_DEFAULT_PREFIX = CRYPTO_METADATA_LEGAL_PREFIX[1]
 
+CRYPTOMATTE_TIME_CHANGED_EXPRESSION = (
+    "[python nuke.thisNode().knob('frame').setValue(nuke.frame())]"
+)
+
 import nuke
 import struct
 import re
@@ -628,17 +632,26 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     _set_preview_expression(gizmo, cryptomatte_channels)
     _set_crypto_layer_choice(gizmo, cinfo)
 
-
 def _setup_wildcards(gizmo, cinfo):
     """ Does wildcard resolution, both expanded and non-expanded.
+    In case of non-expanded, if wildcards are present, sets up time expression.
     Updates manifest in case of any wild cards.
     """
-    if not has_wildcards(gizmo.knob("matteList").getValue()):
-        return
-    cinfo.parse_manifest()
-    if gizmo.knob("expandWildcards").value():
-        matte_set = get_mattelist_as_set(gizmo)
-        set_mattelist_from_set(gizmo, matte_set)
+    def manifest_and_wildcards(gizmo, cinfo):
+        """ returns whether per-frame update expression is needed """
+        if not has_wildcards(gizmo.knob("matteList").getValue()):
+            return
+        cinfo.parse_manifest()
+        if gizmo.knob("expandWildcards").value():
+            matte_set = get_mattelist_as_set(gizmo)
+            set_mattelist_from_set(gizmo, matte_set)
+        else:
+            return True
+    if manifest_and_wildcards(gizmo, cinfo):
+        gizmo.knob("updateFrame").setExpression(CRYPTOMATTE_TIME_CHANGED_EXPRESSION)
+    else:
+        gizmo.knob("updateFrame").clearAnimated()
+
 
 
 def _set_ui(gizmo):
