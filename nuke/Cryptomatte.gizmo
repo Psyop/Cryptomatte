@@ -102,6 +102,8 @@ except Exception, err:
  addUserKnob {3 frame l INVISIBLE +INVISIBLE}
  addUserKnob {3 updateFrame l INVISIBLE +INVISIBLE}
  addUserKnob {1 manifestKey l INVISIBLE +INVISIBLE}
+ addUserKnob {1 wildcardMatteList l INVISIBLE +INVISIBLE}
+ addUserKnob {1 allManifestMetadata l INVISIBLE +INVISIBLE}
 
  addUserKnob {41 previewExpression0 l INVISIBLE +INVISIBLE T Expression_preview.expr0}
  addUserKnob {41 previewExpression1 l INVISIBLE +INVISIBLE T Expression_preview.expr1}

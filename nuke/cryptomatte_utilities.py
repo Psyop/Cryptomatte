@@ -52,6 +52,12 @@ def setup_cryptomatte_ui():
 def setup_cryptomatte():
     nuke.addKnobChanged(lambda: cryptomatte_knob_changed_event(
         nuke.thisNode(), nuke.thisKnob()), nodeClass='Cryptomatte')
+    nuke.addUpdateUI(lambda: cryptomatte_ui_update_event(
+        nuke.thisNode(), nuke.thisKnob()), nodeClass='Cryptomatte')
+    nuke.addBeforeRender(lambda: cryptomatte_before_render_event(
+        nuke.thisNode()))
+    nuke.addAfterRender(lambda: cryptomatte_after_render_event(
+        nuke.thisNode()))
     nuke.addKnobChanged(lambda: encryptomatte_knob_changed_event(
         nuke.thisNode(), nuke.thisKnob()), nodeClass='Encryptomatte')
     nuke.addOnCreate(lambda: encryptomatte_on_create_event(
@@ -304,6 +310,29 @@ class CryptomatteInfo(object):
             # Malformed JSON
             return {}
 
+    def load_all_metadata(self):
+        """Gets the metadata for the selected key for the entire frange.
+        """
+        import ast
+        import json
+        if 'manifest' not in self.cryptomattes[self.selection]:
+            manif_key = self.get_selection_metadata_key('manifest')
+            first_frame = self.nuke_node.firstFrame()
+            last_frame = self.nuke_node.lastFrame()
+            complete_frange_metadata = {}
+            for frame in range(first_frame, last_frame+1):
+                metadata = self.nuke_node.metadata(manif_key,
+                                                   frame)
+                metadata_dict = ast.literal_eval(metadata)
+                complete_frange_metadata.update(metadata_dict)
+            self.cryptomattes[self.selection]['manifest'] = json.dumps(complete_frange_metadata)
+            self.nuke_node.knob('allManifestMetadata').setValue(self.cryptomattes[self.selection]['manifest'])
+        try:
+            return json.loads(self.cryptomattes[self.selection]['manifest'])
+        except ValueError:
+            # Malformed JSON
+            return {}
+
     def parse_manifest(self):
         """ Loads json manifest and unpacks hex strings into floats,
         and converts it to two dictionaries, which map IDs to names and vice versa.
@@ -332,7 +361,11 @@ class CryptomatteInfo(object):
             else:
                 print "Cryptomatte: Unable to find manifest file: ", manif_file
         else:
-            manifest = self.lazy_load_manifest()
+            all_manifest_metadata = self.nuke_node.knob('allManifestMetadata').value()
+            if all_manifest_metadata:
+                manifest = json.loads(all_manifest_metadata)
+            else:
+                manifest = self.lazy_load_manifest()
 
         from_names = {}
         from_ids = {}
@@ -430,12 +463,69 @@ def encryptomatte_create_gizmo():
 #############################################
 # Public - cryptomatte Events
 #############################################
+def cryptomatte_ui_update_event(node=None, knob=None):
+    """ Shows the controlPanel if it's hidden so that the knobChanged callbacks
+    will run.
+    """
+    if not node.shown() and has_wildcards(node.knob("matteList").getValue()):
+        node.showControlPanel()
+        cinfo = CryptomatteInfo(node)
+        _update_cryptomatte_gizmo(node, cinfo, True)
+
+
+def cryptomatte_before_render_event(write_node):
+    """ If there are wildcards in the matte list, load all of the metadata for
+    the frange and fully expand the wildcards so that it will render out as
+    expected. The original input is saved onto the wildcardMatteList knob.
+    """
+    crypto_node_list = get_dependent_cryptomatte_nodes(write_node)
+    for node in crypto_node_list:
+        matte_list = node.knob("matteList").getValue()
+        if has_wildcards(matte_list):
+            node.knob("wildcardMatteList").setValue(matte_list)
+
+            cinfo = CryptomatteInfo(node)
+            if not node.knob('allManifestMetadata').getValue():
+                cinfo.load_all_metadata()
+            node.knob("expandWildcards").setValue(True)
+            _update_cryptomatte_gizmo(node, cinfo)
+
+
+def cryptomatte_after_render_event(write_node):
+    """ If the matte list had wildcards that were expanded pre-render, changes
+    the matte list back to the original input.
+    """
+    crypto_node_set = get_dependent_cryptomatte_nodes(write_node)
+    for node in crypto_node_set:
+        wildcard_matte_list = node.knob("wildcardMatteList").getValue()
+        if wildcard_matte_list:
+            node.knob("expandWildcards").setValue(False)
+            node.knob("matteList").setValue(wildcard_matte_list)
+            node.knob("wildcardMatteList").setValue("")
+
+
+def get_dependent_cryptomatte_nodes(node):
+    """ Gets all dependent cryptomatte nodes.
+    """
+    mask = nuke.INPUTS | nuke.HIDDEN_INPUTS
+    dependent_nodes = node.dependencies(mask)
+    node_set = set()
+    while dependent_nodes:
+        node = dependent_nodes.pop()
+        if node in node_set:
+            continue
+        if node.Class() == 'Cryptomatte':
+            node_set.add(node)
+        dependent_nodes.extend(node.dependencies(mask))
+    return node_set
 
 
 def cryptomatte_knob_changed_event(node = None, knob = None):
     if knob.name() == "inputChange":
         if unsafe_to_do_inputChange(node):
-            return # see comment in #unsafe_to_do_inputChange. 
+            return # see comment in #unsafe_to_do_inputChange.
+        node.knob('wildcardMatteList').setValue('')
+        node.knob('allManifestMetadata').setValue('')
         cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_cryptomatte_gizmo(node, cinfo)
     elif knob.name() in ["cryptoLayer", "cryptoLayerLock"]:
@@ -446,6 +536,8 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
             prev_crypto_layer = node.knob('cryptoLayer').value()
             new_crypto_layer = knob.values()[int(knob.getValue())]
             if prev_crypto_layer != new_crypto_layer:
+                node.knob('wildcardMatteList').setValue('')
+                node.knob('allManifestMetadata').setValue('')
                 node.knob('cryptoLayer').setValue(new_crypto_layer)
                 cinfo = CryptomatteInfo(node)
                 _update_cryptomatte_gizmo(node, cinfo)
@@ -631,6 +723,21 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     _set_expression(gizmo, cryptomatte_channels)
     _set_preview_expression(gizmo, cryptomatte_channels)
     _set_crypto_layer_choice(gizmo, cinfo)
+
+
+def cryptomatte_time_changed(node):
+    """
+    This gets run from the expression on the updateFrame knob.
+    If the expandWildcards knob isn't checked, this allows the manifest
+    to be properly reloaded when frames change.
+    """
+    frame = node.knob('frame').value()
+    current_frame = int(nuke.frame())
+    if frame != current_frame:
+        node.knob('frame').setValue(current_frame)
+        cinfo = CryptomatteInfo(node)
+        _update_cryptomatte_gizmo(node, cinfo, force=True)
+
 
 def _setup_wildcards(gizmo, cinfo):
     """ Does wildcard resolution, both expanded and non-expanded.
