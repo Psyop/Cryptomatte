@@ -1162,19 +1162,20 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.assertTrue("set" in names_to_IDs, "Manifest doesn't contain original manifest")
         self.assertTrue("triangle" in names_to_IDs, "Manifest doesn't contain new members")
 
-    def test_encrypt_roundtrip_keyable(self):        
+    def _setup_roundtrip_keying(self, picker):
         encryptomatte = self.tempNode(
             "Encryptomatte", inputs=[self.read_asset, self._setup_rotomask()], matteName="triangle")
-
         self.gizmo.setInput(0, encryptomatte)
-        self.key_on_image(self.set_pkr, self.triangle_pkr)
+        self.key_on_image(picker)
+        self.gizmo.knob("forceUpdate").execute()
 
-        mlist = self.gizmo.knob("matteList").getValue()
-        self.assertEqual(mlist, "set, triangle",
-                         "Encrypto-modified manifest not properly keyable. {0}".format(mlist))
+    def test_encrypt_roundtrip_existing_keyable(self):
+        self._setup_roundtrip_keying(self.set_pkr)
+        self.assertMatteList("set",  "Could not key existing objects (set). ")
 
-        self.assertTrue("set" in mlist, "Couldn't properly key 'set' (Pre-existing)")
-        self.assertTrue("triangle" in mlist, "Couldn't properly key 'triangle' (New Member)")
+    def test_encrypt_roundtrip_added_keyable(self):
+        self._setup_roundtrip_keying(self.triangle_pkr)
+        self.assertMatteList("triangle",  "Could not key added objects (triangle). ")
 
     def test_encrypt_roundtrip_without_prefix(self):
         self.read_asset.knob("noprefix").setValue(True)
