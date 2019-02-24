@@ -153,7 +153,7 @@ class CryptomatteInfo(object):
             exr_metadata_dict = self._load_minimal_metadata()
 
         if not exr_metadata_dict:
-            exr_metadata_dict = self.nuke_node.metadata() or {}
+            exr_metadata_dict = self.nuke_node.metadata(view=nuke.thisView()) or {}
 
         default_selection = None
         
