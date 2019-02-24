@@ -1267,7 +1267,6 @@ class CryptomatteNukeTests(unittest.TestCase):
             "Period should be removed from name and it should key.")
         self.key_on_image(self.triangle_pkr)
         self.assertMatteList("triangle", "Did not produce a keyable triangle")
-        raise
 
 #############################################
 # Ad hoc test running
