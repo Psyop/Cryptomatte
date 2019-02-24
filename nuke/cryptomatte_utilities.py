@@ -363,7 +363,10 @@ class CryptomatteInfo(object):
             else:
                 print "Cryptomatte: Unable to find manifest file: ", manif_file
         else:
-            all_manifest_metadata = self.nuke_node.knob('allManifestMetadata').value()
+            all_manifest_metadata = (
+                self.nuke_node.knob('allManifestMetadata').value() if 
+                self.nuke_node.Class() == "Cryptomatte" else {})
+
             if all_manifest_metadata:
                 manifest = json.loads(all_manifest_metadata)
             else:
