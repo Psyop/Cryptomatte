@@ -1,3 +1,11 @@
+### 1.2.4
+
+Nuke:
+
+* Performance improvement when keying by caching metadata. (#90)
+* Fixed for stereo renders by using nuke.thisView() (#103)
+* Fixed errors on open with more than 16 layers of Cryptomatte (#95)
+
 ### 1.2.3:
 
 Nuke:
