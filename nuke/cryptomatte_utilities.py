@@ -169,6 +169,8 @@ class CryptomatteInfo(object):
                 metadata_id, partial_key = numbered_key.split("/")  # ex: "ae93ba3/name" --> ae93ba3, "name"
                 if metadata_id not in self.cryptomattes:
                     self.cryptomattes[metadata_id] = {}
+                if partial_key == "name":
+                    value = _legal_nuke_layer_name(value)
                 self.cryptomattes[metadata_id][partial_key] = value
                 self.cryptomattes[metadata_id]['md_prefix'] = prefix
                 if partial_key != "manifest":
@@ -191,7 +193,6 @@ class CryptomatteInfo(object):
                 if not valid_selection and not self.nuke_node.knob("cryptoLayerLock").getValue():
                     self.selection = default_selection
 
-
     def is_valid(self):
         """Checks that the selection is valid."""
         if self.selection is None:
@@ -208,6 +209,7 @@ class CryptomatteInfo(object):
         """ sets the selection (eg. cryptoObject) based on the name. 
         Returns true if successful. 
         """
+        selection = _legal_nuke_layer_name(selection)
         for num in self.cryptomattes:
             if self.cryptomattes[num]["name"] == selection:
                 self.selection = num
@@ -614,6 +616,14 @@ def _set_ui(gizmo):
     gizmo.knob('cryptoLayerChoice').setEnabled(not layer_locked)
 
 
+def _legal_nuke_layer_name(name):
+    """ Blender produces channels with "." in the name, which Nuke 
+    changes to "_". We have to make sure we handle Cryptomattes
+    that are built this way. 
+    """
+    return name.replace(".", "_")
+
+
 def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
     if _cancel_update(gizmo, force):
         return
@@ -647,6 +657,7 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
             cryptomatte_channels = []
 
         crypto_layer = gizmo.knob('cryptoLayer').value()
+        crypto_layer = _legal_nuke_layer_name(crypto_layer)
         if crypto_layer in cryptomatte_channels:
             gizmo.knob('inputCryptoLayers').setValue(len(cryptomatte_channels) - 1)
             manifest_key = cinfo.get_selection_metadata_key("")

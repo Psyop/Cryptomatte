@@ -5,6 +5,7 @@ Nuke:
 * Performance improvement when keying by caching metadata. (#90)
 * Fixed for stereo renders by using nuke.thisView() (#103)
 * Fixed errors on open with more than 16 layers of Cryptomatte (#95)
+* Fixed gizmo for Blender channel names containing "." which get converted to underscores in Nuke, also fixed for Encryptomatte. (#104)
 
 ### 1.2.3:
 
