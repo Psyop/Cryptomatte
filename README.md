@@ -45,6 +45,7 @@ Encoders:
 * [Arnold 4 (AlShaders), by Jonah Friedman, Andy Jones, Anders Langlands.](http://www.anderslanglands.com/alshaders/index.html)
 * [Arnold 5 (AlShaders 2), by Jonah Friedman, Andy Jones, Anders Langlands.](https://github.com/anderslanglands/alShaders2)
 * Nuke 7+ "Encryptomatte", by Andy Jones. In this repo.
+* [Appleseed 2.1.0 by Sergo Pogosyan.](https://appleseedhq.net/2019/09/21/appleseed-2-1-0-beta-Released.html)
 
 Decoders:
 
