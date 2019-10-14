@@ -1,0 +1,188 @@
+--[[
+Requires   : Fusion 9.0.2+
+Optional   : cjson
+Created by : Cédric Duriau         [duriau.cedric@live.be]
+             Kristof Indeherberge  [xmnr0x23@gmail.com]
+             Andrew Hazelden       [andrew@andrewhazelden.com]
+Version    : 1.2.4
+--]]
+
+{
+    Action {
+        ID = "CryptomatteAdd",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Add",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            fuse.Add = 1
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Action {
+        ID = "CryptomatteClear",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Clear",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            fuse.Clear = 1
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Action {
+        ID = "CryptomatteKeyableSurface",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Keyable Surface",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            fuse.KeyableSurface = 1 - fuse.KeyableSurface[fu.TIME_UNDEFINED]
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Action {
+        ID = "CryptomatteLayerMinus",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Layer Minus",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            if fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] ~= 1 then
+                                fuse.CryptoLayerSlider = fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] - 1
+                            end
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Action {
+        ID = "CryptomatteLayerPlus",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Layer Plus",
+        Targets = {
+                Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            if fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] ~= fuse.CryptoLayerSlider:GetAttrs("INPN_MaxScale") then
+                                fuse.CryptoLayerSlider = fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] + 1
+                            end
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Action {
+        ID = "CryptomatteMatteOnly",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Matte Only",
+        Targets = {
+                Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            fuse.MatteOnly = 1 - fuse.MatteOnly[fu.TIME_UNDEFINED]
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Action {
+        ID = "CryptomatteRemove",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Remove",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            fuse.Remove = 1
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Action {
+        ID = "CryptomatteToggle",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Toggle",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            fuse.Toggle = 1
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Action {
+        ID = "CryptomatteViewMode",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte View Mode",
+        Targets = {
+                Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            if fuse.ViewMode[fu.TIME_UNDEFINED] ~= 2 then
+                                fuse.ViewMode = fuse.ViewMode[fu.TIME_UNDEFINED] + 1
+                            else
+                                fuse.ViewMode = 0
+                            end
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Hotkeys {
+        Target = "GLView",
+        SHIFT_A = "CryptomatteAdd{}",
+        SHIFT_C = "CryptomatteClear{}",
+        SHIFT_K = "CryptomatteKeyableSurface{}",
+        SHIFT_KEYPAD_MINUS = "CryptomatteLayerMinus{}",
+        SHIFT_MINUS = "CryptomatteLayerMinus{}",
+        SHIFT_KEYPAD_PLUS = "CryptomatteLayerPlus{}",
+        SHIFT_PLUS = "CryptomatteLayerPlus{}",
+        SHIFT_M = "CryptomatteMatteOnly{}",
+        SHIFT_R = "CryptomatteRemove{}",
+        SHIFT_T = "CryptomatteToggle{}",
+        SHIFT_V = "CryptomatteViewMode{}",
+        SHIFT_CONTROL_K = "CryptomatteViewMode{}",
+    }
+}
