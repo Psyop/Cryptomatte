@@ -1237,6 +1237,12 @@ class CryptomatteNukeTests(unittest.TestCase):
             "custom_crypto", encryptomatte.knob("cryptoLayer").getValue(),
             "Period should be removed from Encryptomatte name.")
         self.gizmo.setInput(0, encryptomatte)
+
+        # For some reason, on first runs after opening a fresh nuke (12.0v3)
+        # this does not always update on its own. 
+        encryptomatte.knob("forceUpdate").execute()
+        self.gizmo.knob("forceUpdate").execute()
+
         self.assertEqual(
             self.gizmo.knob("cryptoLayer").getValue(), "custom_crypto",
             "Period should be removed from name and it should key.")
