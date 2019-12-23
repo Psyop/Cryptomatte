@@ -617,11 +617,12 @@ def _set_ui(gizmo):
 
 
 def _legal_nuke_layer_name(name):
-    """ Blender produces channels with "." in the name, which Nuke 
+    """ Blender produces channels with certain characters in the name, which Nuke 
     changes to "_". We have to make sure we handle Cryptomattes
-    that are built this way. 
+    that are built this way. Doing this by only allowing alphanumeric
+    output plus dash and underscores
     """
-    return name.replace(".", "_")
+    return "".join([x if x.lower() in 'abcdefghijklmnopqrstuvwxyz1234567890_-' else '_' for x in name])
 
 
 def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
