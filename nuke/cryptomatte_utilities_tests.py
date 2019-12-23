@@ -932,7 +932,7 @@ class CryptomatteNukeTests(unittest.TestCase):
     def test_gizmo_version(self, node=None):
         import cryptomatte_utilities as cu
         def test_version(gizmo):
-            gizmo_version = gizmo.knob("CryptomatteVersion").value()
+            gizmo_version = gizmo.knob("cryptomatteVersion").value()
             self.assertEqual(
                 gizmo_version, cu.__version__,
                 "%s version not same as Python version. "
