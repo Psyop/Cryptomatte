@@ -569,7 +569,7 @@ def _force_update_all():
 
 def unsafe_to_do_inputChange(node):
     """
-    In Nuke 8, 9, 10, it's been discovered that when copy and pasting certain nodes,
+    In Nuke 8, 9, 10, 11, 12 it's been discovered that when copy and pasting certain nodes,
     or when opening certain scripts the inputchanged knob change callback breaks the script. 
 
     What actually happens is the call to metadata() breaks it. 
