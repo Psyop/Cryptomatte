@@ -794,7 +794,7 @@ def _troubleshoot_setup():
     issues = []
     expected_knob_changeds = ["Cryptomatte", "Encryptomatte"]
     if any(x not in nuke.callbacks.knobChangeds for x in expected_knob_changeds):
-        issues.append(BAD_INSTALL)
+        issues.append(MSG_BAD_INSTALL)
     if nuke.root().knob('proxy').value():
         issues.append(PROXY_MODE)
     return issues
