@@ -102,7 +102,6 @@ except Exception, err:
   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())
 "}
  addUserKnob {3 frame l INVISIBLE +INVISIBLE}
- addUserKnob {3 updateFrame l INVISIBLE +INVISIBLE}
  addUserKnob {1 manifestKey l INVISIBLE +INVISIBLE}
  addUserKnob {1 wildcardMatteList l INVISIBLE +INVISIBLE}
  addUserKnob {1 allManifestMetadata l INVISIBLE +INVISIBLE}
