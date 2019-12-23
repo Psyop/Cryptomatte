@@ -881,11 +881,13 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.gizmo.setInput(0, self.read_wildcard)
         self.gizmo.knob("expandWildcards").setValue(True)
         self.key_on_image(add_asterisk_rect)
-        self.assertMatteList(r'"has_\*_asterisk"', "Wildcard expanded.")
+        self.assertMatteList(r'"has_\*_asterisk"', "Couldn't add")
 
         self.key_on_image(rm_asterisk_rect)
+        self.assertMatteList(r'', "Removed")
+
         self.key_on_image(add_question_circle)
-        self.assertMatteList(r'"sphere_\?_2"', "Wildcard expanded.")
+        self.assertMatteList(r'"sphere_\?_2"', "Couldn't add.")
 
     def test_keying_mattes_with_wildcards_in_name_unexpanded(self):
         add_asterisk_rect = ("add", (600.0, 150.0))
