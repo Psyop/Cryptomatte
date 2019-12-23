@@ -76,3 +76,6 @@ Decoders:
 * Peter Loveday
 * Andrew Hazelden
 * Jens Lindgren
+* Rainer Trummer
+* Veronica Tello
+* Method studios
