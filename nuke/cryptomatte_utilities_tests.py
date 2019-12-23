@@ -1239,52 +1239,64 @@ class CryptomatteNukeTests(unittest.TestCase):
     # Blender names ("with . in names)
     #############################################
 
-    def test_blendery_names_encryptomatte(self):
-        """Tests fresh Encryptomatte setup where there is no input constant."""
-        import cryptomatte_utilities as cu
-        encryptomatte = self.tempNode(
-            "Encryptomatte", inputs=[None, self._setup_rotomask()], matteName="triangle", 
-            setupLayers=True, cryptoLayer="custom.crypto")
-        self.assertEqual(
-            "custom_crypto", encryptomatte.knob("cryptoLayer").getValue(),
-            "Period should be removed from Encryptomatte name.")
-        self.gizmo.setInput(0, encryptomatte)
-
-        # For some reason, on first runs after opening a fresh nuke (12.0v3)
-        # this does not always update on its own. 
-        encryptomatte.knob("forceUpdate").execute()
-        self.gizmo.knob("forceUpdate").execute()
-
-        self.assertEqual(
-            self.gizmo.knob("cryptoLayer").getValue(), "custom_crypto",
-            "Period should be removed from name and it should key.")
-        self.key_on_image(self.triangle_pkr)
-        self.assertMatteList("triangle", "Did not produce a keyable triangle")
+    nuke_unfriendly_channel_names = [
+        ("custom.crypto", "custom_crypto"),
+        ("amp&rsand", "amp_rsand"),
+        ("per.od", "per_od"),
+        (".per.od", "_per_od"),
+        ("numlast_123", "numlast_123"),
+        ("123_numfirst", "123_numfirst"),
+        ("num_123_middle", "num_123_middle"),
+    ]
 
     def test_blendery_names_in_metadata(self):
-        """Tests fresh Encryptomatte setup where there is no input constant."""
-        import cryptomatte_utilities as cu
+        """Tests that names with nuke-unfriendly layer names are mangled property."""
         encryptomatte = self.tempNode(
             "Encryptomatte", inputs=[None, self._setup_rotomask()], matteName="triangle", 
-            setupLayers=True, cryptoLayer="custom_crypto")
+            setupLayers=True)
+        for bad_name, corrected_name in self.nuke_unfriendly_channel_names:
+            encryptomatte.knob("cryptoLayer").setValue(bad_name)
 
-        name_key = ""
-        metadata = encryptomatte.metadata()
-        for key in metadata:
-            if key.startswith("cryptomatte/") and key.endswith("/name"):
-                name_key = key
-                break
-        self.assertEqual(metadata[name_key], "custom_crypto")
+            name_key = ""
+            metadata = encryptomatte.metadata()
+            for key in metadata:
+                if key.startswith("cryptomatte/") and key.endswith("/name"):
+                    name_key = key
+                    break
+            self.assertEqual(metadata[name_key], corrected_name)
 
-        modify_md = self.tempNode(
-            "ModifyMetaData", inputs=[encryptomatte], 
-            metadata='{set %s "custom.crypto"}' % name_key)
-        self.gizmo.setInput(0, modify_md)
-        self.assertEqual(
-            self.gizmo.knob("cryptoLayer").getValue(), "custom_crypto",
-            "Period should be removed from name and it should key.")
-        self.key_on_image(self.triangle_pkr)
-        self.assertMatteList("triangle", "Did not produce a keyable triangle")
+            modify_md = self.tempNode(
+                "ModifyMetaData", inputs=[encryptomatte], 
+                metadata='{set %s "%s"}' % (name_key, bad_name))
+            self.gizmo.setInput(0, modify_md)
+            self.assertEqual(
+                self.gizmo.knob("cryptoLayer").getValue(), corrected_name,
+                "Period should be removed from name and it should key.")
+            self.key_on_image(self.triangle_pkr)
+            self.assertMatteList("triangle", "Did not produce a keyable triangle")
+
+    def test_blendery_names_encryptomatte(self):
+        """Tests that names with nuke-unfriendly layer names are mangled property by Encryptomatte."""
+        encryptomatte = self.tempNode(
+            "Encryptomatte", inputs=[None, self._setup_rotomask()], matteName="triangle", 
+            setupLayers=True)
+        for bad_name, corrected_name in self.nuke_unfriendly_channel_names:
+            encryptomatte.knob("cryptoLayer").setValue(bad_name)
+            self.assertEqual(
+                corrected_name, encryptomatte.knob("cryptoLayer").getValue(),
+                "Period should be removed from Encryptomatte name.")
+            self.gizmo.setInput(0, encryptomatte)
+
+            # For some reason, on first runs after opening a fresh nuke (12.0v3)
+            # this does not always update on its own. 
+            encryptomatte.knob("forceUpdate").execute()
+            self.gizmo.knob("forceUpdate").execute()
+
+            self.assertEqual(
+                self.gizmo.knob("cryptoLayer").getValue(), corrected_name,
+                "Period should be removed from name and it should key.")
+            self.key_on_image(self.triangle_pkr)
+            self.assertMatteList("triangle", "Did not produce a keyable triangle")
 
 #############################################
 # Ad hoc test running
