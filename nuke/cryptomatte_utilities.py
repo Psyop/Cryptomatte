@@ -421,6 +421,9 @@ def encryptomatte_create_gizmo():
 
 
 def cryptomatte_knob_changed_event(node = None, knob = None):
+    if _limbo_state(node):
+        return
+
     if knob.name() == "inputChange":
         if unsafe_to_do_inputChange(node):
             return # see comment in #unsafe_to_do_inputChange. 
@@ -478,10 +481,13 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
 
 
 def encryptomatte_knob_changed_event(node=None, knob=None):
+    if _limbo_state(node):
+        return
+
     if knob.name() in ["matteName", "cryptoLayerLock"]:
         cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_encryptomatte_gizmo(node, cinfo)
-
+        return
     if knob.name() in ["setupLayers", "cryptoLayer", "inputChange", "cryptoLayers"]:
         if knob.name() == "inputChange":
             if unsafe_to_do_inputChange(node):
@@ -574,6 +580,19 @@ def unsafe_to_do_inputChange(node):
     see: https://github.com/Psyop/Cryptomatte/issues/18
     """
     return nuke.NUKE_VERSION_MAJOR > 7 and node.screenHeight() == 0
+
+
+def _limbo_state(gizmo):
+    """
+    Checks if the node is in a limbo state. This happens when creating
+    and connected a node at the same time. It manifests as the error,
+        ValueError: A PythonObject is not attached to a node
+    """
+    try:
+        gizmo.Class()
+    except ValueError:
+        return True
+    return False
 
 
 #############################################
