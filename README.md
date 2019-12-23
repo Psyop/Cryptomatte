@@ -43,9 +43,11 @@ Encoders:
 * LightWave 3D 2018 ([DB&W EXRTrader plugin](https://www.db-w.com/products/exrtrader))
 * [Redshift 2.6.11](https://www.redshift3d.com)
 * [Arnold 4 (AlShaders), by Jonah Friedman, Andy Jones, Anders Langlands.](http://www.anderslanglands.com/alshaders/index.html)
-* [Arnold 5 (AlShaders 2), by Jonah Friedman, Andy Jones, Anders Langlands.](https://github.com/anderslanglands/alShaders2)
+* [Arnold 5 (CryptomatteArnold) by Jonah Friedman, Andy Jones, Anders Langlands.](https://github.com/anderslanglands/alShaders2)
 * Nuke 7+ "Encryptomatte", by Andy Jones. In this repo.
-* [Appleseed 2.1.0 by Sergo Pogosyan.](https://appleseedhq.net/2019/09/21/appleseed-2-1-0-beta-Released.html)
+* [Appleseed 2.1.0 by Sergo Pogosyan, Jon Dent](https://appleseedhq.net/2019/09/21/appleseed-2-1-0-beta-Released.html)
+* [Autodesk VRed](https://knowledge.autodesk.com/support/vred-products/learn-explore/caas/CloudHelp/cloudhelp/2020/ENU/VRED/files/Rendering/VRED-Rendering-How-to-Use-the-Cryptomatte-Options-html-html.html)
+* [Octane for Cinema4D](http://www.aoktar.com/octane/OCTANE%20HELP%20MANUAL.html?Cryptomatte.html)
 
 Decoders:
 
@@ -53,9 +55,11 @@ Decoders:
 * Fusion: by C&eacute;dric Duriau and Kristof Indeherberge at Grid. In this repo.
 * [Houdini 16.5 Compositor (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html), [Demo](https://vimeo.com/241036613#t=2862s)
 * Blender 2.8.0 Compositor (By Tangent Animation and Blender Foundation): [Cryptomatte in Blender 2.8 Alpha 2! demo](https://www.youtube.com/watch?v=lTJJqAGnWFM), [Tutorial by Zacharias Reinhardt](https://zachariasreinhardt.com/blender-2-8-cryptomatte-tutorial), [Cycles for Animated Feature Film Production by Stefan Werner](https://www.youtube.com/watch?v=_2Ia4h8q3xs), [Docs](https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Cycles#Cryptomatte)
-* [Autodesk Flame (By Lewis Saunders)](https://logik-matchbook.org/shader/Cryptomatte)
-* [After Effects (Fnordware ProEXR plugin 2.0)](https://www.fnordware.com/ProEXR/)
-
+* [Autodesk Flame (Autodesk)](https://knowledge.autodesk.com/support/flame-products/learn-explore/caas/CloudHelp/cloudhelp/2020/ENU/Flame-EffectsandToolsReference/files/GUID-0402116E-B47C-4E32-9010-DB8C334853E0-htm.html)
+* [Adobe After Effects 2020 (Native)](https://theblog.adobe.com/adobe-after-effects-is-faster-than-ever/)
+* [Adobe After Effects (Fnordware ProEXR plugin 2.0)](https://www.fnordware.com/ProEXR/)
+* [Adobe Photoshop (EXR-IO 2)](https://www.exr-io.com/exr-io-2-00/)
+* [FilmLight Baselight v5](https://www.filmlight.ltd.uk/pdf/datasheets/FL-BL-DS-0847-Baselightv5.pdf)
 
 ## Acknowledgements 
 
