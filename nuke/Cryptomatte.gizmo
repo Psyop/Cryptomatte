@@ -44,6 +44,10 @@ Gizmo {
  addUserKnob {41 expression l "Keyer Expression" t "The built expression. This knob is set automatically and is only left exposed as information for the user. " T Expression_key.expr0}
 
  addUserKnob {20 Advanced}
+ 
+ addUserKnob {26 CryptomatteVersion l "Cryptomatte Version" T 1.2.4}
+ addUserKnob {26 ""}
+
  addUserKnob {36 ColorKey l "" t "Key an object here to check its name. It will not effect your mattes. " -STARTLINE +HIDDEN}
  ColorKey {0 0 0 0 0 0 0 0}
  addUserKnob {6 ColorKey_panelDropped l "panel dropped state" -STARTLINE +HIDDEN}

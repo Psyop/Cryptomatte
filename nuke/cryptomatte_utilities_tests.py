@@ -929,6 +929,18 @@ class CryptomatteNukeTests(unittest.TestCase):
     # Gizmo integrity
     #############################################
 
+    def test_gizmo_version(self, node=None):
+        import cryptomatte_utilities as cu
+        def test_version(gizmo):
+            gizmo_version = gizmo.knob("CryptomatteVersion").value()
+            self.assertEqual(
+                gizmo_version, cu.__version__,
+                "%s version not same as Python version. "
+                        "(%s, %s)" % (gizmo.Class(), cu.__version__, gizmo_version))
+
+        test_version(self.gizmo)
+        test_version(self.tempNode("Encryptomatte"))
+
     def test_crypto_channel_knobs_type(self, node=None):
         import cryptomatte_utilities as cu
         for channel in cu.GIZMO_CHANNEL_KNOBS:
