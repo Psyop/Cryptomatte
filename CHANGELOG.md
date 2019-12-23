@@ -8,6 +8,17 @@ Nuke:
 * The "Expand Wildcards" knob controls whether the wildcards are expanded or not.
   * If the wildcards are not expanded, the manifest is recomputed at every frame.
 
+### 1.2.5
+
+Nuke:
+
+* Added a version number display for users and scripts to test what version is used (#106)
+* Better support for Blender layer names (#114, thanks @aliasguru)
+* Scalable Cryptomatte logo (#119, thanks JF Panisset)
+* Fixed a callback error when tab-creating gizmos with an input selected (#109)
+* Fixed troubleshooting button when callbacks are not installed. (#112)
+* Tests pass in Nuke 12.0v3
+
 ### 1.2.4
 
 Nuke:

@@ -526,6 +526,9 @@ def get_dependent_cryptomatte_nodes(node):
 
 
 def cryptomatte_knob_changed_event(node = None, knob = None):
+    if _limbo_state(node):
+        return
+
     if knob.name() == "inputChange":
         if unsafe_to_do_inputChange(node):
             return # see comment in #unsafe_to_do_inputChange.
@@ -597,10 +600,13 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
 
 
 def encryptomatte_knob_changed_event(node=None, knob=None):
+    if _limbo_state(node):
+        return
+
     if knob.name() in ["matteName", "cryptoLayerLock"]:
         cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_encryptomatte_gizmo(node, cinfo)
-
+        return
     if knob.name() in ["setupLayers", "cryptoLayer", "inputChange", "cryptoLayers"]:
         if knob.name() == "inputChange":
             if unsafe_to_do_inputChange(node):
@@ -681,7 +687,7 @@ def _force_update_all():
 
 def unsafe_to_do_inputChange(node):
     """
-    In Nuke 8, 9, 10, it's been discovered that when copy and pasting certain nodes,
+    In Nuke 8, 9, 10, 11, 12 it's been discovered that when copy and pasting certain nodes,
     or when opening certain scripts the inputchanged knob change callback breaks the script. 
 
     What actually happens is the call to metadata() breaks it. 
@@ -692,6 +698,19 @@ def unsafe_to_do_inputChange(node):
     see: https://github.com/Psyop/Cryptomatte/issues/18
     """
     return nuke.NUKE_VERSION_MAJOR > 7 and node.screenHeight() == 0
+
+
+def _limbo_state(gizmo):
+    """
+    Checks if the node is in a limbo state. This happens when creating
+    and connected a node at the same time. It manifests as the error,
+        ValueError: A PythonObject is not attached to a node
+    """
+    try:
+        gizmo.Class()
+    except ValueError:
+        return True
+    return False
 
 
 #############################################
@@ -772,11 +791,12 @@ def _set_ui(gizmo):
 
 
 def _legal_nuke_layer_name(name):
-    """ Blender produces channels with "." in the name, which Nuke 
+    """ Blender produces channels with certain characters in the name, which Nuke 
     changes to "_". We have to make sure we handle Cryptomattes
-    that are built this way. 
+    that are built this way. Doing this by only allowing alphanumeric
+    output plus dash and underscores
     """
-    return name.replace(".", "_")
+    return "".join([x if x.lower() in 'abcdefghijklmnopqrstuvwxyz1234567890_-' else '_' for x in name])
 
 
 def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
@@ -949,7 +969,7 @@ def _troubleshoot_setup():
     issues = []
     expected_knob_changeds = ["Cryptomatte", "Encryptomatte"]
     if any(x not in nuke.callbacks.knobChangeds for x in expected_knob_changeds):
-        issues.append(BAD_INSTALL)
+        issues.append(MSG_BAD_INSTALL)
     if nuke.root().knob('proxy').value():
         issues.append(PROXY_MODE)
     return issues

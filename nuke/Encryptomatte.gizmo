@@ -23,6 +23,7 @@ Gizmo {
  addUserKnob {1 manifestKey l INVISIBLE +INVISIBLE}
  addUserKnob {3 cryptoLayers l Layers t "Number of cryptomatte layers to use."}
  cryptoLayers 3
+
  addUserKnob {3 inputCryptoLayers l INVISIBLE +INVISIBLE}
  addUserKnob {6 setupLayers l "Setup Layers" t "Set up the Cryptomatte layers if they do not already exist, and remove any extras." -STARTLINE}
  addUserKnob {6 newLayer l INVISIBLE +INVISIBLE +STARTLINE}
@@ -57,6 +58,10 @@ Gizmo {
  addUserKnob {41 add05 l INVISIBLE +INVISIBLE T AddChannels_04_07.channels2}
  addUserKnob {41 add06 l INVISIBLE +INVISIBLE T AddChannels_04_07.channels3}
  addUserKnob {41 add07 l INVISIBLE +INVISIBLE T AddChannels_04_07.channels4}
+
+ addUserKnob {20 Advanced}
+ 
+ addUserKnob {26 cryptomatteVersion l "Cryptomatte Version" T 1.2.5}
 }
  Input {
   inputs 0
