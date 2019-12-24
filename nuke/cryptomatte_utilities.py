@@ -460,7 +460,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         cinfo = CryptomatteInfo(node)
         keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
         node.knob("pickerRemove").setValue([0] * 8)
-        _matteList_modify(node, keyed_object, False)
+        _modify_mattelist_with_keyer(node, keyed_object, False)
         _update_cryptomatte_gizmo(node, cinfo)
 
     elif knob.name() == "pickerRemove":
@@ -470,7 +470,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         cinfo = CryptomatteInfo(node)
         keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
         node.knob("pickerAdd").setValue([0] * 8)
-        _matteList_modify(node, keyed_object, True)
+        _modify_mattelist_with_keyer(node, keyed_object, True)
         _update_cryptomatte_gizmo(node, cinfo)  
 
     elif knob.name() == "matteList":
@@ -1178,7 +1178,7 @@ def set_mattelist_from_set(gizmo, matte_items, escape_wildcards=True):
     gizmo.knob("matteList").setValue(matte_list_str)
 
 
-def _matteList_modify(gizmo, name, remove):
+def _modify_mattelist_with_keyer(gizmo, keyed_name, remove):
     def _matteList_set_add(name, matte_names):
         matte_names.add(name)
 
@@ -1200,15 +1200,15 @@ def _matteList_modify(gizmo, name, remove):
             if num_str in matte_names:
                 matte_names.remove(num_str) # the simple case
 
-    if not name or gizmo.knob("stopAutoUpdate").getValue() == 1.0:
+    if not keyed_name or gizmo.knob("stopAutoUpdate").getValue() == 1.0:
         return
 
     matte_names = get_mattelist_as_set(gizmo)
 
     if remove:
-        _matteList_set_remove(name, matte_names)
+        _matteList_set_remove(keyed_name, matte_names)
     else:
-        _matteList_set_add(name, matte_names)
+        _matteList_set_add(keyed_name, matte_names)
 
     set_mattelist_from_set(gizmo, matte_names)
 
