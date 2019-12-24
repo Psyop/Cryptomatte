@@ -647,7 +647,7 @@ def _expand_wildcards(gizmo, cinfo):
     if has_wildcards(gizmo.knob("matteList").getValue()):
         cinfo.parse_manifest()
         if gizmo.knob("expandWildcards").value():
-            set_mattelist_from_set(gizmo, get_mattelist_as_set(gizmo))
+            set_mattelist_from_set(gizmo, get_mattelist_as_set(gizmo, expand_wildcards=True))
 
 
 def _set_ui(gizmo):
@@ -910,7 +910,7 @@ def _is_number(s):
 
 def _set_expression(gizmo, cryptomatte_channels):
     ID_list = []
-    matte_list = get_mattelist_as_set(gizmo, ignore_wildcards=True)
+    matte_list = get_mattelist_as_set(gizmo)
 
     for item in matte_list:
         if item.startswith("<") and item.endswith(">"):
@@ -1039,7 +1039,7 @@ def _get_knob_channel_value(knob, recursive_mode=None):
     if recursive_mode is None:
         id_list = []
     else:
-        matte_list = get_mattelist_as_set(node, ignore_wildcards=True)
+        matte_list = get_mattelist_as_set(node)
         id_list = map(_id_from_matte_name, matte_list)
 
     saw_bg = False
@@ -1154,17 +1154,17 @@ def make_name_wildcard_friendly(name):
     return wildcard_matte
 
 
-def get_mattelist_as_set(gizmo, ignore_wildcards=False):
+def get_mattelist_as_set(gizmo, expand_wildcards=False):
     matte_list = _decode_csv(gizmo.knob("matteList").getValue())
 
     matte_set = set()
     for matte in matte_list:
-        if ignore_wildcards or not has_wildcards(matte):
-            matte_set.add(matte.encode("utf-8") if type(matte) is unicode else str(matte))
-        else:
+        if expand_wildcards and has_wildcards(matte):
             globbed_wildcard_mattes = _glob_wildcard_names(matte)
             for globbed_matte in globbed_wildcard_mattes:
                 matte_set.add(globbed_matte)
+        else:
+            matte_set.add(matte.encode("utf-8") if type(matte) is unicode else str(matte))
 
     return matte_set
 
@@ -1203,7 +1203,7 @@ def _matteList_modify(gizmo, name, remove):
     if not name or gizmo.knob("stopAutoUpdate").getValue() == 1.0:
         return
 
-    matte_names = get_mattelist_as_set(gizmo, ignore_wildcards=True)
+    matte_names = get_mattelist_as_set(gizmo)
 
     if remove:
         _matteList_set_remove(name, matte_names)
