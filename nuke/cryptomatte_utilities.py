@@ -1117,12 +1117,13 @@ def _encode_csv(iterable_items, escape_wildcards=False):
 def _decode_csv(input_str):
     """ Decodes CSVs into a list of strings. """
     import csv
-    reader = csv.reader([input_str], quotechar='"', delimiter=',', escapechar="\\", 
+    csv_str = get_mattelist_wildcard_re.sub(r"\\\\", input_str)
+    reader = csv.reader([csv_str], quotechar='"', delimiter=',', escapechar="\\", 
         doublequote=False, quoting=csv.QUOTE_ALL, skipinitialspace=True);
     result = []
     for row in reader:
         result += row
-    return result
+    return [get_mattelist_wildcard_re.sub(r"", x) for x in result]
 
 
 def _glob_wildcard_names(wildcard_str):
@@ -1156,7 +1157,6 @@ def make_name_wildcard_friendly(name):
 
 def get_mattelist_as_set(gizmo, ignore_wildcards=False):
     matte_list = gizmo.knob("matteList").getValue()
-    matte_list = get_mattelist_wildcard_re.sub(r"\\\\", matte_list)
     matte_list = _decode_csv(matte_list)
 
     matte_set = set()
@@ -1164,11 +1164,9 @@ def get_mattelist_as_set(gizmo, ignore_wildcards=False):
 
     for matte in matte_list:
         if ignore_wildcards or not has_wildcards(matte):
-            matte = get_mattelist_wildcard_re.sub("", matte)
             matte_set.add(matte.encode("utf-8") if type(matte) is unicode else str(matte))
         else:
-            cleaned_matte = get_mattelist_wildcard_re.sub("", matte)
-            globbed_wildcard_mattes = _glob_wildcard_names(cleaned_matte)
+            globbed_wildcard_mattes = _glob_wildcard_names(matte)
             for globbed_matte in globbed_wildcard_mattes:
                 expanded_wildcards.add(globbed_matte)
 
