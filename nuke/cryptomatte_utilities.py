@@ -33,8 +33,8 @@ import fnmatch
 # Wildcard Regex
 has_wildcards_re = re.compile(r"(?<!\\)([*?\[\]])")
 wildcard_friendly_re = re.compile(r"([*?\[\]])")
-get_mattelist_wildcard_re = re.compile(r"(\\)(?=[*?])")
-set_mattelist_wildcard_re = re.compile(r"(\\)(?![\[\]])")
+get_mattelist_wildcard_re = re.compile(r"(\\)(?=[*?])") # TODO: wrap these in a readable function
+set_mattelist_wildcard_re = re.compile(r"(\\)(?![\[\]])") # TODO: wrap these in a readable function
 
 
 def setup_cryptomatte_ui():
@@ -454,7 +454,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
     elif knob.name() == "pickerAdd":
         if node.knob("singleSelection").getValue():
             node.knob("matteList").setValue("")
-        ID_value = _get_knob_channel_value(node.knob("pickerAdd"), recursive_mode="add")
+        ID_value = _get_keyed_ID(node, node.knob("pickerAdd"), remove=False)
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
@@ -464,7 +464,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         _update_cryptomatte_gizmo(node, cinfo)
 
     elif knob.name() == "pickerRemove":
-        ID_value = _get_knob_channel_value(node.knob("pickerRemove"), recursive_mode="remove")
+        ID_value = _get_keyed_ID(node, node.knob("pickerRemove"), remove=True)
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
@@ -1028,23 +1028,19 @@ def _id_from_matte_name(name):
     else:
         return mm3hash_float(name)
 
-def _get_knob_channel_value(knob, recursive_mode=None):
-    bbox = knob.getValue()[4:]
-    node = knob.node()
+
+def _get_keyed_ID(node, keying_knob, remove=False):
+    bbox = keying_knob.getValue()[4:]
     upstream_node = node.input(0)
     if not upstream_node:
         return 0.0
 
-    # TODO: non-recursive mode is no longer a thing
-    if recursive_mode is None:
-        id_list = []
-    else:
-        matte_list = get_mattelist_as_set(node)
-        id_list = map(_id_from_matte_name, matte_list)
+    matte_list = get_mattelist_as_set(node)
+    id_list = map(_id_from_matte_name, matte_list)
 
     saw_bg = False
-    add_mode = recursive_mode == "add"
-    rm_mode = recursive_mode == "remove"
+    add_mode = not remove
+    rm_mode = remove
 
     for layer_knob in GIZMO_CHANNEL_KNOBS:
         layer = node.knob(layer_knob).value()
@@ -1058,19 +1054,15 @@ def _get_knob_channel_value(knob, recursive_mode=None):
             selected_id = upstream_node.sample(id_chan, bbox[0], bbox[1])
             selected_coverage = upstream_node.sample(cov_chan, bbox[0], bbox[1])
 
-            if add_mode or rm_mode:
-                if selected_id == 0.0 or selected_coverage == 0.0:
-                    # Seen bg twice?  Select bg.
-                    if saw_bg:
-                        break
-                    saw_bg = True
-                    continue
+            if selected_id == 0.0 or selected_coverage == 0.0:
+                # Seen bg twice?  Select bg.
+                if saw_bg:
+                    break
+                saw_bg = True
+                continue
 
-                in_list = selected_id in id_list
-                if (add_mode and not in_list) or (rm_mode and in_list):
-                    return selected_id
-            else:
-                # Non-recursive.  Just return the first id found.
+            in_list = selected_id in id_list
+            if (add_mode and not in_list) or (rm_mode and in_list):
                 return selected_id
 
 
