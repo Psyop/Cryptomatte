@@ -873,30 +873,27 @@ class CryptomatteNukeTests(unittest.TestCase):
                              "Wildcard case sensitive matching.")
         self.gizmo.setInput(0, self.read_asset)
 
-    def test_keying_mattes_with_wildcards_in_name_expanded(self):
+    def _test_keying_wildcard_chars(self, expand=True):
+        self.gizmo.setInput(0, self.read_wildcard)
+        self.gizmo.knob("expandWildcards").setValue(expand)
+
         add_asterisk_rect = ("add", (600.0, 150.0))
         rm_asterisk_rect = ("remove", (600.0, 150.0))
         add_question_circle = ("add", (350.0, 150.0))
-        self.gizmo.setInput(0, self.read_wildcard)
-        self.gizmo.knob("expandWildcards").setValue(True)
         self.key_on_image(add_asterisk_rect)
-        self.assertMatteList(r'"has_\*_asterisk"', "Couldn't add")
+        self.assertMatteList('"has_\\*_asterisk"', "Couldn't add")
 
         self.key_on_image(rm_asterisk_rect)
         self.assertMatteList(r'', "Removed")
 
         self.key_on_image(add_question_circle)
-        self.assertMatteList(r'"sphere_\?_2"', "Couldn't add.")
+        self.assertMatteList('"sphere_\\?_2"', "Couldn't add.")
 
-    def test_keying_mattes_with_wildcards_in_name_unexpanded(self):
-        add_asterisk_rect = ("add", (600.0, 150.0))
-        add_question_circle = ("add", (350.0, 150.0))
-        self.gizmo.setInput(0, self.read_wildcard)
-        self.gizmo.knob("expandWildcards").setValue(False)
-        self.key_on_image(add_asterisk_rect)
-        self.key_on_image(add_question_circle)
-        self.assertMatteList(r'"has_[*]_asterisk", "sphere_[?]_2"',
-                             "Wildcard unexpanded.")
+    def test_keying_wildcard_chars_expanded(self):
+        self._test_keying_wildcard_chars(True)
+
+    def test_keying_wildcard_chars_unexpanded(self):
+        self._test_keying_wildcard_chars(False)
 
     #############################################
     # Decryptomatte
