@@ -459,7 +459,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
             return
         cinfo = CryptomatteInfo(node)
         keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
-        keyed_object = make_name_wildcard_friendly(keyed_object)
+        # keyed_object = make_name_wildcard_friendly(keyed_object)
         node.knob("pickerRemove").setValue([0] * 8)
         _matteList_modify(node, keyed_object, False)
         _update_cryptomatte_gizmo(node, cinfo)
@@ -470,6 +470,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
             return
         cinfo = CryptomatteInfo(node)
         keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
+        # keyed_object = make_name_wildcard_friendly(keyed_object)
         node.knob("pickerAdd").setValue([0] * 8)
         _matteList_modify(node, keyed_object, True)
         _update_cryptomatte_gizmo(node, cinfo)  
@@ -1210,8 +1211,10 @@ def _matteList_modify(gizmo, name, remove):
     matte_names = get_mattelist_as_set(gizmo, ignore_wildcards=True)
 
     if remove:
+        print "removing", name, "from", matte_names
         _matteList_set_remove(name, matte_names)
     else:
+        print "adding", name, "to", matte_names
         _matteList_set_add(name, matte_names)
 
     expand = gizmo.knob("expandWildcards").value()
