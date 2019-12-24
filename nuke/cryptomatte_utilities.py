@@ -1155,21 +1155,18 @@ def make_name_wildcard_friendly(name):
 
 
 def get_mattelist_as_set(gizmo, ignore_wildcards=False):
-    matte_list = gizmo.knob("matteList").getValue()
-    matte_list = _decode_csv(matte_list)
+    matte_list = _decode_csv(gizmo.knob("matteList").getValue())
 
     matte_set = set()
-    expanded_wildcards = set()
-
     for matte in matte_list:
         if ignore_wildcards or not has_wildcards(matte):
             matte_set.add(matte.encode("utf-8") if type(matte) is unicode else str(matte))
         else:
             globbed_wildcard_mattes = _glob_wildcard_names(matte)
             for globbed_matte in globbed_wildcard_mattes:
-                expanded_wildcards.add(globbed_matte)
+                matte_set.add(globbed_matte)
 
-    return matte_set.union(expanded_wildcards)
+    return matte_set
 
 
 def set_mattelist_from_set(gizmo, matte_items, escape_wildcards=True):
