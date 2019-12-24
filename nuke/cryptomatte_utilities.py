@@ -49,12 +49,6 @@ def setup_cryptomatte_ui():
 def setup_cryptomatte():
     nuke.addKnobChanged(lambda: cryptomatte_knob_changed_event(
         nuke.thisNode(), nuke.thisKnob()), nodeClass='Cryptomatte')
-    nuke.addUpdateUI(lambda: cryptomatte_ui_update_event(
-        nuke.thisNode(), nuke.thisKnob()), nodeClass='Cryptomatte')
-    nuke.addBeforeRender(lambda: cryptomatte_before_render_event(
-        nuke.thisNode()))
-    nuke.addAfterRender(lambda: cryptomatte_after_render_event(
-        nuke.thisNode()))
     nuke.addKnobChanged(lambda: encryptomatte_knob_changed_event(
         nuke.thisNode(), nuke.thisKnob()), nodeClass='Encryptomatte')
     nuke.addOnCreate(lambda: encryptomatte_on_create_event(
@@ -300,32 +294,7 @@ class CryptomatteInfo(object):
         import json
         if 'manifest' not in self.cryptomattes[self.selection]:
             manif_key = self.get_selection_metadata_key('manifest')
-            current_frame = self.nuke_node.knob('frame').value()
-            self.cryptomattes[self.selection]['manifest'] = self.nuke_node.metadata(manif_key,
-                                                                                    current_frame)
-        try:
-            return json.loads(self.cryptomattes[self.selection]['manifest'])
-        except ValueError:
-            # Malformed JSON
-            return {}
-
-    def load_all_metadata(self):
-        """Gets the metadata for the selected key for the entire frange.
-        """
-        import ast
-        import json
-        if 'manifest' not in self.cryptomattes[self.selection]:
-            manif_key = self.get_selection_metadata_key('manifest')
-            first_frame = self.nuke_node.firstFrame()
-            last_frame = self.nuke_node.lastFrame()
-            complete_frange_metadata = {}
-            for frame in range(first_frame, last_frame+1):
-                metadata = self.nuke_node.metadata(manif_key,
-                                                   frame)
-                metadata_dict = ast.literal_eval(metadata)
-                complete_frange_metadata.update(metadata_dict)
-            self.cryptomattes[self.selection]['manifest'] = json.dumps(complete_frange_metadata)
-            self.nuke_node.knob('allManifestMetadata').setValue(self.cryptomattes[self.selection]['manifest'])
+            self.cryptomattes[self.selection]['manifest'] = self.nuke_node.metadata(manif_key)
         try:
             return json.loads(self.cryptomattes[self.selection]['manifest'])
         except ValueError:
@@ -360,14 +329,7 @@ class CryptomatteInfo(object):
             else:
                 print "Cryptomatte: Unable to find manifest file: ", manif_file
         else:
-            all_manifest_metadata = (
-                self.nuke_node.knob('allManifestMetadata').value() if 
-                self.nuke_node.Class() == "Cryptomatte" else {})
-
-            if all_manifest_metadata:
-                manifest = json.loads(all_manifest_metadata)
-            else:
-                manifest = self.lazy_load_manifest()
+            manifest = self.lazy_load_manifest()
 
         from_names = {}
         from_ids = {}
@@ -465,62 +427,6 @@ def encryptomatte_create_gizmo():
 #############################################
 # Public - cryptomatte Events
 #############################################
-def cryptomatte_ui_update_event(node=None, knob=None):
-    """ Shows the controlPanel if it's hidden so that the knobChanged callbacks
-    will run.
-    """
-    if not node.shown() and has_wildcards(node.knob("matteList").getValue()):
-        node.showControlPanel()
-        cinfo = CryptomatteInfo(node)
-        _update_cryptomatte_gizmo(node, cinfo, True)
-
-
-def cryptomatte_before_render_event(write_node):
-    """ If there are wildcards in the matte list, load all of the metadata for
-    the frange and fully expand the wildcards so that it will render out as
-    expected. The original input is saved onto the wildcardMatteList knob.
-    """
-    crypto_node_list = get_dependent_cryptomatte_nodes(write_node)
-    for node in crypto_node_list:
-        matte_list = node.knob("matteList").getValue()
-        if has_wildcards(matte_list):
-            node.knob("wildcardMatteList").setValue(matte_list)
-
-            cinfo = CryptomatteInfo(node)
-            if not node.knob('allManifestMetadata').getValue():
-                cinfo.load_all_metadata()
-            node.knob("expandWildcards").setValue(True)
-            _update_cryptomatte_gizmo(node, cinfo)
-
-
-def cryptomatte_after_render_event(write_node):
-    """ If the matte list had wildcards that were expanded pre-render, changes
-    the matte list back to the original input.
-    """
-    crypto_node_set = get_dependent_cryptomatte_nodes(write_node)
-    for node in crypto_node_set:
-        wildcard_matte_list = node.knob("wildcardMatteList").getValue()
-        if wildcard_matte_list:
-            node.knob("expandWildcards").setValue(False)
-            node.knob("matteList").setValue(wildcard_matte_list)
-            node.knob("wildcardMatteList").setValue("")
-
-
-def get_dependent_cryptomatte_nodes(node):
-    """ Gets all dependent cryptomatte nodes.
-    """
-    mask = nuke.INPUTS | nuke.HIDDEN_INPUTS
-    dependent_nodes = node.dependencies(mask)
-    node_set = set()
-    while dependent_nodes:
-        node = dependent_nodes.pop()
-        if node in node_set:
-            continue
-        if node.Class() == 'Cryptomatte':
-            node_set.add(node)
-        dependent_nodes.extend(node.dependencies(mask))
-    return node_set
-
 
 def cryptomatte_knob_changed_event(node = None, knob = None):
     if _limbo_state(node):
@@ -529,8 +435,6 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
     if knob.name() == "inputChange":
         if unsafe_to_do_inputChange(node):
             return # see comment in #unsafe_to_do_inputChange.
-        node.knob('wildcardMatteList').setValue('')
-        node.knob('allManifestMetadata').setValue('')
         cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_cryptomatte_gizmo(node, cinfo)
     elif knob.name() in ["cryptoLayer", "cryptoLayerLock"]:
@@ -541,8 +445,6 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
             prev_crypto_layer = node.knob('cryptoLayer').value()
             new_crypto_layer = knob.values()[int(knob.getValue())]
             if prev_crypto_layer != new_crypto_layer:
-                node.knob('wildcardMatteList').setValue('')
-                node.knob('allManifestMetadata').setValue('')
                 node.knob('cryptoLayer').setValue(new_crypto_layer)
                 cinfo = CryptomatteInfo(node)
                 _update_cryptomatte_gizmo(node, cinfo)
@@ -589,11 +491,6 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
     elif knob.name() == "expandWildcards":
         cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo, True)
-
-    elif knob.name() == "frame":
-        if has_wildcards(node.knob("matteList").getValue()):
-            cinfo = CryptomatteInfo(node)
-            _update_cryptomatte_gizmo(node, cinfo, True)
 
 
 def encryptomatte_knob_changed_event(node=None, knob=None):
@@ -746,19 +643,12 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     _set_crypto_layer_choice(gizmo, cinfo)
 
 
-
-
 def _expand_wildcards(gizmo, cinfo):
-    """ Does wildcard resolution, both expanded and non-expanded.
-    In case of non-expanded, if wildcards are present, sets up time expression.
-    Updates manifest in case of any wild cards.
-    """
+    """ Expands the wildcards in the matte list."""
     if has_wildcards(gizmo.knob("matteList").getValue()):
         cinfo.parse_manifest()
         if gizmo.knob("expandWildcards").value():
-            matte_set = get_mattelist_as_set(gizmo)
-            set_mattelist_from_set(gizmo, matte_set)
-
+            set_mattelist_from_set(gizmo, get_mattelist_as_set(gizmo))
 
 
 def _set_ui(gizmo):
@@ -1021,10 +911,7 @@ def _is_number(s):
 
 def _set_expression(gizmo, cryptomatte_channels):
     ID_list = []
-    if gizmo.knob('expandWildcards').value():
-        matte_list = get_mattelist_as_set(gizmo, ignore_wildcards=True)
-    else:
-        matte_list = get_mattelist_as_set(gizmo)
+    matte_list = get_mattelist_as_set(gizmo, ignore_wildcards=True)
 
     for item in matte_list:
         if item.startswith("<") and item.endswith(">"):
@@ -1149,13 +1036,11 @@ def _get_knob_channel_value(knob, recursive_mode=None):
     if not upstream_node:
         return 0.0
 
+    # TODO: non-recursive mode is no longer a thing
     if recursive_mode is None:
         id_list = []
     else:
-        if node.knob('expandWildcards').value():
-            matte_list = get_mattelist_as_set(node, ignore_wildcards=True)
-        else:
-            matte_list = get_mattelist_as_set(node)
+        matte_list = get_mattelist_as_set(node, ignore_wildcards=True)
         id_list = map(_id_from_matte_name, matte_list)
 
     saw_bg = False
@@ -1266,37 +1151,28 @@ def make_name_wildcard_friendly(name):
     containing *, ?, [, ] special characters.
     """
     wildcard_matte = wildcard_friendly_re.sub("[\g<1>]", name)
-
     return wildcard_matte
 
 
-def get_mattelist_as_set(gizmo, split_wildcards=False, ignore_wildcards=False):
+def get_mattelist_as_set(gizmo, ignore_wildcards=False):
     matte_list = gizmo.knob("matteList").getValue()
     matte_list = get_mattelist_wildcard_re.sub(r"\\\\", matte_list)
     matte_list = _decode_csv(matte_list)
 
     matte_set = set()
-    wildcard_matte_dict = {'mattes': {},
-                           'wildcards': {}}
-    wildcards = set()
+    expanded_wildcards = set()
 
     for matte in matte_list:
-        if has_wildcards(matte) and not ignore_wildcards:
-            matte = get_mattelist_wildcard_re.sub("", matte)
-            wildcards.add(matte)
-            globbed_wildcard_mattes = _glob_wildcard_names(matte)
-            wildcard_matte_dict['wildcards'][matte] = globbed_wildcard_mattes
-            for globbed_matte in globbed_wildcard_mattes:
-                wildcard_matte_dict['mattes'][globbed_matte] = matte
-        else:
+        if ignore_wildcards or not has_wildcards(matte):
             matte = get_mattelist_wildcard_re.sub("", matte)
             matte_set.add(matte.encode("utf-8") if type(matte) is unicode else str(matte))
+        else:
+            cleaned_matte = get_mattelist_wildcard_re.sub("", matte)
+            globbed_wildcard_mattes = _glob_wildcard_names(cleaned_matte)
+            for globbed_matte in globbed_wildcard_mattes:
+                expanded_wildcards.add(globbed_matte)
 
-    if split_wildcards:
-        return matte_set, wildcard_matte_dict, wildcards
-    else:
-        wildcard_mattes = [matte for matte in wildcard_matte_dict['mattes'].keys()]
-        return matte_set.union(set(wildcard_mattes))
+    return matte_set.union(expanded_wildcards)
 
 
 def set_mattelist_from_set(gizmo, matte_items, escape_wildcards=True):
@@ -1307,15 +1183,14 @@ def set_mattelist_from_set(gizmo, matte_items, escape_wildcards=True):
     matte_list_str = set_mattelist_wildcard_re.sub(r"\\\\", matte_list_str)
     gizmo.knob("matteList").setValue(matte_list_str)
 
+
 def _matteList_modify(gizmo, name, remove):
     def _matteList_set_add(name, matte_names):
         matte_names.add(name)
 
-    def _matteList_set_remove(name, matte_names, wildcard_mattes):
+    def _matteList_set_remove(name, matte_names):
         if name in matte_names:
             matte_names.remove(name) # the simple case
-        elif name in wildcard_mattes:
-            wildcard_mattes.remove(name)
         elif name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
             # maybe it was selected by name before, but is being removed by number
             # (manifest was working, now it doesn't)
@@ -1334,38 +1209,18 @@ def _matteList_modify(gizmo, name, remove):
     if not name or gizmo.knob("stopAutoUpdate").getValue() == 1.0:
         return
 
-    force_expand = False
-    expand_wildcard_matte = ""
-    if gizmo.knob("expandWildcards").value():
-        matte_names, wildcard_mattes_dict, wildcards = get_mattelist_as_set(gizmo,
-                                                                            split_wildcards=True,
-                                                                            ignore_wildcards=True)
-    else:
-        matte_names, wildcard_mattes_dict, wildcards = get_mattelist_as_set(gizmo,
-                                                                            split_wildcards=True)
+    matte_names = get_mattelist_as_set(gizmo, ignore_wildcards=True)
+
     if remove:
-        wildcard_mattes = wildcard_mattes_dict['mattes'].keys()
-        if name in wildcard_mattes_dict['mattes'].keys():
-            force_expand = True
-            expand_wildcard_matte = wildcard_mattes_dict['mattes'][name]
-            wildcard_mattes_dict['mattes'].pop(name)
-            wildcard_mattes = wildcard_mattes_dict['wildcards'][expand_wildcard_matte]
-        _matteList_set_remove(name, matte_names, wildcard_mattes)
+        _matteList_set_remove(name, matte_names)
     else:
         _matteList_set_add(name, matte_names)
 
-    if gizmo.knob("expandWildcards").value() or force_expand:
-        if expand_wildcard_matte:
-            wildcards.remove(expand_wildcard_matte)
-            wildcard_mattes_dict['wildcards'][expand_wildcard_matte].update(wildcard_mattes)
-            matte_names.update(wildcards)
-            matte_names.update(wildcard_mattes_dict['wildcards'][expand_wildcard_matte])
-            set_mattelist_from_set(gizmo, matte_names, escape_wildcards=False)
-        else:
-            matte_names.update(set(wildcard_mattes_dict['mattes'].keys()))
-            set_mattelist_from_set(gizmo, matte_names)
+    expand = gizmo.knob("expandWildcards").value()
+    if expand:
+        set_mattelist_from_set(gizmo, matte_names)
     else:
-        set_mattelist_from_set(gizmo, matte_names.union(wildcards), escape_wildcards=False)
+        set_mattelist_from_set(gizmo, matte_names, escape_wildcards=False)
 
 #############################################
 # Public - Decryption

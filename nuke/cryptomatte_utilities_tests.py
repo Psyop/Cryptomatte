@@ -857,8 +857,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.key_on_image(rm_grass)
         self.assertMatteList("*flower*", "Wildcard not expanded.")
         self.key_on_image(rm_flowerB)
-        self.assertMatteList("flowerA_petal, flowerStem_mat", 
-                             "Wildcard forcibly expanded.")
+        self.assertMatteList("*flower*", "No change should happen.")
 
     def test_wildcard_case_sensitive_matching(self):
         wildcard_uppercase_str = "*Rect*"
@@ -898,24 +897,6 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.key_on_image(add_question_circle)
         self.assertMatteList(r'"has_[*]_asterisk", "sphere_[?]_2"',
                              "Wildcard unexpanded.")
-
-    def test_wildcard_selection_update_each_frame(self):
-        import nuke
-        first_id, second_id = "-8.36323478609e-35", "-2.14896060135e+17"
-        mattelist_str = "*sphere*"
-        self.gizmo.setInput(0, self.read_wildcard)
-        self.gizmo.knob("expandWildcards").setValue(False)
-        self.gizmo.knob("matteList").setValue(mattelist_str)
-        nuke.executeInMainThread(self.gizmo.knob('frame').setValue, args=1)
-
-        exp = self.gizmo.knob("expression").getValue()
-        self.assertIn(first_id, exp, "Frame changed to 0001.\n")
-        self.assertNotIn(second_id, exp, "Frame changed to 0001.\n")
-
-        nuke.executeInMainThread(self.gizmo.knob('frame').setValue, args=2)
-        exp = self.gizmo.knob("expression").getValue()
-        self.assertIn(second_id, exp, "Frame changed to 0002.\n")
-        self.assertNotIn(first_id, exp, "Frame changed to 0002.\n")
 
     #############################################
     # Decryptomatte

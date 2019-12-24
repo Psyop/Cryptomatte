@@ -36,7 +36,7 @@ Gizmo {
  addUserKnob {22 forceUpdate l "Force Update" t "Updates the Gizmo based on which channels are available in the input. \n\nThis happens automatically when input changes, when loading the nuke script, or when a new gizmo is created. This is how it deals with differently named channels in the different Cryptomatte layers, and different depths that it's possible to render at. " -STARTLINE T "try: \n   import cryptomatte_utilities as cu\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())"}
  addUserKnob {6 stopAutoUpdate l "Stop Auto Update" t "Stops the automatic update of this copy of the Gizmo." -STARTLINE}
  addUserKnob {6 expandWildcards l "Expand Wildcards" t "Expands wildcard entries in the Matte List knob. \nIf disabled, the cryptomatte IDs will be recomputed every frame dynamically." -STARTLINE}
- expandWildcards true
+ expandWildcards false
 
  addUserKnob {26 ""}
  addUserKnob {4 cryptoLayerChoice l "Layer Selection" t "Choose which Cryptomatte layer to key." M {"                               " ""} +DO_NOT_WRITE}
@@ -103,8 +103,6 @@ except Exception, err:
 "}
  addUserKnob {3 frame l INVISIBLE +INVISIBLE}
  addUserKnob {1 manifestKey l INVISIBLE +INVISIBLE}
- addUserKnob {1 wildcardMatteList l INVISIBLE +INVISIBLE}
- addUserKnob {1 allManifestMetadata l INVISIBLE +INVISIBLE}
 
  addUserKnob {41 previewExpression0 l INVISIBLE +INVISIBLE T Expression_preview.expr0}
  addUserKnob {41 previewExpression1 l INVISIBLE +INVISIBLE T Expression_preview.expr1}
