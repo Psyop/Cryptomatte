@@ -54,6 +54,32 @@ Advanced Tab:
 * Unload Manifest: Generates a keyer for every name in the manifest.
 * Force Update All Gizmos in Script: Same as "Force Update", but runs the force update functionality on all Gizmos in the script.
 
+#### Wildcards
+
+Simple cases:
+
+- To use a wildcard expression, enable `Use Wildcards` and add an expression to the matte list. This uses *fnmatch* style matching, which has the following features. 
+- Wildcards (`*`) 
+  - `flower*` matches `flower1`,  `flower3_petal`, `flower_stem`, but not `red_flower`. 
+  - `flower*petal` matches `flower3_petal` and `flower_rose_petal`, but not `flower_stem`.
+- Numeric wildcards (`?`)
+  - `flower?` matches `flower25` but not `flower25_petal2`. 
+  - `flower?_petal?` matches `flower25_petal2` 
+
+Finer points (advanced):
+
+- If `Use Wildcards` is not enabled, the name `*sterisk` is used as the literal string. This is however somewhat like having an unexploded bomb in your matte list - as soon as you enable wildcards it'll expand. Keying an object with an `*` in the name will add escape characters to the front, to ensure this doesn't happen. 
+- For example, an object is literally named  `*sterisk`, where some smartass put an asterisk into the name itself.
+ - `\\*sterisk` means the literal name `*sterisk`. The escape characters (`\\`) preceding the `*` mean it is not an fnmatch expression, and will not change when enabling wild cards. 
+ - Keying an object named `*sterisk` will add `\\*sterisk` to your matte list, so that when wildcards are enabled it will not change. 
+- It's possible to mixing wildcards and literal characters, like so: 
+ - `\\*sterisk*` will match `*sterisk1`, `*sterisk2`,  `*sterisk3` and so on at the same time. 
+-  What if my name contains square brackets? (`Brack[et]`)
+ - This is an even specialer case, as Nuke will match the square brackets themselves. Those require a single escape character. In the matte list this will appear as `Brack\[et\]`. 
+ - Brackets are also used by fnmatch. In fnmatch, `[*]sterisk` is a way of writing a literal asterisk and will match only `*sterisk`. 
+ - Using this mechanism is too complicated due to multiple levels of escaping and is not recommended. Instead, use `\\*sterisk` in the matte list to signify a literal asterisk. 
+
+
 ### Encryptomatte Gizmo
 
 ![Encryptomatte Gizmo Properties in Nuke](encryptomatteProperties.png)
