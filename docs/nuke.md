@@ -36,6 +36,7 @@ Psyop Cryptomatte Tab:
   * "None" allows viewing of input RGBA without borders, but with a visible highlight on selected areas
 * Matte Only: Also write the matte to RGBA channels
 * Single Selection: Changes the gizmo behavior so that only one object may be selected at a time.
+* Expand Wildcards: Expands wildcards in names typed in the matte list.
 * Remove Channels: Removes the Cryptomatte channels so that downstream of the gizmo, the additional channels are not present.
 * Matte Output: Which channel the extracted matte is written to.
 * Unpremultiply: Unpremults the extracted matte against by the alpha.

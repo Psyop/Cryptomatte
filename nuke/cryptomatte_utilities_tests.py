@@ -832,17 +832,17 @@ class CryptomatteNukeTests(unittest.TestCase):
 
     def test_wildcard_matte_list_expansion(self):
         wildcard_str = "*flower*"
-        self.gizmo.knob("expandWildcards").setValue(True)
+        self.gizmo.knob("useWildcards").setValue(True)
         self.gizmo.knob("matteList").setValue(wildcard_str)
         self.assertMatteList("flowerA, flowerB, heroflower", "Wildcard expanded.")
 
-        self.gizmo.knob("expandWildcards").setValue(False)
+        self.gizmo.knob("useWildcards").setValue(False)
         self.gizmo.knob("matteList").setValue(wildcard_str)
         self.assertMatteList(wildcard_str, "Wildcard not expanded.")
 
     def test_picker_add_to_wildcard_matte_list(self):
         wildcard_str = "*flower*"
-        self.gizmo.knob("expandWildcards").setValue(False)
+        self.gizmo.knob("useWildcards").setValue(False)
         self.gizmo.knob("matteList").setValue(wildcard_str)
         self.key_on_image(self.bunny_pkr)
         self.assertMatteList('"\\*flower\\*", bunny', "Wildcard not expanded.")
@@ -852,7 +852,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         rm_grass = ("remove", (820.0, 68.0))
         mattelist_str = "*flower*, grass_mat"
         self.gizmo.setInput(0, self.read_material)
-        self.gizmo.knob("expandWildcards").setValue(False)
+        self.gizmo.knob("useWildcards").setValue(False)
         self.gizmo.knob("matteList").setValue(mattelist_str)
         self.key_on_image(rm_grass)
         self.assertMatteList('"\\*flower\\*"', "Wildcard not expanded.")
@@ -863,7 +863,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         wildcard_uppercase_str = "*Rect*"
         wildcard_lowercase_str = "*rect*"
         self.gizmo.setInput(0, self.read_wildcard)
-        self.gizmo.knob("expandWildcards").setValue(True)
+        self.gizmo.knob("useWildcards").setValue(True)
         self.gizmo.knob("matteList").setValue(wildcard_uppercase_str)
         self.assertMatteList(r'"Rect_[]_right", "Rect_]_left"',
                              "Wildcard case sensitive matching.")
@@ -875,7 +875,7 @@ class CryptomatteNukeTests(unittest.TestCase):
 
     def _test_keying_wildcard_chars(self, expand=True):
         self.gizmo.setInput(0, self.read_wildcard)
-        self.gizmo.knob("expandWildcards").setValue(expand)
+        self.gizmo.knob("useWildcards").setValue(expand)
 
         add_asterisk_rect = ("add", (600.0, 150.0))
         rm_asterisk_rect = ("remove", (600.0, 150.0))

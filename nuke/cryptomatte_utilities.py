@@ -32,10 +32,8 @@ import fnmatch
 
 # Wildcard Regex
 has_wildcards_re = re.compile(r"(?<!\\)([*?\[\]])")
-wildcard_friendly_re = re.compile(r"([*?\[\]])")
 get_mattelist_wildcard_re = re.compile(r"(\\)(?=[*?])") # TODO: wrap these in a readable function
 set_mattelist_wildcard_re = re.compile(r"(\\)(?![\[\]])") # TODO: wrap these in a readable function
-
 
 def setup_cryptomatte_ui():
     if nuke.GUI:
@@ -487,7 +485,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_cryptomatte_gizmo(node, cinfo, True)
 
-    elif knob.name() == "expandWildcards":
+    elif knob.name() == "useWildcards":
         cinfo = CryptomatteInfo(node)
         _update_cryptomatte_gizmo(node, cinfo, True)
 
@@ -646,7 +644,7 @@ def _expand_wildcards(gizmo, cinfo):
     """ Expands the wildcards in the matte list."""
     if has_wildcards(gizmo.knob("matteList").getValue()):
         cinfo.parse_manifest()
-        if gizmo.knob("expandWildcards").value():
+        if gizmo.knob("useWildcards").value():
             set_mattelist_from_set(gizmo, get_mattelist_as_set(gizmo, expand_wildcards=True))
 
 
@@ -1128,22 +1126,19 @@ def _glob_wildcard_names(wildcard_str):
     return match_set
 
 
-def has_wildcards(name):
+def has_wildcards(input_str):
     """ Checks for wildcards in string that aren't escaped.
     Returns True if a wildcard is found, else False.
     """
-    if has_wildcards_re.search(name):
+    if has_wildcards_re.search(input_str):
         return True
     else:
         return False
 
 
-def make_name_wildcard_friendly(name):
-    """ Returns fnmatch friendly str to allow for mattes with names
-    containing *, ?, [, ] special characters.
-    """
-    wildcard_matte = wildcard_friendly_re.sub("[\g<1>]", name)
-    return wildcard_matte
+def double_escapes_except_brackets(input_str):
+    set_mattelist_wildcard_re = re.compile(r"(\\)(?![\[\]])") # TODO: wrap these in a readable function
+    return set_mattelist_wildcard_re.sub(r"\\\\", input_str)
 
 
 def get_mattelist_as_set(gizmo, expand_wildcards=False):
@@ -1166,7 +1161,7 @@ def set_mattelist_from_set(gizmo, matte_items, escape_wildcards=True):
     matte_names_list = list(matte_items)
     matte_names_list.sort(key=lambda x: x.lower())
     matte_list_str = _encode_csv(matte_names_list, escape_wildcards=escape_wildcards)
-    matte_list_str = set_mattelist_wildcard_re.sub(r"\\\\", matte_list_str)
+    matte_list_str = double_escapes_except_brackets(matte_list_str)
     gizmo.knob("matteList").setValue(matte_list_str)
 
 
