@@ -1064,15 +1064,11 @@ class MatteList(object):
 
         if type(initializer) in (str, unicode):
             self.mattelist_str = initializer
-            print "starting mattelist", initializer
         else:
             gizmo = initializer
             self.mattelist_str = gizmo.knob("matteList").getValue()
-            print "starting mattelist", gizmo.knob("matteList").getValue()
 
         assert type(self.mattes) is set
-        print "set", self.mattes
-        print "new mattelist", self.mattelist_str
 
     def add(self, name):
         self.mattes.add(name)
@@ -1137,6 +1133,7 @@ class MatteList(object):
 
     @mattelist_str.setter
     def mattelist_str(self, value):
+        print "%s decodes to %s" % (value, self._decode_csv(value))
         self.mattes = set(self._decode_csv(value))
         self._sanitize()
 
@@ -1153,6 +1150,7 @@ class MatteList(object):
             matte.encode("utf-8") if type(matte) is unicode else str(matte) 
             for matte in self.mattes
         )
+        print "sanitary", self.mattes
 
     def _glob_wildcard_names(self, raw_str, manifest):
         """ Returns a set of matches from the wildcard string."""
