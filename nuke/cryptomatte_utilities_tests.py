@@ -141,12 +141,45 @@ class CSVParsingNuke(unittest.TestCase):
     def test_big_csv_through_gizmo(self):
         self.round_trip_through_gizmo(CSVParsing.csv_str, "Round trip failed")
 
+    def test_has_wildcards(self):
+        import cryptomatte_utilities as cu
+        self.assertFalse(cu._has_wildcards("test_str"))
+        self.assertFalse(cu._has_wildcards("test_\\*"))
+        self.assertFalse(cu._has_wildcards("test_\\?"))
+        self.assertFalse(cu._has_wildcards("\\[\\]"))
+        self.assertFalse(cu._has_wildcards("\\["))
+        self.assertFalse(cu._has_wildcards("\\]"))
+
+        self.assertTrue(cu._has_wildcards("test_str*"))
+        self.assertTrue(cu._has_wildcards("test_str?"))
+        self.assertTrue(cu._has_wildcards("test_[*]"))
+        self.assertTrue(cu._has_wildcards("test_[*]"))
+        self.assertTrue(cu._has_wildcards("*"))
+        self.assertTrue(cu._has_wildcards("?"))
+        self.assertTrue(cu._has_wildcards("[]"))
+
+    def test_double_escapes_except_brackets(self):
+        import cryptomatte_utilities as cu
+
+        escaping_modifications = [
+            (r"back\slash", r"back\\slash"),
+            (r"back\slash_brack\[ets\]", r"back\\slash_brack\[ets\]"),
+            (r"brack\[ets\]", r"brack\[ets\]"),
+            (r"brack\\[ets\\]", r"brack\\\[ets\\\]"),
+            (r"brack\\\[ets\\\]", r"brack\\\\\[ets\\\\\]"),
+        ]
+
+        for raw, processed in escaping_modifications:
+            self.assertEqual(cu._double_escapes_except_brackets(raw), processed)
+
+
+
 
 class CryptomatteNodePasting(unittest.TestCase):
     """
     This one takes some explaining. 
 
-    In Nuke 8, 9, 10, it's been discovered that when copy and pasting certain nodes,
+    In Nuke 8, 9, 10, 11, 12 it's been discovered that when copy and pasting certain nodes,
     or when opening certain scripts the inputchanged knob change callback breaks the script. 
 
     What actually happens is the call to metadata() breaks it. 

@@ -24,16 +24,11 @@ GIZMO_ADD_CHANNEL_KNOBS = [
 CRYPTO_METADATA_LEGAL_PREFIX = ["exr/cryptomatte/", "cryptomatte/"]
 CRYPTO_METADATA_DEFAULT_PREFIX = CRYPTO_METADATA_LEGAL_PREFIX[1]
 
-
+import re
+import csv
 import nuke
 import struct
-import re
 import fnmatch
-
-# Wildcard Regex
-has_wildcards_re = re.compile(r"(?<!\\)([*?\[\]])")
-get_mattelist_wildcard_re = re.compile(r"(\\)(?=[*?])") # TODO: wrap these in a readable function
-set_mattelist_wildcard_re = re.compile(r"(\\)(?![\[\]])") # TODO: wrap these in a readable function
 
 def setup_cryptomatte_ui():
     if nuke.GUI:
@@ -642,7 +637,7 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
 
 def _expand_wildcards(gizmo, cinfo):
     """ Expands the wildcards in the matte list."""
-    if has_wildcards(gizmo.knob("matteList").getValue()):
+    if _has_wildcards(gizmo.knob("matteList").getValue()):
         cinfo.parse_manifest()
         if gizmo.knob("useWildcards").value():
             set_mattelist_from_set(gizmo, get_mattelist_as_set(gizmo, expand_wildcards=True))
@@ -1068,22 +1063,32 @@ def _get_keyed_ID(node, keying_knob, remove=False):
 # Utils - Comma seperated list processing
 #############################################
 
+r"""
+If your scene contains an object named "chars \ aste[r*sk]"... 
 
-def _encode_csv(iterable_items, escape_wildcards=False):
+Nomenclature:
+    
+    raw_str: The name we will hash or expand. 
+        chars \ aste[r*sk]
+    mattelist_str: The string we'll store in the matte list
+        "chars \\ aste\[r\\*sk\]"
+"""
+
+def _encode_csv(raw_strs, escape_wildcards=False):
     """
     Encodes CSVs with special characters escaped, and surrounded in quotes
     if it contains any of these or spaces, with a space after each comma. 
     """
     cleaned_items = []
     need_escape_chars = '[]"\\'
-    need_space_chars = ' ,'
+    need_quotes_characters = ' ,'
 
     if escape_wildcards:
         need_escape_chars += '*?'
 
-    for item in iterable_items:
+    for item in raw_strs:
         need_escape = any(x in item for x in need_escape_chars)
-        need_quotes = need_escape or any(x in item for x in need_space_chars)
+        need_quotes = need_escape or any(x in item for x in need_quotes_characters)
 
         cleaned = None
         if need_escape:
@@ -1099,46 +1104,53 @@ def _encode_csv(iterable_items, escape_wildcards=False):
             cleaned_items.append('"%s"'%cleaned)
         else:
             cleaned_items.append(cleaned)
-    result = ", ".join(cleaned_items)
-    return result
+    return ", ".join(cleaned_items)
 
 
-def _decode_csv(input_str):
+def _decode_csv(mattelist_str):
     """ Decodes CSVs into a list of strings. """
-    import csv
-    csv_str = get_mattelist_wildcard_re.sub(r"\\\\", input_str)
-    reader = csv.reader([csv_str], quotechar='"', delimiter=',', escapechar="\\", 
+    reader = csv.reader([mattelist_str], quotechar='"', delimiter=',', escapechar="\\", 
         doublequote=False, quoting=csv.QUOTE_ALL, skipinitialspace=True);
     result = []
     for row in reader:
         result += row
-    return [get_mattelist_wildcard_re.sub(r"", x) for x in result]
+    return result
 
 
-def _glob_wildcard_names(wildcard_str):
+def _glob_wildcard_names(raw_str):
     """ Returns a set of matches from the wildcard string.
     """
     match_set = set()
     for manf in g_cryptomatte_manf_from_names.keys():
-        if fnmatch.fnmatchcase(manf, wildcard_str):
+        if fnmatch.fnmatchcase(manf, raw_str):
             manf = manf.encode("utf-8") if type(manf) is unicode else str(manf)
             match_set.add(manf)
     return match_set
 
 
-def has_wildcards(input_str):
+def _has_wildcards(raw_str):
     """ Checks for wildcards in string that aren't escaped.
     Returns True if a wildcard is found, else False.
     """
-    if has_wildcards_re.search(input_str):
+    has_wildcards_re = re.compile(r"(?<!\\)([*?\[\]])")
+    if has_wildcards_re.search(raw_str):
         return True
     else:
         return False
 
 
-def double_escapes_except_brackets(input_str):
-    set_mattelist_wildcard_re = re.compile(r"(\\)(?![\[\]])") # TODO: wrap these in a readable function
-    return set_mattelist_wildcard_re.sub(r"\\\\", input_str)
+def _double_escapes_except_brackets(mattelist_str):
+    r"""To put strings into a matte list, we need to double escapes characters. 
+
+    The exception to this are square brackets, which need a single escape 
+    to not be consumed by Nuke itself.
+
+    "back\slash" -> "back\\slash"
+    "brack\[ets\]" -> "brack\[ets\]"
+    "back\slash.brack\[ets\]" -> "back\\slash.brack\[ets\]"
+    """
+    bracket_esc_processing_re = re.compile(r"(\\)(?![\[\]])")
+    return bracket_esc_processing_re.sub(r"\\\\", mattelist_str)
 
 
 def get_mattelist_as_set(gizmo, expand_wildcards=False):
@@ -1146,7 +1158,7 @@ def get_mattelist_as_set(gizmo, expand_wildcards=False):
 
     matte_set = set()
     for matte in matte_list:
-        if expand_wildcards and has_wildcards(matte):
+        if expand_wildcards and _has_wildcards(matte):
             globbed_wildcard_mattes = _glob_wildcard_names(matte)
             for globbed_matte in globbed_wildcard_mattes:
                 matte_set.add(globbed_matte)
@@ -1156,12 +1168,12 @@ def get_mattelist_as_set(gizmo, expand_wildcards=False):
     return matte_set
 
 
-def set_mattelist_from_set(gizmo, matte_items, escape_wildcards=True):
+def set_mattelist_from_set(gizmo, matte_items):
     " Creates a CSV matte list. "
     matte_names_list = list(matte_items)
     matte_names_list.sort(key=lambda x: x.lower())
-    matte_list_str = _encode_csv(matte_names_list, escape_wildcards=escape_wildcards)
-    matte_list_str = double_escapes_except_brackets(matte_list_str)
+    matte_list_str = _encode_csv(matte_names_list, escape_wildcards=True)
+    matte_list_str = _double_escapes_except_brackets(matte_list_str)
     gizmo.knob("matteList").setValue(matte_list_str)
 
 
