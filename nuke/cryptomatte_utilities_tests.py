@@ -70,13 +70,15 @@ class CSVParsing(unittest.TestCase):
                              "Round trip to list failed: %s != %s" % (self.name_list, decoded))
 
         # start from csv
-        decoded = cu._decode_csv(self.csv_str)
-        encoded = cu._encode_csv(decoded)
+        ml = cu.MatteList("")
+
+        decoded = ml._decode_csv(self.csv_str)
+        encoded = ml._encode_csv(decoded)
         check_results(encoded, decoded)
 
         # start from list
-        encoded = cu._encode_csv(self.name_list)
-        decoded = cu._decode_csv(encoded)
+        encoded = ml._encode_csv(self.name_list)
+        decoded = ml._decode_csv(encoded)
         check_results(encoded, decoded)
 
 
@@ -127,12 +129,14 @@ class CSVParsingNuke(unittest.TestCase):
         self.gizmo.knob("matteList").setValue(csv.replace("\\", "\\\\"))
 
         for i in range(3):
-            matte_set = cu.get_mattelist_as_set(self.gizmo)
+            ml = cu.MatteList(self.gizmo)
             self.gizmo.knob("matteList").setValue("")
-            cu.set_mattelist_from_set(self.gizmo, matte_set)
+            ml.set_gizmo_mattelist(self.gizmo)
+
+        ml = cu.MatteList("")
         result_csv = self.gizmo.knob("matteList").getValue()
-        correct_set = set(cu._decode_csv(csv))
-        result_set = set(cu._decode_csv(result_csv))
+        correct_set = set(ml._decode_csv(csv))
+        result_set = set(ml._decode_csv(result_csv))
         self.assertEqual(correct_set, result_set, "%s: Came out as: %s" % (msg, result_csv))
 
     def test_csv_through_gizmo(self):
@@ -158,7 +162,7 @@ class CSVParsingNuke(unittest.TestCase):
         self.assertTrue(cu._has_wildcards("?"))
         self.assertTrue(cu._has_wildcards("[]"))
 
-    def test_double_escapes_except_brackets(self):
+    def test_raw_strs_to_mattelist_strs(self):
         import cryptomatte_utilities as cu
 
         escaping_modifications = [
@@ -168,9 +172,9 @@ class CSVParsingNuke(unittest.TestCase):
             (r"brack\\[ets\\]", r"brack\\\[ets\\\]"),
             (r"brack\\\[ets\\\]", r"brack\\\\\[ets\\\\\]"),
         ]
-
+        ml = cu.MatteList("")
         for raw, processed in escaping_modifications:
-            self.assertEqual(cu._double_escapes_except_brackets(raw), processed)
+            self.assertEqual(ml._raw_strs_to_mattelist_strs(raw), processed)
 
 
 

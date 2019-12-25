@@ -5,6 +5,12 @@
 #
 #
 
+import re
+import csv
+import nuke
+import struct
+import fnmatch
+
 __version__ = "1.3.0"
 
 GIZMO_CHANNEL_KNOBS = [
@@ -24,11 +30,7 @@ GIZMO_ADD_CHANNEL_KNOBS = [
 CRYPTO_METADATA_LEGAL_PREFIX = ["exr/cryptomatte/", "cryptomatte/"]
 CRYPTO_METADATA_DEFAULT_PREFIX = CRYPTO_METADATA_LEGAL_PREFIX[1]
 
-import re
-import csv
-import nuke
-import struct
-import fnmatch
+HAS_WILDCARDS_RE = re.compile(r"(?<!\\)([*?\[\]])")
 
 def setup_cryptomatte_ui():
     if nuke.GUI:
@@ -637,11 +639,20 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
 
 def _expand_wildcards(gizmo, cinfo):
     """ Expands the wildcards in the matte list."""
-    if _has_wildcards(gizmo.knob("matteList").getValue()):
-        cinfo.parse_manifest()
-        if gizmo.knob("useWildcards").value():
-            set_mattelist_from_set(gizmo, get_mattelist_as_set(gizmo, expand_wildcards=True))
+    if not gizmo.knob("useWildcards").value():
+        return 
 
+    if not _has_wildcards(gizmo.knob("matteList").getValue()):
+        # TODO: determine if this is still necessary 
+        # This checks for a wildcard before parsing the matte list. 
+        # This may or may not matter, or there may be a better way to do it. 
+        return 
+
+    ml = MatteList(gizmo)
+    if ml.has_wildcards:
+        cinfo.parse_manifest()
+        ml.expand_wildcards(cinfo)
+        ml.set_gizmo_mattelist(gizmo)
 
 def _set_ui(gizmo):
     layer_locked = gizmo.knob('cryptoLayerLock').value()
@@ -902,18 +913,8 @@ def _is_number(s):
 
 
 def _set_expression(gizmo, cryptomatte_channels):
-    ID_list = []
-    matte_list = get_mattelist_as_set(gizmo)
-
-    for item in matte_list:
-        if item.startswith("<") and item.endswith(">"):
-            numstr = item[1:-1]
-            if _is_number(numstr): 
-                ID_list.append(single_precision(float(numstr)))
-        else:
-            ID_list.append(mm3hash_float(item))
-
-    expression = _build_extraction_expression(cryptomatte_channels, ID_list)
+    ml = MatteList(gizmo)
+    expression = _build_extraction_expression(cryptomatte_channels, ml.IDs)
     gizmo.knob("expression").setValue(expression)
 
 
@@ -1015,21 +1016,14 @@ def _set_preview_expression(gizmo, cryptomatte_channels):
 #############################################
 
 
-def _id_from_matte_name(name):
-    if name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
-        return single_precision(float(name[1:-1]))
-    else:
-        return mm3hash_float(name)
-
-
 def _get_keyed_ID(node, keying_knob, remove=False):
     bbox = keying_knob.getValue()[4:]
     upstream_node = node.input(0)
     if not upstream_node:
         return 0.0
 
-    matte_list = get_mattelist_as_set(node)
-    id_list = map(_id_from_matte_name, matte_list)
+    ml = MatteList(node)
+    id_set = set(ml.IDs)
 
     saw_bg = False
     add_mode = not remove
@@ -1054,7 +1048,7 @@ def _get_keyed_ID(node, keying_knob, remove=False):
                 saw_bg = True
                 continue
 
-            in_list = selected_id in id_list
+            in_list = selected_id in id_set
             if (add_mode and not in_list) or (rm_mode and in_list):
                 return selected_id
 
@@ -1063,143 +1057,178 @@ def _get_keyed_ID(node, keying_knob, remove=False):
 # Utils - Comma seperated list processing
 #############################################
 
+class MatteList(object):
+    def __init__(self, initializer):
+        import nuke
+        self.mattes = None
 
-def _encode_csv(raw_strs, escape_wildcards=False):
-    """
-    Encodes CSVs with special characters escaped, and surrounded in quotes
-    if it contains any of these or spaces, with a space after each comma. 
-    """
-    cleaned_items = []
-    need_escape_chars = '[]"\\'
-    need_quotes_characters = ' ,'
-
-    if escape_wildcards:
-        need_escape_chars += '*?'
-
-    for item in raw_strs:
-        need_escape = any(x in item for x in need_escape_chars)
-        need_quotes = need_escape or any(x in item for x in need_quotes_characters)
-
-        cleaned = None
-        if need_escape:
-            cleaned = ""
-            for char in item:
-                if char in need_escape_chars:
-                    cleaned +=( '\\%s' % char )
-                else:
-                    cleaned += char
+        if type(initializer) in (str, unicode):
+            self.mattelist_str = initializer
         else:
-            cleaned = item
-        if need_quotes:
-            cleaned_items.append('"%s"'%cleaned)
+            gizmo = initializer
+            self.mattelist_str = gizmo.knob("matteList").getValue()
+
+        assert type(self.mattes) is set
+
+    def add(self, name):
+        self.mattes.add(name)
+
+    def remove(self, name):
+        if name in self.mattes:
+            self.mattes.remove(name) # the simple case
+        elif name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
+            # in matte list by name, but is being removed by number
+            num = single_precision(float(name[1:-1]))
+            for existing_name in self.mattes:
+                if mm3hash_float(existing_name) == num:
+                    self.mattes.remove(existing_name)
+                    break
         else:
-            cleaned_items.append(cleaned)
-    return ", ".join(cleaned_items)
+            # in mattelist by number, but is being removed by name
+            num_str = "<%s>" % mm3hash_float(name)
+            if num_str in self.mattes:
+                self.mattes.remove(num_str)
+
+    @property
+    def has_wildcards(self):
+        """ Checks for wildcards in string that aren't escaped.
+        Returns True if a wildcard is found, else False.
+        """
+        return any(self._name_has_wildcards(x) for x in self.mattes)
+
+    @property
+    def IDs(self):
+        return map(self._id_from_matte_name, self.mattes)    
+
+    def _id_from_matte_name(self, name):
+        if name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
+            return single_precision(float(name[1:-1]))
+        else:
+            return mm3hash_float(name)
+
+    def _name_has_wildcards(self, name):
+        return HAS_WILDCARDS_RE.search(name)
+
+    def expand_wildcards(self, cinfo):
+        if not self.has_wildcards:
+            return
+
+        manifest = cinfo.parse_manifest()
+        old_mattes = self.mattes
+        self.mattes = set()
+        for matte in old_mattes:
+            if self._name_has_wildcards(matte):
+                globbed_wildcard_mattes = self._glob_wildcard_names(matte, manifest)
+                for globbed_matte in globbed_wildcard_mattes:
+                    self.mattes.add(globbed_matte)
+            else:
+                self.mattes.add(matte)
+
+    @property    
+    def mattelist_str(self):
+        matte_names_list = list(self.mattes)
+        matte_names_list.sort(key=lambda x: x.lower())
+        mattelist_str = self._encode_csv(matte_names_list)
+        return self._raw_strs_to_mattelist_strs(mattelist_str)
+
+    @mattelist_str.setter
+    def mattelist_str(self, value):
+        self.mattes = set(self._decode_csv(value))
+        self._sanitize()
+
+    def set_gizmo_mattelist(self, gizmo):
+        # TODO: test performance of checking first
+        # result = self.mattelist_str
+        # if gizmo.knob("matteList").getValue() != result:
+        #     gizmo.knob("matteList").setValue(self.mattelist_str)
+        gizmo.knob("matteList").setValue(self.mattelist_str)
+
+    def _sanitize(self):
+        # make sure everything is utf-8
+        self.mattes = set(
+            matte.encode("utf-8") if type(matte) is unicode else str(matte) 
+            for matte in self.mattes
+        )
+
+    def _glob_wildcard_names(self, raw_str, manifest):
+        """ Returns a set of matches from the wildcard string."""
+        match_set = []
+        for manf in manifest:
+            if fnmatch.fnmatchcase(manf, raw_str):
+                manf = manf.encode("utf-8") if type(manf) is unicode else str(manf)
+                match_set.append(manf)
+        return match_set
+
+    def _raw_strs_to_mattelist_strs(self, mattelist_str):
+        r"""To put strings into a matte list, we need to double escapes characters. 
+
+        The exception to this are square brackets, which need a single escape 
+        to not be consumed by Nuke itself.
+
+        "back\slash" -> "back\\slash"
+        "brack\[ets\]" -> "brack\[ets\]"
+        "back\slash.brack\[ets\]" -> "back\\slash.brack\[ets\]"
+        """
+        bracket_esc_processing_re = re.compile(r"(\\)(?![\[\]])")
+        return bracket_esc_processing_re.sub(r"\\\\", mattelist_str)
+
+    def _encode_csv(self, raw_strs):
+        """
+        Encodes CSVs with special characters escaped, and surrounded in quotes
+        if it contains any of these or spaces, with a space after each comma. 
+        """
+        cleaned_items = []
+        need_escape_chars = '[]"\\*?'
+        need_quotes_characters = ' ,'
+
+        for item in raw_strs:
+            need_escape = any(x in item for x in need_escape_chars)
+            need_quotes = need_escape or any(x in item for x in need_quotes_characters)
+
+            cleaned = None
+            if need_escape:
+                cleaned = ""
+                for char in item:
+                    if char in need_escape_chars:
+                        cleaned +=( '\\%s' % char )
+                    else:
+                        cleaned += char
+            else:
+                cleaned = item
+            if need_quotes:
+                cleaned_items.append('"%s"'%cleaned)
+            else:
+                cleaned_items.append(cleaned)
+        return ", ".join(cleaned_items)
 
 
-def _decode_csv(mattelist_str):
-    """ Decodes CSVs into a list of strings. """
-    reader = csv.reader([mattelist_str], quotechar='"', delimiter=',', escapechar="\\", 
-        doublequote=False, quoting=csv.QUOTE_ALL, skipinitialspace=True);
-    result = []
-    for row in reader:
-        result += row
-    return result
-
-
-def _glob_wildcard_names(raw_str):
-    """ Returns a set of matches from the wildcard string.
-    """
-    match_set = set()
-    for manf in g_cryptomatte_manf_from_names.keys():
-        if fnmatch.fnmatchcase(manf, raw_str):
-            manf = manf.encode("utf-8") if type(manf) is unicode else str(manf)
-            match_set.add(manf)
-    return match_set
+    def _decode_csv(self, mattelist_str):
+        """ Decodes CSVs into a list of strings. """
+        reader = csv.reader([mattelist_str], quotechar='"', delimiter=',', escapechar="\\", 
+            doublequote=False, quoting=csv.QUOTE_ALL, skipinitialspace=True);
+        result = []
+        for row in reader:
+            result += row
+        return result
 
 
 def _has_wildcards(raw_str):
     """ Checks for wildcards in string that aren't escaped.
     Returns True if a wildcard is found, else False.
     """
-    has_wildcards_re = re.compile(r"(?<!\\)([*?\[\]])")
-    if has_wildcards_re.search(raw_str):
+    if HAS_WILDCARDS_RE.search(raw_str):
         return True
     else:
         return False
 
-
-def _double_escapes_except_brackets(mattelist_str):
-    r"""To put strings into a matte list, we need to double escapes characters. 
-
-    The exception to this are square brackets, which need a single escape 
-    to not be consumed by Nuke itself.
-
-    "back\slash" -> "back\\slash"
-    "brack\[ets\]" -> "brack\[ets\]"
-    "back\slash.brack\[ets\]" -> "back\\slash.brack\[ets\]"
-    """
-    bracket_esc_processing_re = re.compile(r"(\\)(?![\[\]])")
-    return bracket_esc_processing_re.sub(r"\\\\", mattelist_str)
-
-
-def get_mattelist_as_set(gizmo, expand_wildcards=False):
-    matte_list = _decode_csv(gizmo.knob("matteList").getValue())
-
-    matte_set = set()
-    for matte in matte_list:
-        if expand_wildcards and _has_wildcards(matte):
-            globbed_wildcard_mattes = _glob_wildcard_names(matte)
-            for globbed_matte in globbed_wildcard_mattes:
-                matte_set.add(globbed_matte)
-        else:
-            matte_set.add(matte.encode("utf-8") if type(matte) is unicode else str(matte))
-
-    return matte_set
-
-
-def set_mattelist_from_set(gizmo, matte_items):
-    " Creates a CSV matte list. "
-    matte_names_list = list(matte_items)
-    matte_names_list.sort(key=lambda x: x.lower())
-    matte_list_str = _encode_csv(matte_names_list, escape_wildcards=True)
-    matte_list_str = _double_escapes_except_brackets(matte_list_str)
-    gizmo.knob("matteList").setValue(matte_list_str)
-
-
 def _modify_mattelist_with_keyer(gizmo, keyed_name, remove):
-    def _matteList_set_add(name, matte_names):
-        matte_names.add(name)
-
-    def _matteList_set_remove(name, matte_names):
-        if name in matte_names:
-            matte_names.remove(name) # the simple case
-        elif name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
-            # maybe it was selected by name before, but is being removed by number
-            # (manifest was working, now it doesn't)
-            num = single_precision(float(name[1:-1]))
-            for existing_name in matte_names:
-                if mm3hash_float(existing_name) == num:
-                    matte_names.remove(existing_name)
-                    break
-        else:
-            # maybe it was selected by number before, but is being removed by name
-            # (manifest was broken, now it works)
-            num_str = "<%s>" % mm3hash_float(name)
-            if num_str in matte_names:
-                matte_names.remove(num_str) # the simple case
-
-    if not keyed_name or gizmo.knob("stopAutoUpdate").getValue() == 1.0:
-        return
-
-    matte_names = get_mattelist_as_set(gizmo)
-
+    ml = MatteList(gizmo)
     if remove:
-        _matteList_set_remove(keyed_name, matte_names)
+        ml.remove(keyed_name)
     else:
-        _matteList_set_add(keyed_name, matte_names)
+        ml.add(keyed_name)
+    ml.set_gizmo_mattelist(gizmo)
 
-    set_mattelist_from_set(gizmo, matte_names)
 
 #############################################
 # Public - Decryption
