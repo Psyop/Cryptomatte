@@ -642,15 +642,15 @@ def _expand_wildcards(gizmo, cinfo):
     if not gizmo.knob("useWildcards").value():
         return 
 
-    if not _has_wildcards(gizmo.knob("matteList").getValue()):
-        # TODO: determine if this is still necessary 
-        # This checks for a wildcard before parsing the matte list. 
-        # This may or may not matter, or there may be a better way to do it. 
-        return 
+    # print "has wildcards", _has_wildcards(gizmo.knob("matteList").getValue())
+    # if not _has_wildcards(gizmo.knob("matteList").getValue()):
+    #     # TODO: determine if this is still necessary 
+    #     # This checks for a wildcard before parsing the matte list. 
+    #     # This may or may not matter, or there may be a better way to do it. 
+    #     return 
 
     ml = MatteList(gizmo)
     if ml.has_wildcards:
-        cinfo.parse_manifest()
         ml.expand_wildcards(cinfo)
         ml.set_gizmo_mattelist(gizmo)
 
@@ -1064,11 +1064,15 @@ class MatteList(object):
 
         if type(initializer) in (str, unicode):
             self.mattelist_str = initializer
+            print "starting mattelist", initializer
         else:
             gizmo = initializer
             self.mattelist_str = gizmo.knob("matteList").getValue()
+            print "starting mattelist", gizmo.knob("matteList").getValue()
 
         assert type(self.mattes) is set
+        print "set", self.mattes
+        print "new mattelist", self.mattelist_str
 
     def add(self, name):
         self.mattes.add(name)
