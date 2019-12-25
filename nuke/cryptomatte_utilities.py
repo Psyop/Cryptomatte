@@ -1063,16 +1063,6 @@ def _get_keyed_ID(node, keying_knob, remove=False):
 # Utils - Comma seperated list processing
 #############################################
 
-r"""
-If your scene contains an object named "chars \ aste[r*sk]"... 
-
-Nomenclature:
-    
-    raw_str: The name we will hash or expand. 
-        chars \ aste[r*sk]
-    mattelist_str: The string we'll store in the matte list
-        "chars \\ aste\[r\\*sk\]"
-"""
 
 def _encode_csv(raw_strs, escape_wildcards=False):
     """
