@@ -50,13 +50,13 @@ def reset_skip_cleanup_on_failure():
 
 class CSVParsing(unittest.TestCase):
     long_csv = ("""str, "str with space", "single 'quotes'", """
-               '"with_a,_comma", "with comma, and \\"quotes\\"", <123.45>, '
-               '" space_in_front", "space_at_end ", "has_escape\\\\chars", '
+               r'"with_a,_comma", "with comma, and \"quotes\"", <123.45>, '
+               r'" space_in_front", "space_at_end ", "has_escape\\chars", '
                '"cyrillic \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"')
 
     long_csv_name_list = [
         "str", "str with space", "single 'quotes'", "with_a,_comma", 'with comma, and "quotes"',
-        "<123.45>", " space_in_front", "space_at_end ", "has_escape\\chars",
+        "<123.45>", " space_in_front", "space_at_end ", r"has_escape\chars",
         "cyrillic \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"
     ]
 
@@ -153,7 +153,7 @@ class CSVParsingNuke(unittest.TestCase):
         self.assertEqual(correct_raws, result_raws, "%s: Came out as: %s" % (msg, result_nukestr))
 
     def test_csv_through_gizmo(self):
-        self.round_trip_through_gizmo('"name containing a \\"quote\\"  "', "Round trip failed")
+        self.round_trip_through_gizmo(r'"name containing a \"quote\"  "', "Round trip failed")
 
     def test_big_csv_through_gizmo(self):
         self.round_trip_through_gizmo(CSVParsing.long_csv, "Round trip failed")
@@ -162,16 +162,16 @@ class CSVParsingNuke(unittest.TestCase):
         self.round_trip_through_gizmo('" name with space ", other', "Round trip failed")
 
     def test_escape_csv_through_gizmo(self):
-        self.round_trip_through_gizmo('"name\\\\withslashes", other', "Round trip failed")
+        self.round_trip_through_gizmo(r'"name\\withslashes", other', "Round trip failed")
 
     def test_has_wildcards(self):
         import cryptomatte_utilities as cu
-        self.assertFalse(cu.HAS_WILDCARDS_RE.search("test_str"))
-        self.assertFalse(cu.HAS_WILDCARDS_RE.search("test_\\*"))
-        self.assertFalse(cu.HAS_WILDCARDS_RE.search("test_\\?"))
-        self.assertFalse(cu.HAS_WILDCARDS_RE.search("\\[\\]"))
-        self.assertFalse(cu.HAS_WILDCARDS_RE.search("\\["))
-        self.assertFalse(cu.HAS_WILDCARDS_RE.search("\\]"))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search(r"test_str"))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search(r"test_\*"))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search(r"test_\?"))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search(r"\[\]"))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search(r"\["))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search(r"\]"))
 
         self.assertTrue(cu.HAS_WILDCARDS_RE.search("test_str*"))
         self.assertTrue(cu.HAS_WILDCARDS_RE.search("test_str?"))
@@ -189,7 +189,6 @@ class CSVParsingNuke(unittest.TestCase):
             (r"2_back\slash_brack[ets]", r"2_back\\slash_brack\[ets\]"),
             (r"3_literal\brack\[ets\]", r"3_literal\\brack\\\[ets\\\]"),
             (r"4_escape_before_brack\\[ets\\]", r"4_escape_before_brack\\\\\[ets\\\\\]"),
-            # (r"4_brack\\\\[ets\\\\]", r"4_brack\\\\\\\[ets\\\\\\\]"),
         ]
         se = cu.StringEncoder()
         for rawstr, mattestr in escaping_modifications:
@@ -198,11 +197,11 @@ class CSVParsingNuke(unittest.TestCase):
     def test_decoding_wildcard_handling(self):
         import cryptomatte_utilities as cu
         csv_to_mattestr = [
-            ('*ster\\\\*sk', '*ster\\*sk'), 
-            ('\\\\?uestion?', '\\?uestion?'), 
-            ('brack[e]t', 'brack[e]t'), 
-            ('quote\\"mark\\"', 'quote"mark"'),
-            ('"space in word"', 'space in word'),
+            (r'*ster\\*sk',      r'*ster\*sk'), 
+            (r'\\?uestion?',     r'\?uestion?'), 
+            (r'brack[e]t',       r'brack[e]t'), 
+            (r'quote\"mark\"',   r'quote"mark"'),
+            (r'"space in word"', r'space in word'),
         ]
 
         se = cu.StringEncoder()
@@ -347,8 +346,8 @@ class CSVParsingNuke(unittest.TestCase):
         fnmatch = se.encode_mattestr_to_fnmatch('aster\\*x')
         self.assertEqual(fnmatch, 'aster[*]x')
 
-        fnmatch = se.encode_mattestr_to_fnmatch('\\\\brack\\*\\[et\\]')
-        self.assertEqual(fnmatch, '\\\\brack[*][[]et[]]')
+        fnmatch = se.encode_mattestr_to_fnmatch(r'\\brack\*\[et\]')
+        self.assertEqual(fnmatch, r'\\brack[*][[]et[]]')
 
 
 class CryptomatteNodePasting(unittest.TestCase):
@@ -1090,13 +1089,13 @@ class CryptomatteNukeTests(unittest.TestCase):
         rm_asterisk_rect = ("remove", (600.0, 150.0))
         add_question_circle = ("add", (350.0, 150.0))
         self.key_on_image(add_asterisk_rect)
-        self.assertMatteList('"has_\\*_asterisk"', "Couldn't add")
+        self.assertMatteList(r'"has_\*_asterisk"', "Couldn't add")
 
         self.key_on_image(rm_asterisk_rect)
-        self.assertMatteList(r'', "Removed")
+        self.assertMatteList('', "Removed")
 
         self.key_on_image(add_question_circle)
-        self.assertMatteList('"sphere_\\?_2"', "Couldn't add.")
+        self.assertMatteList(r'"sphere_\?_2"', "Couldn't add.")
 
     def test_keying_wildcard_chars_expanded(self):
         self._test_keying_wildcard_chars(True)

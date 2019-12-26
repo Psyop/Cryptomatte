@@ -897,14 +897,6 @@ def unload_manifest(node):
 #############################################
 
 
-def _is_number(s):
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
-
-
 def _set_expression(gizmo, cryptomatte_channels):
     ml = MatteList(gizmo)
     expression = _build_extraction_expression(cryptomatte_channels, ml.IDs)
@@ -1095,7 +1087,7 @@ class StringEncoder(object):
 
     def encode_mattestr_to_csv(self, mattestrs):
         """ Converts a mattestr strings to csv. """
-        return self._new_encode_csv(mattestrs)
+        return self._encode_csv(mattestrs)
 
     def encode_csvstr_to_nukestr(self, csvstr):
         """ Converts a csv-friendly string to one that can be consumed by Nuke """
@@ -1103,7 +1095,8 @@ class StringEncoder(object):
 
     def decode_nukestr_to_csv(self, nukestr):
         """ Converts a nuke string to one that can be consumed by CSV 
-         getvalue will have stripped escape characters, so we need to restore them. 
+        getvalue will have stripped escape characters, so we need to restore them. 
+        Also need to avoid double-escaping "
         """
         return nukestr.replace("\\", "\\\\").replace('\\\\"', '\\"')
 
@@ -1120,7 +1113,27 @@ class StringEncoder(object):
             rawstr = rawstr.replace("\\%s" % token, token)
         return rawstr
 
-    ####################
+    def encode_mattestr_to_fnmatch(self, mattestr):
+        """ Converts the matte string to an fnmatch pattern.
+        Escaped tokens are isntead wrapped in [], as fnmatch
+        would like. 
+        """
+        fn_token = "[]*?"
+        pattern = ""
+
+        escaped = False
+        for char in mattestr:
+            if char == "\\" and not escaped:
+                escaped = True
+            elif escaped:
+                if char in fn_token:
+                    pattern += "[%s]" % char
+                if char == "\\":
+                    pattern += "\\\\"
+                escaped = False
+            else:
+                pattern += char
+        return pattern
 
     def _decode_csv(self, csvstr):
         """ Decodes CSVs into a list of strings. """
@@ -1131,7 +1144,7 @@ class StringEncoder(object):
             result += row
         return result
 
-    def _new_encode_csv(self, rawstrs):
+    def _encode_csv(self, rawstrs):
         cleaned_items = []
         need_escape_chars = '"\\'
         need_quotes_characters = ' ,'
@@ -1156,25 +1169,6 @@ class StringEncoder(object):
                 cleaned_items.append(cleaned)
         return ", ".join(cleaned_items)
 
-    ##########
-    def encode_mattestr_to_fnmatch(self, mattestr):
-        fn_token = "[]*?"
-        pattern = ""
-
-        escaped = False
-        for char in mattestr:
-            if char == "\\" and not escaped:
-                escaped = True
-            elif escaped:
-                if char in fn_token:
-                    pattern += "[%s]" % char
-                if char == "\\":
-                    pattern += "\\\\"
-                escaped = False
-            else:
-                pattern += char
-        return pattern
-
 
 class MatteList(StringEncoder):
     """
@@ -1191,8 +1185,6 @@ class MatteList(StringEncoder):
 
     """
 
-    fnmatch_token_escapes_re = re.compile(r"(\\)(?=[*?])")
-
     def __init__(self, initializer):
         import nuke
         self.mattes = None
@@ -1205,11 +1197,12 @@ class MatteList(StringEncoder):
 
         csv = self.decode_nukestr_to_csv(nukestr)
         mattestrs = self.decode_csvstr_to_mattestrs(csv)
-        matte_list = map(self.ensure_utf8, mattestrs)
-        self.mattes = set(matte_list)
+        # TODO: determine if still necessary to ensure utf8
+        matte_list = map(self._ensure_utf8, mattestrs)
+        self.mattes = set(mattestrs)
         self._update_raw_mattes()
 
-    def ensure_utf8(self, string):
+    def _ensure_utf8(self, string):
         return string.encode("utf-8") if type(string) is unicode else str(string) 
 
     def add(self, rawstr):
@@ -1221,7 +1214,7 @@ class MatteList(StringEncoder):
         mattestr = self.encode_rawstr_to_mattestr(rawstr)
         if mattestr in self.mattes:
             self.mattes.remove(mattestr) # the simple case
-        elif mattestr.startswith('<') and mattestr.endswith('>') and _is_number(mattestr[1:-1]):
+        elif mattestr.startswith('<') and mattestr.endswith('>') and self._is_number(mattestr[1:-1]):
             # in matte list by name, but is being removed by number
             num = single_precision(float(mattestr[1:-1]))
             for existing_name in self.raw_mattes:
@@ -1245,21 +1238,11 @@ class MatteList(StringEncoder):
     @property
     def IDs(self):
         def _id_from_matte_name(name):
-            if name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
+            if name.startswith('<') and name.endswith('>') and self._is_number(name[1:-1]):
                 return single_precision(float(name[1:-1]))
             else:
                 return mm3hash_float(name)
         return map(_id_from_matte_name, self.raw_mattes)    
-
-    def _update_raw_mattes(self):
-        self.raw_mattes = set(
-            self.decode_mattestr_to_raw(x)
-            for x in self.mattes
-        )
-
-
-    def _name_has_wildcards(self, name):
-        return HAS_WILDCARDS_RE.search(name)
 
     def expand_wildcards(self, cinfo):
         if not self.has_wildcards:
@@ -1279,16 +1262,30 @@ class MatteList(StringEncoder):
         self._update_raw_mattes()
 
     @property    
-    def mattelist_str(self):
+    def to_nukestr(self):
         matte_names_list = list(self.mattes)
         matte_names_list.sort(key=lambda x: x.lower())
-
         csv = self.encode_mattestr_to_csv(matte_names_list)
-        nukestr = self.encode_csvstr_to_nukestr(csv)
-        return nukestr
+        return self.encode_csvstr_to_nukestr(csv)
 
     def set_gizmo_mattelist(self, gizmo):
-        gizmo.knob("matteList").setValue(self.mattelist_str)
+        gizmo.knob("matteList").setValue(self.to_nukestr)
+
+    def _update_raw_mattes(self):
+        self.raw_mattes = set(
+            self.decode_mattestr_to_raw(x)
+            for x in self.mattes
+        )
+
+    def _is_number(self, string):
+        try:
+            float(string)
+            return True
+        except ValueError:
+            return False
+    
+    def _name_has_wildcards(self, name):
+        return HAS_WILDCARDS_RE.search(name)
 
     def _glob_wildcard_names(self, mattestr, manifest):
         """ Returns a set of matches from the wildcard string."""
