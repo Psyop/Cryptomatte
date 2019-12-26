@@ -1067,9 +1067,9 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.gizmo.knob("useWildcards").setValue(False)
         self.gizmo.knob("matteList").setValue(mattelist_str)
         self.key_on_image(rm_grass)
-        self.assertMatteList('"\\*flower\\*"', "Wildcard not expanded.")
+        self.assertMatteList('*flower*', "Wildcard not expanded.")
         self.key_on_image(rm_flowerB)
-        self.assertMatteList('"\\*flower\\*"', "No change should happen.")
+        self.assertMatteList('*flower*', "No change should happen.")
 
     def test_wildcard_case_sensitive_matching(self):
         wildcard_uppercase_str = "*Rect*"

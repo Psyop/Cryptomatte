@@ -1204,19 +1204,20 @@ class MatteList(StringEncoder):
         self.mattes.add(mlstr)
         self._update_raw_mattes()
 
-    def remove(self, name):
-        if name in self.mattes:
-            self.mattes.remove(name) # the simple case
-        elif name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
+    def remove(self, rawstr):
+        mlstr = self.encode_rawstr_to_mlstr(rawstr)
+        if mlstr in self.mattes:
+            self.mattes.remove(mlstr) # the simple case
+        elif mlstr.startswith('<') and mlstr.endswith('>') and _is_number(mlstr[1:-1]):
             # in matte list by name, but is being removed by number
-            num = single_precision(float(name[1:-1]))
-            for existing_name in self.mattes:
+            num = single_precision(float(mlstr[1:-1]))
+            for existing_name in self.raw_mattes:
                 if mm3hash_float(existing_name) == num:
                     self.mattes.remove(existing_name)
                     break
         else:
             # in mattelist by number, but is being removed by name
-            num_str = "<%s>" % mm3hash_float(name)
+            num_str = "<%s>" % mm3hash_float(rawstr)
             if num_str in self.mattes:
                 self.mattes.remove(num_str)
         self._update_raw_mattes()
