@@ -49,12 +49,12 @@ def reset_skip_cleanup_on_failure():
 
 
 class CSVParsing(unittest.TestCase):
-    csv_str = ("""str, "str with space", "single 'quotes'", """
+    long_csv = ("""str, "str with space", "single 'quotes'", """
                '"with_a,_comma", "with comma, and \\"quotes\\"", <123.45>, '
                '" space_in_front", "space_at_end ", "has_escape\\\\chars", '
                '"cyrillic \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"')
 
-    name_list = [
+    long_csv_name_list = [
         "str", "str with space", "single 'quotes'", "with_a,_comma", 'with comma, and "quotes"',
         "<123.45>", " space_in_front", "space_at_end ", "has_escape\\chars",
         "cyrillic \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"
@@ -65,22 +65,21 @@ class CSVParsing(unittest.TestCase):
         """Ensures the round trip is correct for CSV encoding and decoding. """
 
         def check_results(encoded, decoded):
-            self.assertEqual(encoded, self.csv_str,
-                             "Round trip to str failed: %s != %s" % (self.csv_str, encoded))
-            self.assertEqual(self.name_list, decoded,
-                             "Round trip to list failed: %s != %s" % (self.name_list, decoded))
+            self.assertEqual(encoded, self.long_csv,
+                             "Round trip to str failed: %s != %s" % (self.long_csv, encoded))
+            self.assertEqual(self.long_csv_name_list, decoded,
+                             "Round trip to list failed: %s != %s" % (self.long_csv_name_list, decoded))
 
         # start from csv
-        ml = cu.MatteList("")
         se = cu.StringEncoder()
 
-        decoded = se.decode_csvstr_to_mlstrs(self.csv_str)
-        encoded = se.encode_mlstr_to_csv(decoded)
+        decoded = se.decode_csvstr_to_mattestrs(self.long_csv)
+        encoded = se.encode_mattestr_to_csv(decoded)
         check_results(encoded, decoded)
 
         # start from list
-        encoded = se.encode_mlstr_to_csv(self.name_list)
-        decoded = se.decode_csvstr_to_mlstrs(encoded)
+        encoded = se.encode_mattestr_to_csv(self.long_csv_name_list)
+        decoded = se.decode_csvstr_to_mattestrs(encoded)
         check_results(encoded, decoded)
 
 
@@ -130,8 +129,8 @@ class CSVParsingNuke(unittest.TestCase):
         se = cu.StringEncoder()
 
         # decode the csvs to get the correct answer
-        correct_mlstrs = se.decode_csvstr_to_mlstrs(csv)
-        correct_raws = sorted([se.decode_mlstr_to_raw(x) for x in correct_mlstrs])
+        correct_mattestrs = se.decode_csvstr_to_mattestrs(csv)
+        correct_raws = sorted([se.decode_mattestr_to_raw(x) for x in correct_mattestrs])
         # start from csv
         nukestring = se.encode_csvstr_to_nukestr(csv)
 
@@ -146,8 +145,8 @@ class CSVParsingNuke(unittest.TestCase):
 
         def nukestr_to_raw(nukestr):            
             dec_csv = se.decode_nukestr_to_csv(nukestr)
-            dec_ml_strs = se.decode_csvstr_to_mlstrs(dec_csv)
-            dec_raw_strs = [se.decode_mlstr_to_raw(x) for x in dec_ml_strs]
+            dec_mattestrs = se.decode_csvstr_to_mattestrs(dec_csv)
+            dec_raw_strs = [se.decode_mattestr_to_raw(x) for x in dec_mattestrs]
             return dec_raw_strs
 
         result_raws = sorted(nukestr_to_raw(result_nukestr))
@@ -157,7 +156,7 @@ class CSVParsingNuke(unittest.TestCase):
         self.round_trip_through_gizmo('"name containing a \\"quote\\"  "', "Round trip failed")
 
     def test_big_csv_through_gizmo(self):
-        self.round_trip_through_gizmo(CSVParsing.csv_str, "Round trip failed")
+        self.round_trip_through_gizmo(CSVParsing.long_csv, "Round trip failed")
 
     def test_space_csv_through_gizmo(self):
         self.round_trip_through_gizmo('" name with space ", other', "Round trip failed")
@@ -182,7 +181,7 @@ class CSVParsingNuke(unittest.TestCase):
         self.assertTrue(cu.HAS_WILDCARDS_RE.search("?"))
         self.assertTrue(cu.HAS_WILDCARDS_RE.search("[]"))
 
-    def test_encode_rawstr_to_mlstr(self):
+    def test_encode_rawstr_to_mattestr(self):
         import cryptomatte_utilities as cu
         
         escaping_modifications = [
@@ -193,12 +192,12 @@ class CSVParsingNuke(unittest.TestCase):
             # (r"4_brack\\\\[ets\\\\]", r"4_brack\\\\\\\[ets\\\\\\\]"),
         ]
         se = cu.StringEncoder()
-        for rawstr, mlstr in escaping_modifications:
-            self.assertEqual(se.encode_rawstr_to_mlstr(rawstr), mlstr)
+        for rawstr, mattestr in escaping_modifications:
+            self.assertEqual(se.encode_rawstr_to_mattestr(rawstr), mattestr)
 
     def test_decoding_wildcard_handling(self):
         import cryptomatte_utilities as cu
-        csv_to_mlstr = [
+        csv_to_mattestr = [
             ('*ster\\\\*sk', '*ster\\*sk'), 
             ('\\\\?uestion?', '\\?uestion?'), 
             ('brack[e]t', 'brack[e]t'), 
@@ -208,15 +207,15 @@ class CSVParsingNuke(unittest.TestCase):
 
         se = cu.StringEncoder()
 
-        for csv, mlstr in csv_to_mlstr:
-            dec_mlstrs = se.decode_csvstr_to_mlstrs(csv)
-            self.assertEqual(dec_mlstrs, [mlstr])
+        for csv, mattestr in csv_to_mattestr:
+            dec_mattestrs = se.decode_csvstr_to_mattestrs(csv)
+            self.assertEqual(dec_mattestrs, [mattestr])
         
-        csv_only = [csv for csv, mls in csv_to_mlstr]
-        mls_only = [mls for csv, mls in csv_to_mlstr]
-        self.assertEqual(se.decode_csvstr_to_mlstrs(",".join(csv_only)), mls_only)
-        self.assertEqual(se.decode_csvstr_to_mlstrs(", ".join(csv_only)), mls_only)
-        self.assertEqual(se.decode_csvstr_to_mlstrs(",  ".join(csv_only)), mls_only)
+        csv_only = [csv for csv, mls in csv_to_mattestr]
+        mls_only = [mls for csv, mls in csv_to_mattestr]
+        self.assertEqual(se.decode_csvstr_to_mattestrs(",".join(csv_only)), mls_only)
+        self.assertEqual(se.decode_csvstr_to_mattestrs(", ".join(csv_only)), mls_only)
+        self.assertEqual(se.decode_csvstr_to_mattestrs(",  ".join(csv_only)), mls_only)
 
     def test_every_encoding_step(self):
         r""" Let's tell a story about encoding. 
@@ -256,101 +255,100 @@ class CSVParsingNuke(unittest.TestCase):
             return string.replace('\\', '/')
 
         def do_every_encoding(raw_str):
-            enc_ml_str = se.encode_rawstr_to_mlstr(raw_str)
-            enc_csv_str = se.encode_mlstr_to_csv([enc_ml_str])
-            enc_nuke_str = se.encode_csvstr_to_nukestr(enc_csv_str)
+            enc_mattestr = se.encode_rawstr_to_mattestr(raw_str)
+            enc_csvstr = se.encode_mattestr_to_csv([enc_mattestr])
+            enc_nuke_str = se.encode_csvstr_to_nukestr(enc_csvstr)
 
             dec_nuke_str = simulate_nuke_getvalue(enc_nuke_str)
-            dec_csv_str = se.decode_nukestr_to_csv(dec_nuke_str)
-            dec_ml_str = se.decode_csvstr_to_mlstrs(dec_csv_str)[0]
-            dec_raw_str = se.decode_mlstr_to_raw(dec_ml_str)
+            dec_csvstr = se.decode_nukestr_to_csv(dec_nuke_str)
+            dec_mattestr = se.decode_csvstr_to_mattestrs(dec_csvstr)[0]
+            dec_raw_str = se.decode_mattestr_to_raw(dec_mattestr)
             return (
-                enc_ml_str, enc_csv_str, enc_nuke_str, 
-                dec_nuke_str, dec_csv_str, dec_ml_str, dec_raw_str
+                enc_mattestr, enc_csvstr, enc_nuke_str, 
+                dec_nuke_str, dec_csvstr, dec_mattestr, dec_raw_str
             )
 
-
-        raw_str = '\\brack*[et]'
-        enc_ml_str, enc_csv_str, enc_nuke_str, \
-            dec_nuke_str, dec_csv_str, \
-            dec_ml_str, dec_raw_str = do_every_encoding(raw_str)
-
-        self.assertEqual(fs(raw_str),       '/brack*[et]')
-        self.assertEqual(fs(enc_ml_str),    '//brack/*/[et/]')
-        self.assertEqual(fs(enc_csv_str),   '"////brack//*//[et//]"')
-        self.assertEqual(fs(enc_nuke_str),  '"////brack//*///[et///]"')
-        self.assertEqual(fs(dec_nuke_str),  '"//brack/*/[et/]"')
-        self.assertEqual(fs(dec_csv_str),   '"////brack//*//[et//]"')
-        self.assertEqual(fs(dec_ml_str),    '//brack/*/[et/]')
-        self.assertEqual(fs(dec_raw_str),   '/brack*[et]')
-
         raw_str = 'has space?'
-        enc_ml_str, enc_csv_str, enc_nuke_str, \
-            dec_nuke_str, dec_csv_str, \
-            dec_ml_str, dec_raw_str = do_every_encoding(raw_str)
+        enc_mattestr, enc_csvstr, enc_nuke_str, \
+            dec_nuke_str, dec_csvstr, \
+            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
 
         self.assertEqual(fs(raw_str),       'has space?')
-        self.assertEqual(fs(enc_ml_str),    'has space/?')
-        self.assertEqual(fs(enc_csv_str),   '"has space//?"')
+        self.assertEqual(fs(enc_mattestr),    'has space/?')
+        self.assertEqual(fs(enc_csvstr),   '"has space//?"')
         self.assertEqual(fs(enc_nuke_str),  '"has space//?"')
         self.assertEqual(fs(dec_nuke_str),  '"has space/?"')
-        self.assertEqual(fs(dec_csv_str),   '"has space//?"')
-        self.assertEqual(fs(dec_ml_str),    'has space/?')
+        self.assertEqual(fs(dec_csvstr),   '"has space//?"')
+        self.assertEqual(fs(dec_mattestr),    'has space/?')
         self.assertEqual(fs(dec_raw_str),   'has space?')
 
         raw_str = 'simple123'
-        enc_ml_str, enc_csv_str, enc_nuke_str, \
-            dec_nuke_str, dec_csv_str, \
-            dec_ml_str, dec_raw_str = do_every_encoding(raw_str)
+        enc_mattestr, enc_csvstr, enc_nuke_str, \
+            dec_nuke_str, dec_csvstr, \
+            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
 
         self.assertEqual(fs(raw_str),       'simple123')
-        self.assertEqual(fs(enc_ml_str),    'simple123')
-        self.assertEqual(fs(enc_csv_str),   'simple123')
+        self.assertEqual(fs(enc_mattestr),    'simple123')
+        self.assertEqual(fs(enc_csvstr),   'simple123')
         self.assertEqual(fs(enc_nuke_str),  'simple123')
         self.assertEqual(fs(dec_nuke_str),  'simple123')
-        self.assertEqual(fs(dec_csv_str),   'simple123')
-        self.assertEqual(fs(dec_ml_str),    'simple123')
+        self.assertEqual(fs(dec_csvstr),   'simple123')
+        self.assertEqual(fs(dec_mattestr),    'simple123')
         self.assertEqual(fs(dec_raw_str),   'simple123')
 
         raw_str = 'has"quote"'
-        enc_ml_str, enc_csv_str, enc_nuke_str, \
-            dec_nuke_str, dec_csv_str, \
-            dec_ml_str, dec_raw_str = do_every_encoding(raw_str)
+        enc_mattestr, enc_csvstr, enc_nuke_str, \
+            dec_nuke_str, dec_csvstr, \
+            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
 
         self.assertEqual(fs(raw_str),       'has"quote"')
-        self.assertEqual(fs(enc_ml_str),    'has"quote"')
-        self.assertEqual(fs(enc_csv_str),   '"has/"quote/""')
+        self.assertEqual(fs(enc_mattestr),    'has"quote"')
+        self.assertEqual(fs(enc_csvstr),   '"has/"quote/""')
         self.assertEqual(fs(enc_nuke_str),  '"has//"quote//""')
         self.assertEqual(fs(dec_nuke_str),  '"has/"quote/""')
-        self.assertEqual(fs(dec_csv_str),   '"has/"quote/""')
-        self.assertEqual(fs(dec_ml_str),    'has"quote"')
+        self.assertEqual(fs(dec_csvstr),   '"has/"quote/""')
+        self.assertEqual(fs(dec_mattestr),    'has"quote"')
         self.assertEqual(fs(dec_raw_str),   'has"quote"')
 
         raw_str = 'has\\escape'
-        enc_ml_str, enc_csv_str, enc_nuke_str, \
-            dec_nuke_str, dec_csv_str, \
-            dec_ml_str, dec_raw_str = do_every_encoding(raw_str)
+        enc_mattestr, enc_csvstr, enc_nuke_str, \
+            dec_nuke_str, dec_csvstr, \
+            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
 
         self.assertEqual(fs(raw_str),       'has/escape')
-        self.assertEqual(fs(enc_ml_str),    'has//escape')
-        self.assertEqual(fs(enc_csv_str),   '"has////escape"')
+        self.assertEqual(fs(enc_mattestr),    'has//escape')
+        self.assertEqual(fs(enc_csvstr),   '"has////escape"')
         self.assertEqual(fs(enc_nuke_str),  '"has////escape"')
         self.assertEqual(fs(dec_nuke_str),  '"has//escape"')
-        self.assertEqual(fs(dec_csv_str),   '"has////escape"')
-        self.assertEqual(fs(dec_ml_str),    'has//escape')
+        self.assertEqual(fs(dec_csvstr),   '"has////escape"')
+        self.assertEqual(fs(dec_mattestr),    'has//escape')
         self.assertEqual(fs(dec_raw_str),   'has/escape')
+
+        raw_str = '\\brack*[et]'
+        enc_mattestr, enc_csvstr, enc_nuke_str, \
+            dec_nuke_str, dec_csvstr, \
+            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
+
+        self.assertEqual(fs(raw_str),       '/brack*[et]')
+        self.assertEqual(fs(enc_mattestr),    '//brack/*/[et/]')
+        self.assertEqual(fs(enc_csvstr),   '"////brack//*//[et//]"')
+        self.assertEqual(fs(enc_nuke_str),  '"////brack//*///[et///]"')
+        self.assertEqual(fs(dec_nuke_str),  '"//brack/*/[et/]"')
+        self.assertEqual(fs(dec_csvstr),   '"////brack//*//[et//]"')
+        self.assertEqual(fs(dec_mattestr),    '//brack/*/[et/]')
+        self.assertEqual(fs(dec_raw_str),   '/brack*[et]')
 
     def test_fnmatch_encoding(self):
         import cryptomatte_utilities as cu
         se = cu.StringEncoder()
 
-        fnmatch = se.encode_mlstr_to_fnmatch('aster*x')
+        fnmatch = se.encode_mattestr_to_fnmatch('aster*x')
         self.assertEqual(fnmatch, 'aster*x')
 
-        fnmatch = se.encode_mlstr_to_fnmatch('aster\\*x')
+        fnmatch = se.encode_mattestr_to_fnmatch('aster\\*x')
         self.assertEqual(fnmatch, 'aster[*]x')
 
-        fnmatch = se.encode_mlstr_to_fnmatch('\\\\brack\\*\\[et\\]')
+        fnmatch = se.encode_mattestr_to_fnmatch('\\\\brack\\*\\[et\\]')
         self.assertEqual(fnmatch, '\\\\brack[*][[]et[]]')
 
 
