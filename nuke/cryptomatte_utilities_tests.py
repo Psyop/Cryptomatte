@@ -1037,7 +1037,7 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.key_on_image(self.bunny_pkr, self.set_pkr)
         self.assertMatteList("bunny, set", "Could not re-add by picking.")
 
-    def test_wildcard_matte_list_expansion(self):
+    def test_wildcard_explosion(self):
         wildcard_str = "*flower*"
         self.gizmo.knob("useWildcards").setValue(True)
         self.gizmo.knob("matteList").setValue(wildcard_str)
@@ -1065,6 +1065,20 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.assertMatteList('*flower*', "Wildcard not expanded.")
         self.key_on_image(rm_flowerB)
         self.assertMatteList('*flower*', "No change should happen.")
+
+    def test_wildcard_partial_explosion(self):
+        """ Checks that only escaped wildcards do not expand, 
+        while others do in the same list. """
+        unexpanded          = r'"has_\\*_asterisk", sphere_*'
+        unexpanded_nukestr  = r'"has_\*_asterisk", sphere_*'
+        expanded_nukestr    = r'"has_\*_asterisk", "sphere_\?_2"'
+
+        self.gizmo.setInput(0, self.read_wildcard)
+        self.gizmo.knob("useWildcards").setValue(False)
+        self.gizmo.knob("matteList").setValue(unexpanded)
+        self.assertMatteList(unexpanded_nukestr, "No explosion.")
+        self.gizmo.knob("useWildcards").setValue(True)
+        self.assertMatteList(expanded_nukestr, "Partial explosion")
 
     def test_wildcard_case_sensitive_matching(self):
         wildcard_uppercase_str = "*Rect*"
