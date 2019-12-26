@@ -197,7 +197,7 @@ class CSVParsingNuke(unittest.TestCase):
         self.assertEqual(ml._decode_csv(", ".join(csvs_only)), raws_only)
         self.assertEqual(ml._decode_csv(",  ".join(csvs_only)), raws_only)
 
-    def test_new_encoding(self):
+    def test_every_encoding_step(self):
         # TODO: change name
 
         r""" Let's tell a story about encoding. 
@@ -221,6 +221,9 @@ class CSVParsingNuke(unittest.TestCase):
             raw str:            \brack*[et]
 
         """
+        import cryptomatte_utilities as cu
+        se = cu.StringEncoder()
+
         def simulate_nuke_getvalue(enc_nuke_str):
             # simulate nuke's behavior - double escapes and escaped square brackets go away
             dec_nuke_str = enc_nuke_str
@@ -240,15 +243,13 @@ class CSVParsingNuke(unittest.TestCase):
 
             dec_nuke_str = simulate_nuke_getvalue(enc_nuke_str)
             dec_csv_str = se.decode_nukestr_to_csv(dec_nuke_str)
-            dec_ml_str = se.decode_csvstr_to_mlstr(dec_csv_str)[0]
+            dec_ml_str = se.decode_csvstr_to_mlstrs(dec_csv_str)[0]
             dec_raw_str = se.decode_mlstr_to_raw(dec_ml_str)
             return (
                 enc_ml_str, enc_csv_str, enc_nuke_str, 
                 dec_nuke_str, dec_csv_str, dec_ml_str, dec_raw_str
             )
 
-        import cryptomatte_utilities as cu
-        se = cu.StringEncoder()
 
         raw_str = '\\brack*[et]'
         enc_ml_str, enc_csv_str, enc_nuke_str, \
@@ -291,6 +292,19 @@ class CSVParsingNuke(unittest.TestCase):
         self.assertEqual(fs(dec_csv_str),   'simple123')
         self.assertEqual(fs(dec_ml_str),    'simple123')
         self.assertEqual(fs(dec_raw_str),   'simple123')
+
+    def test_fnmatch_encoding(self):
+        import cryptomatte_utilities as cu
+        se = cu.StringEncoder()
+
+        fnmatch = se.encode_mlstr_to_fnmatch('aster*x')
+        self.assertEqual(fnmatch, 'aster*x')
+
+        fnmatch = se.encode_mlstr_to_fnmatch('aster\\*x')
+        self.assertEqual(fnmatch, 'aster[*]x')
+
+        fnmatch = se.encode_mlstr_to_fnmatch('\\\\brack\\*\\[et\\]')
+        self.assertEqual(fnmatch, '\\\\brack[*][[]et[]]')
 
 
 class CryptomatteNodePasting(unittest.TestCase):

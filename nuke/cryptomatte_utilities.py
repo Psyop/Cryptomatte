@@ -1103,7 +1103,7 @@ class StringEncoder(object):
         """
         return nukestr.replace("\\", "\\\\") 
 
-    def decode_csvstr_to_mlstr(self, csvstr):
+    def decode_csvstr_to_mlstrs(self, csvstr):
         """ Converts a CSV to mattelist form """
         # This is done by CSV's behavior with escapes. 
         return self._new_decode_csv(csvstr)
@@ -1153,8 +1153,29 @@ class StringEncoder(object):
                 cleaned_items.append(cleaned)
         return ", ".join(cleaned_items)
 
+    ##########
 
-class MatteList(object):
+    def encode_mlstr_to_fnmatch(self, mlstr):
+        fn_token = "[]*?"
+        pattern = ""
+
+        escaped = False
+        for char in mlstr:
+            if char == "\\" and not escaped:
+                escaped = True
+            elif escaped:
+                if char in fn_token:
+                    pattern += "[%s]" % char
+                if char == "\\":
+                    pattern += "\\\\"
+                escaped = False
+            else:
+                pattern += char
+        return pattern
+
+
+
+class MatteList(StringEncoder):
 
     fnmatch_token_escapes_re = re.compile(r"(\\)(?=[*?])")
 
@@ -1163,13 +1184,14 @@ class MatteList(object):
         self.mattes = None
 
         if type(initializer) in (str, unicode):
-            mattelist_str = initializer
+            nuke_str = initializer
         else:
             gizmo = initializer
-            mattelist_str = gizmo.knob("matteList").getValue()
+            nuke_str = gizmo.knob("matteList").getValue()
 
-        matte_list = map(self.ensure_utf8, self._decode_csv(mattelist_str))
-        # print "decoded", mattelist_str, "---- to", "|".join(matte_list)
+        csv = self.decode_nukestr_to_csv(nuke_str)
+        mlstrs = self.decode_csvstr_to_mlstrs(csv)
+        matte_list = map(self.ensure_utf8, mlstrs)
         self.mattes = set(matte_list)
         self._update_raw_mattes()
 
@@ -1177,11 +1199,9 @@ class MatteList(object):
         return string.encode("utf-8") if type(string) is unicode else str(string) 
 
 
-
-
-    def add(self, name):
-        name = name.replace("*", "\\*").replace("?", "\\?")
-        self.mattes.add(name)
+    def add(self, rawstr):
+        mlstr = self.encode_rawstr_to_mlstr(rawstr)
+        self.mattes.add(mlstr)
         self._update_raw_mattes()
 
     def remove(self, name):
@@ -1210,19 +1230,19 @@ class MatteList(object):
 
     @property
     def IDs(self):
-        return map(self._id_from_matte_name, self.raw_mattes)    
+        def _id_from_matte_name(name):
+            if name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
+                return single_precision(float(name[1:-1]))
+            else:
+                return mm3hash_float(name)
+        return map(_id_from_matte_name, self.raw_mattes)    
 
     def _update_raw_mattes(self):
         self.raw_mattes = set(
-            self.fnmatch_token_escapes_re.sub(r"", x) 
+            self.decode_mlstr_to_raw(x)
             for x in self.mattes
         )
 
-    def _id_from_matte_name(self, name):
-        if name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
-            return single_precision(float(name[1:-1]))
-        else:
-            return mm3hash_float(name)
 
     def _name_has_wildcards(self, name):
         return HAS_WILDCARDS_RE.search(name)
@@ -1234,24 +1254,24 @@ class MatteList(object):
         manifest = cinfo.parse_manifest()
         old_mattes = self.mattes
         self.mattes = set()
-        for matte in old_mattes:
-            if self._name_has_wildcards(matte):
-                globbed_wildcard_mattes = self._glob_wildcard_names(matte, manifest)
+        for mlstr in old_mattes:
+            if self._name_has_wildcards(mlstr):
+
+                globbed_wildcard_mattes = self._glob_wildcard_names(mlstr, manifest)
                 for globbed_matte in globbed_wildcard_mattes:
-                    self.mattes.add(globbed_matte)
+                    self.mattes.add( globbed_matte)
             else:
-                self.mattes.add(matte)
+                self.mattes.add(mlstr)
         self._update_raw_mattes()
 
     @property    
     def mattelist_str(self):
         matte_names_list = list(self.mattes)
         matte_names_list.sort(key=lambda x: x.lower())
-        mattelist_str = self._encode_csv(matte_names_list)
-        # print "encoded list", " | ".join(self.mattes), "to string", mattelist_str
-        mattelist_str = mattelist_str.replace("\\\\*", "\\*")
-        mattelist_str = mattelist_str.replace("\\\\?", "\\?")
-        return self._raw_strs_to_mattelist_strs(mattelist_str)
+
+        csv = self.encode_mlstr_to_csv(matte_names_list)
+        nukestr = self.encode_csvstr_to_nukestr(csv)
+        return nukestr
 
     def set_gizmo_mattelist(self, gizmo):
         # TODO: test performance of checking first
@@ -1259,66 +1279,18 @@ class MatteList(object):
         # if gizmo.knob("matteList").getValue() != result:
         gizmo.knob("matteList").setValue(self.mattelist_str)
 
-    def _glob_wildcard_names(self, raw_str, manifest):
+    def _glob_wildcard_names(self, mlstr, manifest):
         """ Returns a set of matches from the wildcard string."""
+
+        #TODO: This does not handle escaped wildcards at all. 
         match_set = []
+        fn_pattern = self.encode_mlstr_to_fnmatch(mlstr)
+        print "searching for", fn_pattern
         for manf in manifest:
-            if fnmatch.fnmatchcase(manf, raw_str):
+            if fnmatch.fnmatchcase(manf, fn_pattern):
                 manf = manf.encode("utf-8") if type(manf) is unicode else str(manf)
-                match_set.append(manf)
+                match_set.append(self.encode_rawstr_to_mlstr(manf))
         return match_set
-
-    def _raw_strs_to_mattelist_strs(self, mattelist_str):
-        r"""To put strings into a matte list, we need to double escapes characters. 
-
-        The exception to this are square brackets, which need a single escape 
-        to not be consumed by Nuke itself.
-
-        "back\slash" -> "back\\slash"
-        "brack\[ets\]" -> "brack\[ets\]"
-        "back\slash.brack\[ets\]" -> "back\\slash.brack\[ets\]"
-        """
-        bracket_esc_processing_re = re.compile(r"(\\)(?![\[\]])")
-        return bracket_esc_processing_re.sub(r"\\\\", mattelist_str)
-
-    def _encode_csv(self, raw_strs):
-        """
-        Encodes CSVs with special characters escaped, and surrounded in quotes
-        if it contains any of these or spaces, with a space after each comma. 
-        """
-        cleaned_items = []
-        need_escape_chars = '[]"\\'
-        need_quotes_characters = ' ,'
-
-        for item in raw_strs:
-            need_escape = any(x in item for x in need_escape_chars)
-            need_quotes = need_escape or any(x in item for x in need_quotes_characters)
-
-            cleaned = None
-            if need_escape:
-                cleaned = ""
-                for char in item:
-                    if char in need_escape_chars:
-                        cleaned +=( '\\%s' % char )
-                    else:
-                        cleaned += char
-            else:
-                cleaned = item
-            if need_quotes:
-                cleaned_items.append('"%s"'%cleaned)
-            else:
-                cleaned_items.append(cleaned)
-        return ", ".join(cleaned_items)
-
-    def _decode_csv(self, mattelist_str):
-        """ Decodes CSVs into a list of strings. """
-        double_escaped = self.fnmatch_token_escapes_re.sub(r"\\\\", mattelist_str)
-        reader = csv.reader([double_escaped], quotechar='"', delimiter=',', escapechar="\\", 
-            doublequote=False, quoting=csv.QUOTE_ALL, skipinitialspace=True);
-        result = []
-        for row in reader:
-            result += row
-        return result
 
 
 def _has_wildcards(raw_str):
