@@ -264,7 +264,6 @@ class CSVParsingNuke(unittest.TestCase):
                 dec_nuke_str, dec_csvstr, dec_mattestr, dec_raw_str
             )
 
-
         raw_str = '\\brack*[et]'
         enc_mattestr, enc_csvstr, enc_nuke_str, \
             dec_nuke_str, dec_csvstr, \
@@ -279,19 +278,19 @@ class CSVParsingNuke(unittest.TestCase):
         self.assertEqual(dec_mattestr,  r'\\brack\*\[et\]')
         self.assertEqual(dec_raw_str,   r'\brack*[et]')
 
-        raw_str = 'has space?'
+        raw_str = ' has space?'
         enc_mattestr, enc_csvstr, enc_nuke_str, \
             dec_nuke_str, dec_csvstr, \
             dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
 
-        self.assertEqual(raw_str,       r'has space?')
-        self.assertEqual(enc_mattestr,  r'has space\?')
-        self.assertEqual(enc_csvstr,    r'"has space\\?"')
-        self.assertEqual(enc_nuke_str,  r'"has space\\?"')
-        self.assertEqual(dec_nuke_str,  r'"has space\?"')
-        self.assertEqual(dec_csvstr,    r'"has space\\?"')
-        self.assertEqual(dec_mattestr,  r'has space\?')
-        self.assertEqual(dec_raw_str,   r'has space?')
+        self.assertEqual(raw_str,       r' has space?')
+        self.assertEqual(enc_mattestr,  r' has space\?')
+        self.assertEqual(enc_csvstr,    r'" has space\\?"')
+        self.assertEqual(enc_nuke_str,  r'" has space\\?"')
+        self.assertEqual(dec_nuke_str,  r'" has space\?"')
+        self.assertEqual(dec_csvstr,    r'" has space\\?"')
+        self.assertEqual(dec_mattestr,  r' has space\?')
+        self.assertEqual(dec_raw_str,   r' has space?')
 
         raw_str = 'simple123'
         enc_mattestr, enc_csvstr, enc_nuke_str, \
