@@ -70,15 +70,15 @@ Finer points (advanced):
 
 - If `Use Wildcards` is not enabled, the name `*sterisk` is used as the literal string. This is however somewhat like having an unexploded bomb in your matte list - as soon as you enable wildcards it'll expand. Keying an object with an `*` in the name will add escape characters to the front, to ensure this doesn't happen. 
 - For example, an object is literally named  `*sterisk`, where some smartass put an asterisk into the name itself.
- - `\\*sterisk` means the literal name `*sterisk`. The escape characters (`\\`) preceding the `*` mean it is not an fnmatch expression, and will not change when enabling wild cards. 
- - Keying an object named `*sterisk` will add `\\*sterisk` to your matte list, so that when wildcards are enabled it will not change. 
+  - `\\*sterisk` means the literal name `*sterisk`. The escape characters (`\\`) preceding the `*` mean it is not an fnmatch expression, and will not change when enabling wild cards. 
+  - Keying an object named `*sterisk` will add `\\*sterisk` to your matte list, so that when wildcards are enabled it will not change. 
 - It's possible to mixing wildcards and literal characters, like so: 
- - `\\*sterisk*` will match `*sterisk1`, `*sterisk2`,  `*sterisk3` and so on at the same time. 
+  - `\\*sterisk*` will match `*sterisk1`, `*sterisk2`,  `*sterisk3` and so on at the same time. 
 -  What if my name contains square brackets? (`Brack[et]`)
- - This is an even specialer case, as square brackets have meaning in both fnmatch and muke. Nuke will match the square brackets themselves. For a literal square bracket, these require three escape characters. In the matte list this will appear as `Brack\\\[et\\\]`. 
- - Brackets are also used by fnmatch. In fnmatch, `[*]sterisk` is a way of writing a literal asterisk and will match only `*sterisk`. 
- - Using this mechanism is too complicated due to multiple levels of escaping and is not recommended. Instead, use `\\*sterisk` in the matte list to signify a literal asterisk.
- - `\\*sterisk*` will match `*sterisk1`, `*sterisk2`, but not `asterisk1`.
+  - This is an even specialer case, as square brackets have meaning in both fnmatch and muke. Nuke will match the square brackets themselves. For a literal square bracket, these require three escape characters. In the matte list this will appear as `Brack\\\[et\\\]`. 
+  - Brackets are also used by fnmatch. In fnmatch, `[*]sterisk` is a way of writing a literal asterisk and will match only `*sterisk`. 
+  - Using this mechanism is too complicated due to multiple levels of escaping and is not recommended. Instead, use `\\*sterisk` in the matte list to signify a literal asterisk.
+  - `\\*sterisk*` will match `*sterisk1`, `*sterisk2`, but not `asterisk1`.
 
 
 ### Encryptomatte Gizmo
