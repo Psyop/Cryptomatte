@@ -1145,7 +1145,6 @@ class StringEncoder(object):
         return ", ".join(cleaned_items)
 
     ##########
-
     def encode_mattestr_to_fnmatch(self, mattestr):
         fn_token = "[]*?"
         pattern = ""
@@ -1165,8 +1164,20 @@ class StringEncoder(object):
         return pattern
 
 
-
 class MatteList(StringEncoder):
+    """
+        Mattelist is a class for dealing with matte lists, from
+        the state stored in the gizmo, through fnmatching, and 
+        to the raw state. 
+
+        For the steps of string parsing, see StringEncoder, a 
+        separate calss for convenience reasons. 
+
+        To use, instantiate it with either a gizmo, or a string 
+        as recieved from a gizmo matte list (nukestr) as the 
+        argument. 
+
+    """
 
     fnmatch_token_escapes_re = re.compile(r"(\\)(?=[*?])")
 
