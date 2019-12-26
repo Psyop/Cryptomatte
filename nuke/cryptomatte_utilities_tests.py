@@ -167,20 +167,20 @@ class CSVParsingNuke(unittest.TestCase):
 
     def test_has_wildcards(self):
         import cryptomatte_utilities as cu
-        self.assertFalse(cu._has_wildcards("test_str"))
-        self.assertFalse(cu._has_wildcards("test_\\*"))
-        self.assertFalse(cu._has_wildcards("test_\\?"))
-        self.assertFalse(cu._has_wildcards("\\[\\]"))
-        self.assertFalse(cu._has_wildcards("\\["))
-        self.assertFalse(cu._has_wildcards("\\]"))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search("test_str"))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search("test_\\*"))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search("test_\\?"))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search("\\[\\]"))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search("\\["))
+        self.assertFalse(cu.HAS_WILDCARDS_RE.search("\\]"))
 
-        self.assertTrue(cu._has_wildcards("test_str*"))
-        self.assertTrue(cu._has_wildcards("test_str?"))
-        self.assertTrue(cu._has_wildcards("test_[*]"))
-        self.assertTrue(cu._has_wildcards("test_[*]"))
-        self.assertTrue(cu._has_wildcards("*"))
-        self.assertTrue(cu._has_wildcards("?"))
-        self.assertTrue(cu._has_wildcards("[]"))
+        self.assertTrue(cu.HAS_WILDCARDS_RE.search("test_str*"))
+        self.assertTrue(cu.HAS_WILDCARDS_RE.search("test_str?"))
+        self.assertTrue(cu.HAS_WILDCARDS_RE.search("test_[*]"))
+        self.assertTrue(cu.HAS_WILDCARDS_RE.search("test_[*]"))
+        self.assertTrue(cu.HAS_WILDCARDS_RE.search("*"))
+        self.assertTrue(cu.HAS_WILDCARDS_RE.search("?"))
+        self.assertTrue(cu.HAS_WILDCARDS_RE.search("[]"))
 
     def test_encode_rawstr_to_mlstr(self):
         import cryptomatte_utilities as cu

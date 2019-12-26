@@ -642,13 +642,6 @@ def _expand_wildcards(gizmo, cinfo):
     if not gizmo.knob("useWildcards").value():
         return 
 
-    # print "has wildcards", _has_wildcards(gizmo.knob("matteList").getValue())
-    # if not _has_wildcards(gizmo.knob("matteList").getValue()):
-    #     # TODO: determine if this is still necessary 
-    #     # This checks for a wildcard before parsing the matte list. 
-    #     # This may or may not matter, or there may be a better way to do it. 
-    #     return 
-
     ml = MatteList(gizmo)
     if ml.has_wildcards:
         ml.expand_wildcards(cinfo)
@@ -1061,25 +1054,24 @@ class StringEncoder(object):
     r""" Let's tell a story about encoding. 
     
     First, we have a name coming in, the raw one. 
-        raw_str:            brack*[et]
+        raw_str:            \brack*[et]
     We need to process it so that we know how to use it. 
-        ml str:             \\brack\*[et]
-    Then double escapes for CSV to handle it. 
-        csv string:         \\\\brack\\*[et]
+        ml str:             \\brack\*\[et\]
+    Then double escapes for CSV. 
+        csv string:         \\\\brack\\*\\[et\\]
     Then process brackets for nuke to ignore them. 
-        nuke string (out):  \\\\brack\\*\[et\]
+        nuke string (out):  \\\\brack\\*\\\[et\\\]
 
     Get nuke str back from nuke, which will remove a level of escapes. 
-        nuke string (in):   \\brack\*[et]
+        nuke string (in):   \\brack\*\[et\]
     This is not ready for CSV to process:
-        csv string:         \\\\brack\\*[et]
+        csv string:         \\\\brack\\*\\[et\\]
     CSV gives us mattelist name:
-        ml str:             \\brack\*[et]
+        ml str:             \\brack\*\[et\]
     From that we get the raw:
         raw str:            \brack*[et]
 
     """
-
 
     def encode_rawstr_to_mlstr(self, rawstr):
         """ Converts a raw string to a mattelist form """
@@ -1106,7 +1098,7 @@ class StringEncoder(object):
     def decode_csvstr_to_mlstrs(self, csvstr):
         """ Converts a CSV to mattelist form """
         # This is done by CSV's behavior with escapes. 
-        return self._new_decode_csv(csvstr)
+        return self._decode_csv(csvstr)
 
     def decode_mlstr_to_raw(self, mlstr):
         """ Converts a mlstr to raw """
@@ -1118,9 +1110,8 @@ class StringEncoder(object):
 
     ####################
 
-    def _new_decode_csv(self, csv_str):
+    def _decode_csv(self, csv_str):
         """ Decodes CSVs into a list of strings. """
-        #TODO: remove new name
         reader = csv.reader([csv_str], quotechar='"', delimiter=',', escapechar="\\", 
             doublequote=False, quoting=csv.QUOTE_ALL, skipinitialspace=True);
         result = []
@@ -1275,33 +1266,18 @@ class MatteList(StringEncoder):
         return nukestr
 
     def set_gizmo_mattelist(self, gizmo):
-        # TODO: test performance of checking first
-        # result = self.mattelist_str
-        # if gizmo.knob("matteList").getValue() != result:
         gizmo.knob("matteList").setValue(self.mattelist_str)
 
     def _glob_wildcard_names(self, mlstr, manifest):
         """ Returns a set of matches from the wildcard string."""
-
-        #TODO: This does not handle escaped wildcards at all. 
         match_set = []
         fn_pattern = self.encode_mlstr_to_fnmatch(mlstr)
-        print "searching for", fn_pattern
         for manf in manifest:
             if fnmatch.fnmatchcase(manf, fn_pattern):
                 manf = manf.encode("utf-8") if type(manf) is unicode else str(manf)
                 match_set.append(self.encode_rawstr_to_mlstr(manf))
         return match_set
 
-
-def _has_wildcards(raw_str):
-    """ Checks for wildcards in string that aren't escaped.
-    Returns True if a wildcard is found, else False.
-    """
-    if HAS_WILDCARDS_RE.search(raw_str):
-        return True
-    else:
-        return False
 
 def _modify_mattelist_with_keyer(gizmo, keyed_name, remove):
     ml = MatteList(gizmo)
