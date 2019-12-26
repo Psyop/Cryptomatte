@@ -631,14 +631,14 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
         return
     _set_ui(gizmo)
     _set_channels(gizmo, cryptomatte_channels, cinfo.get_selection_name())
-    _expand_wildcards(gizmo, cinfo)
+    _explode_wildcards(gizmo, cinfo)
     _set_expression(gizmo, cryptomatte_channels)
     _set_preview_expression(gizmo, cryptomatte_channels)
     _set_crypto_layer_choice(gizmo, cinfo)
 
 
-def _expand_wildcards(gizmo, cinfo):
-    """ Expands the wildcards in the matte list."""
+def _explode_wildcards(gizmo, cinfo):
+    """ Explodes the wildcards in the matte list."""
     if not gizmo.knob("useWildcards").value():
         return 
 
