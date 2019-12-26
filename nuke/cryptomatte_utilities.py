@@ -11,7 +11,7 @@ import nuke
 import struct
 import fnmatch
 
-__version__ = "1.3.0"
+__version__ = "1.3.0-beta1"
 
 GIZMO_CHANNEL_KNOBS = [
     "in00", "in01", "in02", "in03", 
@@ -32,6 +32,7 @@ CRYPTO_METADATA_DEFAULT_PREFIX = CRYPTO_METADATA_LEGAL_PREFIX[1]
 
 HAS_WILDCARDS_RE = re.compile(r"(?<!\\)([*?\[\]])")
 
+
 def setup_cryptomatte_ui():
     if nuke.GUI:
         toolbar = nuke.menu("Nodes")
@@ -40,6 +41,7 @@ def setup_cryptomatte_ui():
         menu.addCommand("Decryptomatte All", "import cryptomatte_utilities as cu; cu.decryptomatte_all();")
         menu.addCommand("Decryptomatte Selection", "import cryptomatte_utilities as cu; cu.decryptomatte_selected();")
         menu.addCommand("Encryptomatte", "import cryptomatte_utilities as cu; cu.encryptomatte_create_gizmo();")
+
 
 def setup_cryptomatte():
     nuke.addKnobChanged(lambda: cryptomatte_knob_changed_event(

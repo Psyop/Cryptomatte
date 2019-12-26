@@ -54,7 +54,7 @@ Gizmo {
  addUserKnob {1 keyedName l "Keyed Name" t "This field is for information only." +HIDDEN}
  addUserKnob {26 "" +HIDDEN}
 
- addUserKnob {26 cryptomatteVersion l "Cryptomatte Version" T 1.3.0}
+ addUserKnob {26 cryptomatteVersion l "Cryptomatte Version" T "1.3.0-beta1"}
  addUserKnob {22 troubleshoot l "Troubleshoot"  +STARTLINE
  t "'Force Update All' will run 'Force Update' on all Cryptomatte gizmos in the Nuke script. 'Force Update' orders the gizmos to re-configure themselves based on available metadata, Cryptomatte depth, and the matte list. This updates all aspects of thier operation, from the preview modes to the extraction expression. Usually these updates occur automatically on certain actions, such as 'keying' the image, changing layer selection, or reconnecting images. However if changes occur upstream of the gizmos that require manually invoked updates, 'Force Update' and 'Force Update All' may be used. "
  T "

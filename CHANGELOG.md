@@ -1,4 +1,4 @@
-### 1.3.0:
+### 1.3.0-beta1:
 
 An update to the Nuke plugins.
 
