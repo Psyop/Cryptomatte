@@ -82,4 +82,4 @@ Decoders:
 * Jens Lindgren
 * Rainer Trummer
 * Veronica Tello
-* Method studios
+* Stephen Mackenzie
