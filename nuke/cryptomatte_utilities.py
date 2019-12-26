@@ -1051,7 +1051,19 @@ def _get_keyed_ID(node, keying_knob, remove=False):
 #############################################
 
 class StringEncoder(object):
-    r""" Let's tell a story about encoding. 
+    r""" 
+    Helper class for all the steps of encoding that need
+    to happen in order to get strings through all the levels
+    of parsing. 
+
+    raw str: literal names, no escapes, ready for hashing. 
+    matte str:  strings are users see them. Backslashes and literal f
+                nmatch tokens have escapes
+    csv str: comma separated values, with another level of escaping
+    nuke str:   brackets have special meaning, so have one more
+                level of escaping. 
+
+    Example:
     
     First, we have a name coming in, the raw one. 
         raw str:            \brack*[et]

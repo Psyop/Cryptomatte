@@ -218,7 +218,8 @@ class CSVParsingNuke(unittest.TestCase):
         self.assertEqual(se.decode_csvstr_to_mattestrs(",  ".join(csv_only)), mls_only)
 
     def test_every_encoding_step(self):
-        r""" Let's tell a story about encoding. 
+        r""" Tests results of every step of the encoding and decoding strings. 
+        Encoding example. 
         
         First, we have a name coming in, the raw one. 
             raw_str:            brack*[et]
@@ -250,10 +251,6 @@ class CSVParsingNuke(unittest.TestCase):
                 dec_nuke_str = dec_nuke_str.replace("\\%s" % token, token)
             return dec_nuke_str
 
-        def fs(string):
-            """ Returns backslashes replaced with forward slashes, to make things easier. """
-            return string.replace('\\', '/')
-
         def do_every_encoding(raw_str):
             enc_mattestr = se.encode_rawstr_to_mattestr(raw_str)
             enc_csvstr = se.encode_mattestr_to_csv([enc_mattestr])
@@ -268,75 +265,77 @@ class CSVParsingNuke(unittest.TestCase):
                 dec_nuke_str, dec_csvstr, dec_mattestr, dec_raw_str
             )
 
-        raw_str = 'has space?'
-        enc_mattestr, enc_csvstr, enc_nuke_str, \
-            dec_nuke_str, dec_csvstr, \
-            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
-
-        self.assertEqual(fs(raw_str),       'has space?')
-        self.assertEqual(fs(enc_mattestr),    'has space/?')
-        self.assertEqual(fs(enc_csvstr),   '"has space//?"')
-        self.assertEqual(fs(enc_nuke_str),  '"has space//?"')
-        self.assertEqual(fs(dec_nuke_str),  '"has space/?"')
-        self.assertEqual(fs(dec_csvstr),   '"has space//?"')
-        self.assertEqual(fs(dec_mattestr),    'has space/?')
-        self.assertEqual(fs(dec_raw_str),   'has space?')
-
-        raw_str = 'simple123'
-        enc_mattestr, enc_csvstr, enc_nuke_str, \
-            dec_nuke_str, dec_csvstr, \
-            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
-
-        self.assertEqual(fs(raw_str),       'simple123')
-        self.assertEqual(fs(enc_mattestr),    'simple123')
-        self.assertEqual(fs(enc_csvstr),   'simple123')
-        self.assertEqual(fs(enc_nuke_str),  'simple123')
-        self.assertEqual(fs(dec_nuke_str),  'simple123')
-        self.assertEqual(fs(dec_csvstr),   'simple123')
-        self.assertEqual(fs(dec_mattestr),    'simple123')
-        self.assertEqual(fs(dec_raw_str),   'simple123')
-
-        raw_str = 'has"quote"'
-        enc_mattestr, enc_csvstr, enc_nuke_str, \
-            dec_nuke_str, dec_csvstr, \
-            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
-
-        self.assertEqual(fs(raw_str),       'has"quote"')
-        self.assertEqual(fs(enc_mattestr),    'has"quote"')
-        self.assertEqual(fs(enc_csvstr),   '"has/"quote/""')
-        self.assertEqual(fs(enc_nuke_str),  '"has//"quote//""')
-        self.assertEqual(fs(dec_nuke_str),  '"has/"quote/""')
-        self.assertEqual(fs(dec_csvstr),   '"has/"quote/""')
-        self.assertEqual(fs(dec_mattestr),    'has"quote"')
-        self.assertEqual(fs(dec_raw_str),   'has"quote"')
-
-        raw_str = 'has\\escape'
-        enc_mattestr, enc_csvstr, enc_nuke_str, \
-            dec_nuke_str, dec_csvstr, \
-            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
-
-        self.assertEqual(fs(raw_str),       'has/escape')
-        self.assertEqual(fs(enc_mattestr),    'has//escape')
-        self.assertEqual(fs(enc_csvstr),   '"has////escape"')
-        self.assertEqual(fs(enc_nuke_str),  '"has////escape"')
-        self.assertEqual(fs(dec_nuke_str),  '"has//escape"')
-        self.assertEqual(fs(dec_csvstr),   '"has////escape"')
-        self.assertEqual(fs(dec_mattestr),    'has//escape')
-        self.assertEqual(fs(dec_raw_str),   'has/escape')
 
         raw_str = '\\brack*[et]'
         enc_mattestr, enc_csvstr, enc_nuke_str, \
             dec_nuke_str, dec_csvstr, \
             dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
 
-        self.assertEqual(fs(raw_str),       '/brack*[et]')
-        self.assertEqual(fs(enc_mattestr),    '//brack/*/[et/]')
-        self.assertEqual(fs(enc_csvstr),   '"////brack//*//[et//]"')
-        self.assertEqual(fs(enc_nuke_str),  '"////brack//*///[et///]"')
-        self.assertEqual(fs(dec_nuke_str),  '"//brack/*/[et/]"')
-        self.assertEqual(fs(dec_csvstr),   '"////brack//*//[et//]"')
-        self.assertEqual(fs(dec_mattestr),    '//brack/*/[et/]')
-        self.assertEqual(fs(dec_raw_str),   '/brack*[et]')
+        self.assertEqual(raw_str,       r'\brack*[et]')
+        self.assertEqual(enc_mattestr,  r'\\brack\*\[et\]')
+        self.assertEqual(enc_csvstr,    r'"\\\\brack\\*\\[et\\]"')
+        self.assertEqual(enc_nuke_str,  r'"\\\\brack\\*\\\[et\\\]"')
+        self.assertEqual(dec_nuke_str,  r'"\\brack\*\[et\]"')
+        self.assertEqual(dec_csvstr,    r'"\\\\brack\\*\\[et\\]"')
+        self.assertEqual(dec_mattestr,  r'\\brack\*\[et\]')
+        self.assertEqual(dec_raw_str,   r'\brack*[et]')
+
+        raw_str = 'has space?'
+        enc_mattestr, enc_csvstr, enc_nuke_str, \
+            dec_nuke_str, dec_csvstr, \
+            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
+
+        self.assertEqual(raw_str,       r'has space?')
+        self.assertEqual(enc_mattestr,  r'has space\?')
+        self.assertEqual(enc_csvstr,    r'"has space\\?"')
+        self.assertEqual(enc_nuke_str,  r'"has space\\?"')
+        self.assertEqual(dec_nuke_str,  r'"has space\?"')
+        self.assertEqual(dec_csvstr,    r'"has space\\?"')
+        self.assertEqual(dec_mattestr,  r'has space\?')
+        self.assertEqual(dec_raw_str,   r'has space?')
+
+        raw_str = 'simple123'
+        enc_mattestr, enc_csvstr, enc_nuke_str, \
+            dec_nuke_str, dec_csvstr, \
+            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
+
+        self.assertEqual(raw_str,       r'simple123')
+        self.assertEqual(enc_mattestr,  r'simple123')
+        self.assertEqual(enc_csvstr,    r'simple123')
+        self.assertEqual(enc_nuke_str,  r'simple123')
+        self.assertEqual(dec_nuke_str,  r'simple123')
+        self.assertEqual(dec_csvstr,    r'simple123')
+        self.assertEqual(dec_mattestr,  r'simple123')
+        self.assertEqual(dec_raw_str,   r'simple123')
+
+        raw_str = 'has"quote"'
+        enc_mattestr, enc_csvstr, enc_nuke_str, \
+            dec_nuke_str, dec_csvstr, \
+            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
+
+        self.assertEqual(raw_str,       r'has"quote"')
+        self.assertEqual(enc_mattestr,  r'has"quote"')
+        self.assertEqual(enc_csvstr,    r'"has\"quote\""')
+        self.assertEqual(enc_nuke_str,  r'"has\\"quote\\""')
+        self.assertEqual(dec_nuke_str,  r'"has\"quote\""')
+        self.assertEqual(dec_csvstr,    r'"has\"quote\""')
+        self.assertEqual(dec_mattestr,  r'has"quote"')
+        self.assertEqual(dec_raw_str,   r'has"quote"')
+
+        raw_str = 'has\\escape'
+        enc_mattestr, enc_csvstr, enc_nuke_str, \
+            dec_nuke_str, dec_csvstr, \
+            dec_mattestr, dec_raw_str = do_every_encoding(raw_str)
+
+        self.assertEqual(raw_str,       r'has\escape')
+        self.assertEqual(enc_mattestr,  r'has\\escape')
+        self.assertEqual(enc_csvstr,    r'"has\\\\escape"')
+        self.assertEqual(enc_nuke_str,  r'"has\\\\escape"')
+        self.assertEqual(dec_nuke_str,  r'"has\\escape"')
+        self.assertEqual(dec_csvstr,    r'"has\\\\escape"')
+        self.assertEqual(dec_mattestr,  r'has\\escape')
+        self.assertEqual(dec_raw_str,   r'has\escape')
+
 
     def test_fnmatch_encoding(self):
         import cryptomatte_utilities as cu
