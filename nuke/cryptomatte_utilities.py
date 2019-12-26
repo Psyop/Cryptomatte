@@ -24,7 +24,7 @@ GIZMO_REMOVE_CHANNEL_KNOBS = [
 ]
 GIZMO_ADD_CHANNEL_KNOBS = [
     "add00", "add01", "add02", "add03", 
-    "add04", "add05", "add06", "add07"
+    "add04", "add05", "add06", "add07" 
 ]
 
 CRYPTO_METADATA_LEGAL_PREFIX = ["exr/cryptomatte/", "cryptomatte/"]
@@ -1057,21 +1057,132 @@ def _get_keyed_ID(node, keying_knob, remove=False):
 # Utils - Comma seperated list processing
 #############################################
 
+class StringEncoder(object):
+    r""" Let's tell a story about encoding. 
+    
+    First, we have a name coming in, the raw one. 
+        raw_str:            brack*[et]
+    We need to process it so that we know how to use it. 
+        ml str:             \\brack\*[et]
+    Then double escapes for CSV to handle it. 
+        csv string:         \\\\brack\\*[et]
+    Then process brackets for nuke to ignore them. 
+        nuke string (out):  \\\\brack\\*\[et\]
+
+    Get nuke str back from nuke, which will remove a level of escapes. 
+        nuke string (in):   \\brack\*[et]
+    This is not ready for CSV to process:
+        csv string:         \\\\brack\\*[et]
+    CSV gives us mattelist name:
+        ml str:             \\brack\*[et]
+    From that we get the raw:
+        raw str:            \brack*[et]
+
+    """
+
+
+    def encode_rawstr_to_mlstr(self, rawstr):
+        """ Converts a raw string to a mattelist form """
+        escaped_tokens = "\\*?[]"
+        mlstr = rawstr
+        for token in escaped_tokens:
+            mlstr = mlstr.replace(token, "\\%s" % token)
+        return mlstr
+
+    def encode_mlstr_to_csv(self, mlstrs):
+        """ Converts a mlstr strings to csv. """
+        return self._new_encode_csv(mlstrs)
+
+    def encode_csvstr_to_nukestr(self, csvstr):
+        """ Converts a csv-friendly string to one that can be consumed by Nuke """
+        return csvstr.replace("[", "\\[").replace("]", "\\]")
+
+    def decode_nukestr_to_csv(self, nukestr):
+        """ Converts a nuke string to one that can be consumed by CSV 
+         getvalue will have stripped escape characters, so we need to restore them. 
+        """
+        return nukestr.replace("\\", "\\\\") 
+
+    def decode_csvstr_to_mlstr(self, csvstr):
+        """ Converts a CSV to mattelist form """
+        # This is done by CSV's behavior with escapes. 
+        return self._new_decode_csv(csvstr)
+
+    def decode_mlstr_to_raw(self, mlstr):
+        """ Converts a mlstr to raw """
+        escaped_tokens = "\\*?[]"
+        rawstr = mlstr
+        for token in escaped_tokens:
+            rawstr = rawstr.replace("\\%s" % token, token)
+        return rawstr
+
+    ####################
+
+    def _new_decode_csv(self, csv_str):
+        """ Decodes CSVs into a list of strings. """
+        #TODO: remove new name
+        reader = csv.reader([csv_str], quotechar='"', delimiter=',', escapechar="\\", 
+            doublequote=False, quoting=csv.QUOTE_ALL, skipinitialspace=True);
+        result = []
+        for row in reader:
+            result += row
+        return result
+
+    def _new_encode_csv(self, raw_strs):
+        cleaned_items = []
+        need_escape_chars = '"\\'
+        need_quotes_characters = ' ,'
+
+        for item in raw_strs:
+            need_escape = any(x in item for x in need_escape_chars)
+            need_quotes = need_escape or any(x in item for x in need_quotes_characters)
+
+            cleaned = None
+            if need_escape:
+                cleaned = ""
+                for char in item:
+                    if char in need_escape_chars:
+                        cleaned +=( '\\%s' % char )
+                    else:
+                        cleaned += char
+            else:
+                cleaned = item
+            if need_quotes:
+                cleaned_items.append('"%s"'%cleaned)
+            else:
+                cleaned_items.append(cleaned)
+        return ", ".join(cleaned_items)
+
+
 class MatteList(object):
+
+    fnmatch_token_escapes_re = re.compile(r"(\\)(?=[*?])")
+
     def __init__(self, initializer):
         import nuke
         self.mattes = None
 
         if type(initializer) in (str, unicode):
-            self.mattelist_str = initializer
+            mattelist_str = initializer
         else:
             gizmo = initializer
-            self.mattelist_str = gizmo.knob("matteList").getValue()
+            mattelist_str = gizmo.knob("matteList").getValue()
 
-        assert type(self.mattes) is set
+        matte_list = map(self.ensure_utf8, self._decode_csv(mattelist_str))
+        # print "decoded", mattelist_str, "---- to", "|".join(matte_list)
+        self.mattes = set(matte_list)
+        self._update_raw_mattes()
+
+    def ensure_utf8(self, string):
+        return string.encode("utf-8") if type(string) is unicode else str(string) 
+
+
+
 
     def add(self, name):
+        name = name.replace("*", "\\*").replace("?", "\\?")
         self.mattes.add(name)
+        self._update_raw_mattes()
 
     def remove(self, name):
         if name in self.mattes:
@@ -1088,17 +1199,24 @@ class MatteList(object):
             num_str = "<%s>" % mm3hash_float(name)
             if num_str in self.mattes:
                 self.mattes.remove(num_str)
+        self._update_raw_mattes()
 
     @property
     def has_wildcards(self):
         """ Checks for wildcards in string that aren't escaped.
         Returns True if a wildcard is found, else False.
         """
-        return any(self._name_has_wildcards(x) for x in self.mattes)
+        return any(self._name_has_wildcards(x) for x in self.raw_mattes)
 
     @property
     def IDs(self):
-        return map(self._id_from_matte_name, self.mattes)    
+        return map(self._id_from_matte_name, self.raw_mattes)    
+
+    def _update_raw_mattes(self):
+        self.raw_mattes = set(
+            self.fnmatch_token_escapes_re.sub(r"", x) 
+            for x in self.mattes
+        )
 
     def _id_from_matte_name(self, name):
         if name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
@@ -1123,31 +1241,23 @@ class MatteList(object):
                     self.mattes.add(globbed_matte)
             else:
                 self.mattes.add(matte)
+        self._update_raw_mattes()
 
     @property    
     def mattelist_str(self):
         matte_names_list = list(self.mattes)
         matte_names_list.sort(key=lambda x: x.lower())
         mattelist_str = self._encode_csv(matte_names_list)
+        # print "encoded list", " | ".join(self.mattes), "to string", mattelist_str
+        mattelist_str = mattelist_str.replace("\\\\*", "\\*")
+        mattelist_str = mattelist_str.replace("\\\\?", "\\?")
         return self._raw_strs_to_mattelist_strs(mattelist_str)
-
-    @mattelist_str.setter
-    def mattelist_str(self, value):
-        self.mattes = set(self._decode_csv(value))
-        self._sanitize()
 
     def set_gizmo_mattelist(self, gizmo):
         # TODO: test performance of checking first
         # result = self.mattelist_str
         # if gizmo.knob("matteList").getValue() != result:
         gizmo.knob("matteList").setValue(self.mattelist_str)
-
-    def _sanitize(self):
-        # make sure everything is utf-8
-        self.mattes = set(
-            matte.encode("utf-8") if type(matte) is unicode else str(matte) 
-            for matte in self.mattes
-        )
 
     def _glob_wildcard_names(self, raw_str, manifest):
         """ Returns a set of matches from the wildcard string."""
@@ -1177,7 +1287,7 @@ class MatteList(object):
         if it contains any of these or spaces, with a space after each comma. 
         """
         cleaned_items = []
-        need_escape_chars = '[]"\\*?'
+        need_escape_chars = '[]"\\'
         need_quotes_characters = ' ,'
 
         for item in raw_strs:
@@ -1200,10 +1310,10 @@ class MatteList(object):
                 cleaned_items.append(cleaned)
         return ", ".join(cleaned_items)
 
-
     def _decode_csv(self, mattelist_str):
         """ Decodes CSVs into a list of strings. """
-        reader = csv.reader([mattelist_str], quotechar='"', delimiter=',', escapechar="\\", 
+        double_escaped = self.fnmatch_token_escapes_re.sub(r"\\\\", mattelist_str)
+        reader = csv.reader([double_escaped], quotechar='"', delimiter=',', escapechar="\\", 
             doublequote=False, quoting=csv.QUOTE_ALL, skipinitialspace=True);
         result = []
         for row in reader:

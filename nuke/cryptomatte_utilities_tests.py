@@ -176,7 +176,121 @@ class CSVParsingNuke(unittest.TestCase):
         for raw, processed in escaping_modifications:
             self.assertEqual(ml._raw_strs_to_mattelist_strs(raw), processed)
 
+    def test_decoding_wildcard_handling(self):
+        import cryptomatte_utilities as cu
+        ml = cu.MatteList("")
 
+        csv_to_raw = [
+            ('*ster\\*sk', '*ster\\*sk'), 
+            ('\\?uestion?', '\\?uestion?'), 
+            ('brack[e]t', 'brack[e]t'), 
+            ('quote\\"mark\\"', 'quote"mark"'),
+            ('"space in word"', 'space in word'),
+        ]
+
+        for csv, raw in csv_to_raw:
+            self.assertEqual(ml._decode_csv(csv), [raw])
+        
+        csvs_only = [csv for csv, raw in csv_to_raw]
+        raws_only = [raw for csv, raw in csv_to_raw]
+        self.assertEqual(ml._decode_csv(",".join(csvs_only)), raws_only)
+        self.assertEqual(ml._decode_csv(", ".join(csvs_only)), raws_only)
+        self.assertEqual(ml._decode_csv(",  ".join(csvs_only)), raws_only)
+
+    def test_new_encoding(self):
+        # TODO: change name
+
+        r""" Let's tell a story about encoding. 
+        
+        First, we have a name coming in, the raw one. 
+            raw_str:            brack*[et]
+        We need to process it so that we know how to use it. 
+            ml str:             \\brack\*\[et\]
+        Then double escapes for CSV. 
+            csv string:         \\\\brack\\*\\[et\\]
+        Then process brackets for nuke to ignore them. 
+            nuke string (out):  \\\\brack\\*\\\[et\\\]
+
+        Get nuke str back from nuke, which will remove a level of escapes. 
+            nuke string (in):   \\brack\*\[et\]
+        This is not ready for CSV to process:
+            csv string:         \\\\brack\\*\\[et\\]
+        CSV gives us mattelist name:
+            ml str:             \\brack\*\[et\]
+        From that we get the raw:
+            raw str:            \brack*[et]
+
+        """
+        def simulate_nuke_getvalue(enc_nuke_str):
+            # simulate nuke's behavior - double escapes and escaped square brackets go away
+            dec_nuke_str = enc_nuke_str
+            escaped_tokens = "\\[]"
+            for token in reversed(escaped_tokens):
+                dec_nuke_str = dec_nuke_str.replace("\\%s" % token, token)
+            return dec_nuke_str
+
+        def fs(string):
+            """ Returns backslashes replaced with forward slashes, to make things easier. """
+            return string.replace('\\', '/')
+
+        def do_every_encoding(raw_str):
+            enc_ml_str = se.encode_rawstr_to_mlstr(raw_str)
+            enc_csv_str = se.encode_mlstr_to_csv([enc_ml_str])
+            enc_nuke_str = se.encode_csvstr_to_nukestr(enc_csv_str)
+
+            dec_nuke_str = simulate_nuke_getvalue(enc_nuke_str)
+            dec_csv_str = se.decode_nukestr_to_csv(dec_nuke_str)
+            dec_ml_str = se.decode_csvstr_to_mlstr(dec_csv_str)[0]
+            dec_raw_str = se.decode_mlstr_to_raw(dec_ml_str)
+            return (
+                enc_ml_str, enc_csv_str, enc_nuke_str, 
+                dec_nuke_str, dec_csv_str, dec_ml_str, dec_raw_str
+            )
+
+        import cryptomatte_utilities as cu
+        se = cu.StringEncoder()
+
+        raw_str = '\\brack*[et]'
+        enc_ml_str, enc_csv_str, enc_nuke_str, \
+            dec_nuke_str, dec_csv_str, \
+            dec_ml_str, dec_raw_str = do_every_encoding(raw_str)
+
+        self.assertEqual(fs(raw_str),       '/brack*[et]')
+        self.assertEqual(fs(enc_ml_str),    '//brack/*/[et/]')
+        self.assertEqual(fs(enc_csv_str),   '"////brack//*//[et//]"')
+        self.assertEqual(fs(enc_nuke_str),  '"////brack//*///[et///]"')
+        self.assertEqual(fs(dec_nuke_str),  '"//brack/*/[et/]"')
+        self.assertEqual(fs(dec_csv_str),   '"////brack//*//[et//]"')
+        self.assertEqual(fs(dec_ml_str),    '//brack/*/[et/]')
+        self.assertEqual(fs(dec_raw_str),   '/brack*[et]')
+
+        raw_str = 'has space?'
+        enc_ml_str, enc_csv_str, enc_nuke_str, \
+            dec_nuke_str, dec_csv_str, \
+            dec_ml_str, dec_raw_str = do_every_encoding(raw_str)
+
+        self.assertEqual(fs(raw_str),       'has space?')
+        self.assertEqual(fs(enc_ml_str),    'has space/?')
+        self.assertEqual(fs(enc_csv_str),   '"has space//?"')
+        self.assertEqual(fs(enc_nuke_str),  '"has space//?"')
+        self.assertEqual(fs(dec_nuke_str),  '"has space/?"')
+        self.assertEqual(fs(dec_csv_str),   '"has space//?"')
+        self.assertEqual(fs(dec_ml_str),    'has space/?')
+        self.assertEqual(fs(dec_raw_str),   'has space?')
+
+        raw_str = 'simple123'
+        enc_ml_str, enc_csv_str, enc_nuke_str, \
+            dec_nuke_str, dec_csv_str, \
+            dec_ml_str, dec_raw_str = do_every_encoding(raw_str)
+
+        self.assertEqual(fs(raw_str),       'simple123')
+        self.assertEqual(fs(enc_ml_str),    'simple123')
+        self.assertEqual(fs(enc_csv_str),   'simple123')
+        self.assertEqual(fs(enc_nuke_str),  'simple123')
+        self.assertEqual(fs(dec_nuke_str),  'simple123')
+        self.assertEqual(fs(dec_csv_str),   'simple123')
+        self.assertEqual(fs(dec_ml_str),    'simple123')
+        self.assertEqual(fs(dec_raw_str),   'simple123')
 
 
 class CryptomatteNodePasting(unittest.TestCase):
