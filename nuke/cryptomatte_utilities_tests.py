@@ -53,6 +53,7 @@ class CSVParsing(unittest.TestCase):
                '"with_a,_comma", "with comma, and \\"quotes\\"", <123.45>, '
                '" space_in_front", "space_at_end ", "has_escape\\\\chars", '
                '"cyrillic \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"')
+
     name_list = [
         "str", "str with space", "single 'quotes'", "with_a,_comma", 'with comma, and "quotes"',
         "<123.45>", " space_in_front", "space_at_end ", "has_escape\\chars",
@@ -71,14 +72,15 @@ class CSVParsing(unittest.TestCase):
 
         # start from csv
         ml = cu.MatteList("")
+        se = cu.StringEncoder()
 
-        decoded = ml._decode_csv(self.csv_str)
-        encoded = ml._encode_csv(decoded)
+        decoded = se.decode_csvstr_to_mlstrs(self.csv_str)
+        encoded = se.encode_mlstr_to_csv(decoded)
         check_results(encoded, decoded)
 
         # start from list
-        encoded = ml._encode_csv(self.name_list)
-        decoded = ml._decode_csv(encoded)
+        encoded = se.encode_mlstr_to_csv(self.name_list)
+        decoded = se.decode_csvstr_to_mlstrs(encoded)
         check_results(encoded, decoded)
 
 
@@ -125,25 +127,43 @@ class CSVParsingNuke(unittest.TestCase):
 
     def round_trip_through_gizmo(self, csv, msg):
         import cryptomatte_utilities as cu
-        # start from csv
-        self.gizmo.knob("matteList").setValue(csv.replace("\\", "\\\\"))
+        se = cu.StringEncoder()
 
+        # decode the csvs to get the correct answer
+        correct_mlstrs = se.decode_csvstr_to_mlstrs(csv)
+        correct_raws = sorted([se.decode_mlstr_to_raw(x) for x in correct_mlstrs])
+        # start from csv
+        nukestring = se.encode_csvstr_to_nukestr(csv)
+
+        # set gizmo, spin it a few times with matteList getting and setting the values. 
+        self.gizmo.knob("matteList").setValue(nukestring)
         for i in range(3):
             ml = cu.MatteList(self.gizmo)
             self.gizmo.knob("matteList").setValue("")
             ml.set_gizmo_mattelist(self.gizmo)
 
-        ml = cu.MatteList("")
-        result_csv = self.gizmo.knob("matteList").getValue()
-        correct_set = set(ml._decode_csv(csv))
-        result_set = set(ml._decode_csv(result_csv))
-        self.assertEqual(correct_set, result_set, "%s: Came out as: %s" % (msg, result_csv))
+        result_nukestr = self.gizmo.knob("matteList").getValue()
+
+        def nukestr_to_raw(nukestr):            
+            dec_csv = se.decode_nukestr_to_csv(nukestr)
+            dec_ml_strs = se.decode_csvstr_to_mlstrs(dec_csv)
+            dec_raw_strs = [se.decode_mlstr_to_raw(x) for x in dec_ml_strs]
+            return dec_raw_strs
+
+        result_raws = sorted(nukestr_to_raw(result_nukestr))
+        self.assertEqual(correct_raws, result_raws, "%s: Came out as: %s" % (msg, result_nukestr))
 
     def test_csv_through_gizmo(self):
         self.round_trip_through_gizmo('"name containing a \\"quote\\"  "', "Round trip failed")
 
     def test_big_csv_through_gizmo(self):
         self.round_trip_through_gizmo(CSVParsing.csv_str, "Round trip failed")
+
+    def test_space_csv_through_gizmo(self):
+        self.round_trip_through_gizmo('" name with space ", other', "Round trip failed")
+
+    def test_escape_csv_through_gizmo(self):
+        self.round_trip_through_gizmo('"name\\\\withslashes", other', "Round trip failed")
 
     def test_has_wildcards(self):
         import cryptomatte_utilities as cu
@@ -162,44 +182,43 @@ class CSVParsingNuke(unittest.TestCase):
         self.assertTrue(cu._has_wildcards("?"))
         self.assertTrue(cu._has_wildcards("[]"))
 
-    def test_raw_strs_to_mattelist_strs(self):
+    def test_encode_rawstr_to_mlstr(self):
         import cryptomatte_utilities as cu
-
+        
         escaping_modifications = [
-            (r"back\slash", r"back\\slash"),
-            (r"back\slash_brack\[ets\]", r"back\\slash_brack\[ets\]"),
-            (r"brack\[ets\]", r"brack\[ets\]"),
-            (r"brack\\[ets\\]", r"brack\\\[ets\\\]"),
-            (r"brack\\\[ets\\\]", r"brack\\\\\[ets\\\\\]"),
+            (r"1_back\slash", r"1_back\\slash"),
+            (r"2_back\slash_brack[ets]", r"2_back\\slash_brack\[ets\]"),
+            (r"3_literal\brack\[ets\]", r"3_literal\\brack\\\[ets\\\]"),
+            (r"4_escape_before_brack\\[ets\\]", r"4_escape_before_brack\\\\\[ets\\\\\]"),
+            # (r"4_brack\\\\[ets\\\\]", r"4_brack\\\\\\\[ets\\\\\\\]"),
         ]
-        ml = cu.MatteList("")
-        for raw, processed in escaping_modifications:
-            self.assertEqual(ml._raw_strs_to_mattelist_strs(raw), processed)
+        se = cu.StringEncoder()
+        for rawstr, mlstr in escaping_modifications:
+            self.assertEqual(se.encode_rawstr_to_mlstr(rawstr), mlstr)
 
     def test_decoding_wildcard_handling(self):
         import cryptomatte_utilities as cu
-        ml = cu.MatteList("")
-
-        csv_to_raw = [
-            ('*ster\\*sk', '*ster\\*sk'), 
-            ('\\?uestion?', '\\?uestion?'), 
+        csv_to_mlstr = [
+            ('*ster\\\\*sk', '*ster\\*sk'), 
+            ('\\\\?uestion?', '\\?uestion?'), 
             ('brack[e]t', 'brack[e]t'), 
             ('quote\\"mark\\"', 'quote"mark"'),
             ('"space in word"', 'space in word'),
         ]
 
-        for csv, raw in csv_to_raw:
-            self.assertEqual(ml._decode_csv(csv), [raw])
+        se = cu.StringEncoder()
+
+        for csv, mlstr in csv_to_mlstr:
+            dec_mlstrs = se.decode_csvstr_to_mlstrs(csv)
+            self.assertEqual(dec_mlstrs, [mlstr])
         
-        csvs_only = [csv for csv, raw in csv_to_raw]
-        raws_only = [raw for csv, raw in csv_to_raw]
-        self.assertEqual(ml._decode_csv(",".join(csvs_only)), raws_only)
-        self.assertEqual(ml._decode_csv(", ".join(csvs_only)), raws_only)
-        self.assertEqual(ml._decode_csv(",  ".join(csvs_only)), raws_only)
+        csv_only = [csv for csv, mls in csv_to_mlstr]
+        mls_only = [mls for csv, mls in csv_to_mlstr]
+        self.assertEqual(se.decode_csvstr_to_mlstrs(",".join(csv_only)), mls_only)
+        self.assertEqual(se.decode_csvstr_to_mlstrs(", ".join(csv_only)), mls_only)
+        self.assertEqual(se.decode_csvstr_to_mlstrs(",  ".join(csv_only)), mls_only)
 
     def test_every_encoding_step(self):
-        # TODO: change name
-
         r""" Let's tell a story about encoding. 
         
         First, we have a name coming in, the raw one. 
@@ -292,6 +311,34 @@ class CSVParsingNuke(unittest.TestCase):
         self.assertEqual(fs(dec_csv_str),   'simple123')
         self.assertEqual(fs(dec_ml_str),    'simple123')
         self.assertEqual(fs(dec_raw_str),   'simple123')
+
+        raw_str = 'has"quote"'
+        enc_ml_str, enc_csv_str, enc_nuke_str, \
+            dec_nuke_str, dec_csv_str, \
+            dec_ml_str, dec_raw_str = do_every_encoding(raw_str)
+
+        self.assertEqual(fs(raw_str),       'has"quote"')
+        self.assertEqual(fs(enc_ml_str),    'has"quote"')
+        self.assertEqual(fs(enc_csv_str),   '"has/"quote/""')
+        self.assertEqual(fs(enc_nuke_str),  '"has//"quote//""')
+        self.assertEqual(fs(dec_nuke_str),  '"has/"quote/""')
+        self.assertEqual(fs(dec_csv_str),   '"has/"quote/""')
+        self.assertEqual(fs(dec_ml_str),    'has"quote"')
+        self.assertEqual(fs(dec_raw_str),   'has"quote"')
+
+        raw_str = 'has\\escape'
+        enc_ml_str, enc_csv_str, enc_nuke_str, \
+            dec_nuke_str, dec_csv_str, \
+            dec_ml_str, dec_raw_str = do_every_encoding(raw_str)
+
+        self.assertEqual(fs(raw_str),       'has/escape')
+        self.assertEqual(fs(enc_ml_str),    'has//escape')
+        self.assertEqual(fs(enc_csv_str),   '"has////escape"')
+        self.assertEqual(fs(enc_nuke_str),  '"has////escape"')
+        self.assertEqual(fs(dec_nuke_str),  '"has//escape"')
+        self.assertEqual(fs(dec_csv_str),   '"has////escape"')
+        self.assertEqual(fs(dec_ml_str),    'has//escape')
+        self.assertEqual(fs(dec_raw_str),   'has/escape')
 
     def test_fnmatch_encoding(self):
         import cryptomatte_utilities as cu

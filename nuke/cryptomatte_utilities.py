@@ -1095,13 +1095,13 @@ class StringEncoder(object):
 
     def encode_csvstr_to_nukestr(self, csvstr):
         """ Converts a csv-friendly string to one that can be consumed by Nuke """
-        return csvstr.replace("[", "\\[").replace("]", "\\]")
+        return csvstr.replace("[", "\\[").replace("]", "\\]").replace('\\"', '\\\\"')
 
     def decode_nukestr_to_csv(self, nukestr):
         """ Converts a nuke string to one that can be consumed by CSV 
          getvalue will have stripped escape characters, so we need to restore them. 
         """
-        return nukestr.replace("\\", "\\\\") 
+        return nukestr.replace("\\", "\\\\").replace('\\\\"', '\\"')
 
     def decode_csvstr_to_mlstrs(self, csvstr):
         """ Converts a CSV to mattelist form """
