@@ -572,20 +572,21 @@ class CryptomatteNukeTests(unittest.TestCase):
     def test_layer_selection_after_keying(self):
         """ Tests all layer selection options are still available after keying.  
         """
-        def assert_choices_present():
-            self.assertEqual(
-                set(choice.values()),
-                set(layers))
         layers = ["uCryptoAsset", "uCryptoObject"]
-        choice = self.gizmo.knob("cryptoLayerChoice")
+        choice_knob = self.gizmo.knob("cryptoLayerChoice")
         self.gizmo.setInput(0, self.copyMetadata) # set to multi
 
         for layer in layers:
-            choice.setValue(layer)
+            choice_knob.setValue(layer)
             self.assertEqual(self.gizmo.knob("cryptoLayer").value(), layer)
-            assert_choices_present()
+            self.assertEqual(set(choice_knob.values()), set(layers))
             self.key_on_gizmo(self.gizmo, self.triangle_pkr, self.set_pkr)
-            assert_choices_present()
+            self.assertEqual(set(choice_knob.values()), set(layers))
+
+        new_gizmo = self.tempNode(
+            "Cryptomatte", cryptoLayer="uCryptoAsset", 
+            inputs=[self.copyMetadata], stopAutoUpdate=True)
+        self.assertEqual(set(new_gizmo.knob("cryptoLayerChoice").values()), set(layers))
 
     def test_layer_lock(self, node=None):
         gizmo = node if node else self.gizmo
