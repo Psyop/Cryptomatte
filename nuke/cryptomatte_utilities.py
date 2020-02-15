@@ -645,13 +645,20 @@ def _legal_nuke_layer_name(name):
     that are built this way. Doing this by only allowing alphanumeric
     output plus dash and underscores
     """
-    return "".join([x if x.lower() in 'abcdefghijklmnopqrstuvwxyz1234567890_-' else '_' for x in name])
+    prefix = ""
+    if name and name[0] in "0123456789":
+        prefix = "_"
+    return prefix + "".join([x if x.lower() in 'abcdefghijklmnopqrstuvwxyz1234567890_-' else '_' for x in name])
 
 
 def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
     if _cancel_update(gizmo, force):
         return
     
+    def reset_gizmo(gizmo):
+        _set_channels(gizmo, [], "")
+        gizmo.knob("alphaExpression").setValue("")
+
     matte_name = gizmo.knob('matteName').value()
     matte_input = gizmo.input(1)
     _set_metadata_cache(gizmo, cinfo)
@@ -682,6 +689,8 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
 
         crypto_layer = gizmo.knob('cryptoLayer').value()
         crypto_layer = _legal_nuke_layer_name(crypto_layer)
+        if not crypto_layer:
+            return reset_gizmo(gizmo)
         if crypto_layer in cryptomatte_channels:
             gizmo.knob('inputCryptoLayers').setValue(len(cryptomatte_channels) - 1)
             manifest_key = cinfo.get_selection_metadata_key("")
@@ -721,7 +730,7 @@ def _update_encyptomatte_setup_layers(gizmo):
     setup_layers = gizmo.knob('setupLayers').value()
     num_layers = gizmo.knob('cryptoLayers').value()
     input_layers = gizmo.knob('inputCryptoLayers').value()
-    crypto_layer = gizmo.knob('cryptoLayer').value()
+    crypto_layer = _legal_nuke_layer_name(gizmo.knob('cryptoLayer').value())
 
     if not setup_layers:
         gizmo.knob('manifestKey').setValue("")

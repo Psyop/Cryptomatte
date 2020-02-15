@@ -1270,7 +1270,8 @@ class CryptomatteNukeTests(unittest.TestCase):
         ("per.od", "per_od"),
         (".per.od", "_per_od"),
         ("numlast_123", "numlast_123"),
-        ("123_numfirst", "123_numfirst"),
+        ("123_numfirst", "_123_numfirst"),
+        ("123_numfirst.", "_123_numfirst_"),
         ("num_123_middle", "num_123_middle"),
     ]
 
@@ -1294,14 +1295,23 @@ class CryptomatteNukeTests(unittest.TestCase):
                 "ModifyMetaData", inputs=[encryptomatte], 
                 metadata='{set %s "%s"}' % (name_key, bad_name))
             self.gizmo.setInput(0, modify_md)
+
+            # For some reason, on first runs after opening a fresh nuke (12.0v3)
+            # this does not always update on its own. 
+            encryptomatte.knob("forceUpdate").execute()
+            self.gizmo.knob("forceUpdate").execute()
+
             self.assertEqual(
                 self.gizmo.knob("cryptoLayer").getValue(), corrected_name,
                 "Period should be removed from name and it should key.")
             self.key_on_image(self.triangle_pkr)
             self.assertMatteList("triangle", "Did not produce a keyable triangle")
 
+        self.test_bad_names_in_nuke_layers()
+
     def test_blendery_names_encryptomatte(self):
         """Tests that names with nuke-unfriendly layer names are mangled property by Encryptomatte."""
+
         encryptomatte = self.tempNode(
             "Encryptomatte", inputs=[None, self._setup_rotomask()], matteName="triangle", 
             setupLayers=True)
@@ -1322,6 +1332,17 @@ class CryptomatteNukeTests(unittest.TestCase):
                 "Period should be removed from name and it should key.")
             self.key_on_image(self.triangle_pkr)
             self.assertMatteList("triangle", "Did not produce a keyable triangle")
+
+        self.test_bad_names_in_nuke_layers()
+
+    def test_bad_names_in_nuke_layers(self):
+        import nuke
+        import cryptomatte_utilities as cu
+        for bad_name, corrected_name in self.nuke_unfriendly_channel_names:
+            if bad_name != cu._legal_nuke_layer_name(bad_name):
+                self.assertNotIn(
+                    bad_name + "00", nuke.layers(), 
+                    "Bad layer (%s) got into nuke layers. Restarting Nuke is required to test this again." % bad_name)
 
 #############################################
 # Ad hoc test running
