@@ -210,12 +210,12 @@ class CryptomatteNodePasting(unittest.TestCase):
             }
         """
 
-        prefix = "long_hopefully_unique_name"
+        prefix = "test_paste_with_channelmerge_"
         pasted_node_names = [(prefix + x)
                              for x in ("_TimeOffset7", "_Cryptomatte6", "_ChannelMerge7")]
-        pasted_nodes = [nuke.toNode(x) for x in pasted_node_names]
         self.assertFalse(
-            any(pasted_nodes), "Nodes already exist at the start of testing, were not pasted. ")
+            any([nuke.toNode(x) for x in pasted_node_names]), 
+            "Nodes already exist at the start of testing, were not pasted. ")
         try:
             # deselect all
             for node in nuke.selectedNodes():
@@ -1344,6 +1344,76 @@ class CryptomatteNukeTests(unittest.TestCase):
                 self.assertNotIn(
                     bad_name + "00", nuke.layers(), 
                     "Bad layer (%s) got into nuke layers. Restarting Nuke is required to test this again." % bad_name)
+
+    def test_file_open_doesnt_update_nodes(self):
+        """
+        Note: This script behaves differently if the xpos and ypos are on the Cryptomatte node,
+        vs if they aren't. They need to be here for this to work. 
+
+        There does not appear to be a difference in loading a file vs pasting
+        as of Nuke 12v3. 
+        """
+        import nuke
+
+        prefix = "test_file_open_doesnt_update_nodes"
+        asset_file = self.read_asset.knob("file").getValue()
+
+        loadable = """
+            Read {
+             inputs 0
+             file_type exr
+             file %s
+             name %s_Read
+             selected true
+             xpos 498
+             ypos -17
+            }
+            add_layer {uCryptoAsset00 uCryptoAsset00.red uCryptoAsset00.green uCryptoAsset00.blue uCryptoAsset00.alpha}
+            add_layer {uCryptoAsset01 uCryptoAsset01.red uCryptoAsset01.green uCryptoAsset01.blue uCryptoAsset01.alpha}
+            add_layer {uCryptoAsset02 uCryptoAsset02.red uCryptoAsset02.green uCryptoAsset02.blue uCryptoAsset02.alpha}
+            Cryptomatte {
+             name %s_Cryptomatte
+             selected true
+             xpos 395
+             ypos 33
+             matteOutput alpha
+             matteOutput alpha
+             matteList "set, triangle"
+             cryptoLayer uCryptoMaterial
+             expression "((uCryptoMaterial00.red == 7.36562399642e+18 || uCryptoMaterial00.red == 1.54567320652e-21) ? uCryptoMaterial00.green : 0.0) + ((uCryptoMaterial00.blue == 7.36562399642e+18 || uCryptoMaterial00.blue == 1.54567320652e-21) ? uCryptoMaterial00.alpha : 0.0) + ((uCryptoMaterial01.red == 7.36562399642e+18 || uCryptoMaterial01.red == 1.54567320652e-21) ? uCryptoMaterial01.green : 0.0) + ((uCryptoMaterial01.blue == 7.36562399642e+18 || uCryptoMaterial01.blue == 1.54567320652e-21) ? uCryptoMaterial01.alpha : 0.0) + ((uCryptoMaterial02.red == 7.36562399642e+18 || uCryptoMaterial02.red == 1.54567320652e-21) ? uCryptoMaterial02.green : 0.0) + ((uCryptoMaterial02.blue == 7.36562399642e+18 || uCryptoMaterial02.blue == 1.54567320652e-21) ? uCryptoMaterial02.alpha : 0.0) + 0"
+             in00 uCryptoMaterial00
+             in01 uCryptoMaterial01
+             in02 uCryptoMaterial02
+            }
+        """ % (asset_file, prefix, prefix)
+
+        pasted_node_names = [(prefix + x)
+                             for x in ("_Read", "_Cryptomatte")]
+        self.assertFalse(
+            any([nuke.toNode(x) for x in pasted_node_names]), 
+            "Nodes already exist at the start of testing, were not pasted. ")
+
+        try:
+            for node in nuke.selectedNodes():
+                node['selected'].setValue(False)
+            nuke.scriptReadText(loadable)
+            loaded_nodes = [nuke.toNode(x) for x in pasted_node_names]
+            read, cryptomatte = loaded_nodes
+
+            msg = "Loaded file was changed from the state it was loaded. "
+            self.assertEqual(cryptomatte.knob("cryptoLayer").getValue(), "uCryptoMaterial")
+            self.assertEqual(cryptomatte.knob("in00").value(), "uCryptoMaterial00")
+            self.assertEqual(cryptomatte.knob("in01").value(), "uCryptoMaterial01")
+            self.assertEqual(cryptomatte.knob("in02").value(), "uCryptoMaterial02")
+            self.assertEqual(cryptomatte.knob("matteList").getValue(), "set, triangle")
+            self.assertIn("uCryptoMaterial00.red", cryptomatte.knob("expression").getValue())
+        except:
+            raise
+        finally:
+            if not self.skip_cleanup():
+                for node in loaded_nodes:
+                    nuke.delete(node)
+
 
 #############################################
 # Ad hoc test running

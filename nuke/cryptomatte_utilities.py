@@ -434,7 +434,12 @@ def encryptomatte_create_gizmo():
 
 def cryptomatte_on_create_event(node = None, knob = None):
     # make sure choices are available on load
-    _set_crypto_layer_choice(node, CryptomatteInfo(node))
+    prev_stop_state = node.knob("stopAutoUpdate").getValue()
+    node.knob("stopAutoUpdate").setValue(True)
+
+    _set_crypto_layer_choice_options(node, CryptomatteInfo(node))
+
+    node.knob("stopAutoUpdate").setValue(prev_stop_state)
 
 def cryptomatte_knob_changed_event(node = None, knob = None):
     if _limbo_state(node):
@@ -628,13 +633,17 @@ def _set_channels(gizmo, channels, layer_name):
 def _set_metadata_cache(gizmo, cinfo):
     gizmo.knob('metadataCache').setValue(cinfo.get_metadata_cache())
 
-def _set_crypto_layer_choice(gizmo, cinfo):
+def _set_crypto_layer_choice_options(gizmo, cinfo):
     layer_locked = gizmo.knob('cryptoLayerLock').value()
     values = sorted([v.get('name', '') for v in cinfo.cryptomattes.values()])
-    current_selection = cinfo.get_selection_name()
-
     gizmo.knob('cryptoLayerChoice').setEnabled(not layer_locked)
     gizmo.knob("cryptoLayerChoice").setValues(values)
+    return values
+
+def _set_crypto_layer_choice(gizmo, cinfo):
+    values = _set_crypto_layer_choice_options(gizmo, cinfo)
+    current_selection = cinfo.get_selection_name()
+
     if current_selection:
         gizmo.knob("cryptoLayerChoice").setValue(values.index(current_selection))
 
