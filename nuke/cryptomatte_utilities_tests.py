@@ -477,7 +477,15 @@ class CryptomatteNukeTests(unittest.TestCase):
 
     def _create_bogus_asset_manifest(self):
         bad_md = '{set exr/cryptomatte/d593dd7/manifest "\{broken\}"}'
-        return self.tempNode("ModifyMetaData", inputs=[self.read_asset], metadata=bad_md)
+        return self.tempNode(
+            "ModifyMetaData", inputs=[self.read_asset], 
+            metadata=bad_md, name="ModifyMetaData_rename")
+
+    def _create_missing_asset_manifest(self):
+        bad_md = '{remove exr/cryptomatte/d593dd7/manifest ""}'
+        return self.tempNode(
+            "ModifyMetaData", inputs=[self.read_asset], 
+            metadata=bad_md, name="ModifyMetaData_remove")
 
     def test_manifests(self):
         # Embedded and sidecar
@@ -503,15 +511,28 @@ class CryptomatteNukeTests(unittest.TestCase):
 
     def test_layer_bogus_manifest(self):
         import cryptomatte_utilities as cu
+
+        def test_manifest_and_keying(input_node):
+            cu.reset_manifest_cache()
+            cinfo = cu.CryptomatteInfo(input_node)
+            self.gizmo.knob("matteList").setValue("")
+            self.gizmo.setInput(0, input_node)
+
+            self.assertFalse(cinfo.parse_manifest(), "Bogus manifest still loaded. ")
+
+            cu.update_cryptomatte_gizmo(self.gizmo, True)  # tests that this doesn't raise.
+            self.assertEqual(
+                self.gizmo.knob("cryptoLayer").value(), "uCryptoAsset", "Layer selection not set.")
+
+            self.key_on_image(self.bunny_pkr)
+            self.assertMatteList("<3.36000126251e-27>", "Could not key with bogus manifest.")
+
         bogus_asset = self._create_bogus_asset_manifest()
+        test_manifest_and_keying(bogus_asset)
 
-        cinfo = cu.CryptomatteInfo(bogus_asset)  # tests that this doesn't raise.
-        self.assertFalse(cinfo.parse_manifest(), "Bogus manifest still loaded. ")
+        missing_manifest = self._create_missing_asset_manifest()
+        test_manifest_and_keying(missing_manifest)
 
-        self.gizmo.setInput(0, bogus_asset)
-        cu.update_cryptomatte_gizmo(self.gizmo, True)  # tests that this doesn't raise.
-        self.assertEqual(
-            self.gizmo.knob("cryptoLayer").value(), "uCryptoAsset", "Layer selection not set.")
 
     #############################################
     # Layer Selection
