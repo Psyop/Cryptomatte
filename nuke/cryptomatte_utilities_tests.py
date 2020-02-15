@@ -559,6 +559,7 @@ class CryptomatteNukeTests(unittest.TestCase):
 
     def tearDown(self):
         import nuke
+        import cryptomatte_utilities as cu
         if not self.canceled():
             if self.constant.sample("red", 0, 0) != 0.5:
                 self.set_canceled(True)
@@ -567,6 +568,9 @@ class CryptomatteNukeTests(unittest.TestCase):
         if not self.canceled() and not self.skip_cleanup():
             for node in self._remove_later:
                 nuke.delete(node)
+
+        cu.reset_manifest_cache()
+
 
     def tempNode(self, nodeType, **kwargs):
         """
@@ -687,7 +691,15 @@ class CryptomatteNukeTests(unittest.TestCase):
 
     def _create_bogus_asset_manifest(self):
         bad_md = '{set exr/cryptomatte/d593dd7/manifest "\{broken\}"}'
-        return self.tempNode("ModifyMetaData", inputs=[self.read_asset], metadata=bad_md)
+        return self.tempNode(
+            "ModifyMetaData", inputs=[self.read_asset], 
+            metadata=bad_md, name="ModifyMetaData_rename")
+
+    def _create_missing_asset_manifest(self):
+        bad_md = '{remove exr/cryptomatte/d593dd7/manifest ""}'
+        return self.tempNode(
+            "ModifyMetaData", inputs=[self.read_asset], 
+            metadata=bad_md, name="ModifyMetaData_remove")
 
     def test_manifests(self):
         # Embedded and sidecar
@@ -713,15 +725,28 @@ class CryptomatteNukeTests(unittest.TestCase):
 
     def test_layer_bogus_manifest(self):
         import cryptomatte_utilities as cu
+
+        def test_manifest_and_keying(input_node):
+            cu.reset_manifest_cache()
+            cinfo = cu.CryptomatteInfo(input_node)
+            self.gizmo.knob("matteList").setValue("")
+            self.gizmo.setInput(0, input_node)
+
+            self.assertFalse(cinfo.parse_manifest(), "Bogus manifest still loaded. ")
+
+            cu.update_cryptomatte_gizmo(self.gizmo, True)  # tests that this doesn't raise.
+            self.assertEqual(
+                self.gizmo.knob("cryptoLayer").value(), "uCryptoAsset", "Layer selection not set.")
+
+            self.key_on_image(self.bunny_pkr)
+            self.assertMatteList("<3.36000126251e-27>", "Could not key with bogus manifest.")
+
         bogus_asset = self._create_bogus_asset_manifest()
+        test_manifest_and_keying(bogus_asset)
 
-        cinfo = cu.CryptomatteInfo(bogus_asset)  # tests that this doesn't raise.
-        self.assertFalse(cinfo.parse_manifest(), "Bogus manifest still loaded. ")
+        missing_manifest = self._create_missing_asset_manifest()
+        test_manifest_and_keying(missing_manifest)
 
-        self.gizmo.setInput(0, bogus_asset)
-        cu.update_cryptomatte_gizmo(self.gizmo, True)  # tests that this doesn't raise.
-        self.assertEqual(
-            self.gizmo.knob("cryptoLayer").value(), "uCryptoAsset", "Layer selection not set.")
 
     #############################################
     # Layer Selection
@@ -757,20 +782,21 @@ class CryptomatteNukeTests(unittest.TestCase):
     def test_layer_selection_after_keying(self):
         """ Tests all layer selection options are still available after keying.  
         """
-        def assert_choices_present():
-            self.assertEqual(
-                set(choice.values()),
-                set(layers))
         layers = ["uCryptoAsset", "uCryptoObject"]
-        choice = self.gizmo.knob("cryptoLayerChoice")
+        choice_knob = self.gizmo.knob("cryptoLayerChoice")
         self.gizmo.setInput(0, self.copyMetadata) # set to multi
 
         for layer in layers:
-            choice.setValue(layer)
+            choice_knob.setValue(layer)
             self.assertEqual(self.gizmo.knob("cryptoLayer").value(), layer)
-            assert_choices_present()
+            self.assertEqual(set(choice_knob.values()), set(layers))
             self.key_on_gizmo(self.gizmo, self.triangle_pkr, self.set_pkr)
-            assert_choices_present()
+            self.assertEqual(set(choice_knob.values()), set(layers))
+
+        new_gizmo = self.tempNode(
+            "Cryptomatte", cryptoLayer="uCryptoAsset", 
+            inputs=[self.copyMetadata], stopAutoUpdate=True)
+        self.assertEqual(set(new_gizmo.knob("cryptoLayerChoice").values()), set(layers))
 
     def test_layer_lock(self, node=None):
         gizmo = node if node else self.gizmo
@@ -1535,7 +1561,8 @@ class CryptomatteNukeTests(unittest.TestCase):
         ("per.od", "per_od"),
         (".per.od", "_per_od"),
         ("numlast_123", "numlast_123"),
-        ("123_numfirst", "123_numfirst"),
+        ("123_numfirst", "_123_numfirst"),
+        ("123_numfirst.", "_123_numfirst_"),
         ("num_123_middle", "num_123_middle"),
     ]
 
@@ -1559,14 +1586,23 @@ class CryptomatteNukeTests(unittest.TestCase):
                 "ModifyMetaData", inputs=[encryptomatte], 
                 metadata='{set %s "%s"}' % (name_key, bad_name))
             self.gizmo.setInput(0, modify_md)
+
+            # For some reason, on first runs after opening a fresh nuke (12.0v3)
+            # this does not always update on its own. 
+            encryptomatte.knob("forceUpdate").execute()
+            self.gizmo.knob("forceUpdate").execute()
+
             self.assertEqual(
                 self.gizmo.knob("cryptoLayer").getValue(), corrected_name,
                 "Period should be removed from name and it should key.")
             self.key_on_image(self.triangle_pkr)
             self.assertMatteList("triangle", "Did not produce a keyable triangle")
 
+        self.test_bad_names_in_nuke_layers()
+
     def test_blendery_names_encryptomatte(self):
         """Tests that names with nuke-unfriendly layer names are mangled property by Encryptomatte."""
+
         encryptomatte = self.tempNode(
             "Encryptomatte", inputs=[None, self._setup_rotomask()], matteName="triangle", 
             setupLayers=True)
@@ -1587,6 +1623,17 @@ class CryptomatteNukeTests(unittest.TestCase):
                 "Period should be removed from name and it should key.")
             self.key_on_image(self.triangle_pkr)
             self.assertMatteList("triangle", "Did not produce a keyable triangle")
+
+        self.test_bad_names_in_nuke_layers()
+
+    def test_bad_names_in_nuke_layers(self):
+        import nuke
+        import cryptomatte_utilities as cu
+        for bad_name, corrected_name in self.nuke_unfriendly_channel_names:
+            if bad_name != cu._legal_nuke_layer_name(bad_name):
+                self.assertNotIn(
+                    bad_name + "00", nuke.layers(), 
+                    "Bad layer (%s) got into nuke layers. Restarting Nuke is required to test this again." % bad_name)
 
 #############################################
 # Ad hoc test running

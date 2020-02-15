@@ -44,6 +44,8 @@ def setup_cryptomatte_ui():
 
 
 def setup_cryptomatte():
+    nuke.addOnCreate(lambda: cryptomatte_on_create_event(
+        nuke.thisNode(), nuke.thisKnob()), nodeClass='Cryptomatte')
     nuke.addKnobChanged(lambda: cryptomatte_knob_changed_event(
         nuke.thisNode(), nuke.thisKnob()), nodeClass='Cryptomatte')
     nuke.addKnobChanged(lambda: encryptomatte_knob_changed_event(
@@ -183,11 +185,17 @@ class CryptomatteInfo(object):
                     self.cachable_metadata[key] = value
                 break
 
+        for metadata_id, value in self.cryptomattes.iteritems():
+            if not "name" in value:
+                value["name"] = ""
+
         if self.cryptomattes:
-            default_selection = sorted(self.cryptomattes.keys(), key=lambda x: self.cryptomattes[x]['name'])[0]
+            default_selection = sorted(
+                self.cryptomattes.keys(), 
+                key=lambda x: self.cryptomattes[x]["name"])[0]
 
         for metadata_id, value in self.cryptomattes.iteritems():
-            name = value.get("name", "") 
+            name = value["name"]
             channels = self._identify_channels(name)
             self.cryptomattes[metadata_id]["channels"] = channels
 
@@ -233,10 +241,10 @@ class CryptomatteInfo(object):
         return [self.cryptomattes[x]["name"] for x in self.cryptomattes]
 
     def get_channels(self):
-        return self.cryptomattes[self.selection]["channels"]
+        return self.cryptomattes[self.selection]["channels"] if self.selection else None
 
     def get_selection_name(self):
-        return self.cryptomattes[self.selection]["name"]
+        return self.cryptomattes[self.selection]["name"] if self.selection else None
 
     def get_metadata_cache(self):
         import json
@@ -291,11 +299,15 @@ class CryptomatteInfo(object):
         import json
         if 'manifest' not in self.cryptomattes[self.selection]:
             manif_key = self.get_selection_metadata_key('manifest')
-            self.cryptomattes[self.selection]['manifest'] = self.nuke_node.metadata(manif_key)
+            manif_str = self.nuke_node.metadata(manif_key)
+            if manif_str is None:
+                return {}
+            else:
+                self.cryptomattes[self.selection]['manifest'] = manif_str
         try:
             return json.loads(self.cryptomattes[self.selection]['manifest'])
-        except ValueError:
-            # Malformed JSON
+        except ValueError, e:
+            print "Cryptomatte: Unable to parse manifest. (%s)." % e
             return {}
 
     def parse_manifest(self):
@@ -425,6 +437,12 @@ def encryptomatte_create_gizmo():
 # Public - cryptomatte Events
 #############################################
 
+
+def cryptomatte_on_create_event(node = None, knob = None):
+    # make sure choices are available on load
+    _set_crypto_layer_choice(node, CryptomatteInfo(node))
+
+
 def cryptomatte_knob_changed_event(node = None, knob = None):
     if _limbo_state(node):
         return
@@ -439,8 +457,12 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         _update_cryptomatte_gizmo(node, cinfo)
     elif knob.name() in ["cryptoLayerChoice"]:
         if not node.knob('cryptoLayerLock').value():
+            knob_value = int(knob.getValue())
+            choice_options = knob.values()
+            if knob_value >= len(choice_options):
+                return
             prev_crypto_layer = node.knob('cryptoLayer').value()
-            new_crypto_layer = knob.values()[int(knob.getValue())]
+            new_crypto_layer = knob.values()[knob_value]
             if prev_crypto_layer != new_crypto_layer:
                 node.knob('cryptoLayer').setValue(new_crypto_layer)
                 cinfo = CryptomatteInfo(node)
@@ -607,20 +629,24 @@ def _limbo_state(gizmo):
 # Utils - Update Gizmi 
 #############################################
 
-def _set_channels(gizmo, channels, layer_name, default="none"):
+def _set_channels(gizmo, channels, layer_name):
     gizmo.knob("cryptoLayer").setValue(layer_name)
     for i, knob_name in enumerate(GIZMO_CHANNEL_KNOBS):
-        channel = channels[i] if i < len(channels) else default
+        channel = channels[i] if i < len(channels) else "none"
         gizmo.knob(knob_name).setValue(channel)
 
 def _set_metadata_cache(gizmo, cinfo):
     gizmo.knob('metadataCache').setValue(cinfo.get_metadata_cache())
 
 def _set_crypto_layer_choice(gizmo, cinfo):
-    choice_knob = gizmo.knob("cryptoLayerChoice")
+    layer_locked = gizmo.knob('cryptoLayerLock').value()
     values = sorted([v.get('name', '') for v in cinfo.cryptomattes.values()])
-    choice_knob.setValues(values)
-    choice_knob.setValue(values.index(cinfo.get_selection_name()))
+    current_selection = cinfo.get_selection_name()
+
+    gizmo.knob('cryptoLayerChoice').setEnabled(not layer_locked)
+    gizmo.knob("cryptoLayerChoice").setValues(values)
+    if current_selection:
+        gizmo.knob("cryptoLayerChoice").setValue(values.index(current_selection))
 
 def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     if _cancel_update(gizmo, force):
@@ -631,7 +657,6 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
     cryptomatte_channels = cinfo.get_channels()
     if not cryptomatte_channels:
         return
-    _set_ui(gizmo)
     _set_channels(gizmo, cryptomatte_channels, cinfo.get_selection_name())
     _explode_wildcards(gizmo, cinfo)
     _set_expression(gizmo, cryptomatte_channels)
@@ -660,13 +685,20 @@ def _legal_nuke_layer_name(name):
     that are built this way. Doing this by only allowing alphanumeric
     output plus dash and underscores
     """
-    return "".join([x if x.lower() in 'abcdefghijklmnopqrstuvwxyz1234567890_-' else '_' for x in name])
+    prefix = ""
+    if name and name[0] in "0123456789":
+        prefix = "_"
+    return prefix + "".join([x if x.lower() in 'abcdefghijklmnopqrstuvwxyz1234567890_-' else '_' for x in name])
 
 
 def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
     if _cancel_update(gizmo, force):
         return
     
+    def reset_gizmo(gizmo):
+        _set_channels(gizmo, [], "")
+        gizmo.knob("alphaExpression").setValue("")
+
     matte_name = gizmo.knob('matteName').value()
     matte_input = gizmo.input(1)
     _set_metadata_cache(gizmo, cinfo)
@@ -697,6 +729,8 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
 
         crypto_layer = gizmo.knob('cryptoLayer').value()
         crypto_layer = _legal_nuke_layer_name(crypto_layer)
+        if not crypto_layer:
+            return reset_gizmo(gizmo)
         if crypto_layer in cryptomatte_channels:
             gizmo.knob('inputCryptoLayers').setValue(len(cryptomatte_channels) - 1)
             manifest_key = cinfo.get_selection_metadata_key("")
@@ -736,7 +770,7 @@ def _update_encyptomatte_setup_layers(gizmo):
     setup_layers = gizmo.knob('setupLayers').value()
     num_layers = gizmo.knob('cryptoLayers').value()
     input_layers = gizmo.knob('inputCryptoLayers').value()
-    crypto_layer = gizmo.knob('cryptoLayer').value()
+    crypto_layer = _legal_nuke_layer_name(gizmo.knob('cryptoLayer').value())
 
     if not setup_layers:
         gizmo.knob('manifestKey').setValue("")
