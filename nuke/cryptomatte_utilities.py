@@ -285,11 +285,15 @@ class CryptomatteInfo(object):
         import json
         if 'manifest' not in self.cryptomattes[self.selection]:
             manif_key = self.get_selection_metadata_key('manifest')
-            self.cryptomattes[self.selection]['manifest'] = self.nuke_node.metadata(manif_key)
+            manif_str = self.nuke_node.metadata(manif_key)
+            if manif_str is None:
+                return {}
+            else:
+                self.cryptomattes[self.selection]['manifest'] = manif_str
         try:
             return json.loads(self.cryptomattes[self.selection]['manifest'])
-        except ValueError:
-            # Malformed JSON
+        except ValueError, e:
+            print "Cryptomatte: Unable to parse manifest. (%s)." % e
             return {}
 
     def parse_manifest(self):

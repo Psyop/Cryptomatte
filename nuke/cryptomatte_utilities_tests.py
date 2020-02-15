@@ -349,6 +349,7 @@ class CryptomatteNukeTests(unittest.TestCase):
 
     def tearDown(self):
         import nuke
+        import cryptomatte_utilities as cu
         if not self.canceled():
             if self.constant.sample("red", 0, 0) != 0.5:
                 self.set_canceled(True)
@@ -357,6 +358,9 @@ class CryptomatteNukeTests(unittest.TestCase):
         if not self.canceled() and not self.skip_cleanup():
             for node in self._remove_later:
                 nuke.delete(node)
+
+        cu.reset_manifest_cache()
+
 
     def tempNode(self, nodeType, **kwargs):
         """
