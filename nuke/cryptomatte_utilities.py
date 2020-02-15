@@ -603,10 +603,10 @@ def _limbo_state(gizmo):
 # Utils - Update Gizmi 
 #############################################
 
-def _set_channels(gizmo, channels, layer_name, default="none"):
+def _set_channels(gizmo, channels, layer_name):
     gizmo.knob("cryptoLayer").setValue(layer_name)
     for i, knob_name in enumerate(GIZMO_CHANNEL_KNOBS):
-        channel = channels[i] if i < len(channels) else default
+        channel = channels[i] if i < len(channels) else "none"
         gizmo.knob(knob_name).setValue(channel)
 
 def _set_metadata_cache(gizmo, cinfo):
