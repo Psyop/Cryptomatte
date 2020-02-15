@@ -1,3 +1,7 @@
+### 1.3.0-beta2:
+
+* Brought in fixes from 1.2.6. 
+
 ### 1.3.0-beta1:
 
 An update to the Nuke plugins.
@@ -7,6 +11,14 @@ Nuke:
 * Added support for wildcard searches of mattes.
 * The "Expand Wildcards" knob controls whether the wildcards are expanded or not.
   * If the wildcards are not expanded, wildcards are not used.
+
+### 1.2.6
+
+Nuke:
+
+* Fixed issue where a missing manifest would prevent keying (#124)
+* Fixed issue where nuke-unfriendly cryptomatte names (crypto.material, 123_crypto) would cause issues and noise in tests
+* Fixed layer options not being available on Cryptomatte gizmos after scene open
 
 ### 1.2.5
 
