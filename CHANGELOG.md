@@ -1,3 +1,11 @@
+### 1.2.6
+
+Nuke:
+
+* Fixed issue where a missing manifest would prevent keying (#124)
+* Fixed issue where nuke-unfriendly cryptomatte names (crypto.material, 123_crypto) would cause issues and noise in tests
+* Fixed layer options not being available on Cryptomatte gizmos after scene open
+
 ### 1.2.5
 
 Nuke:
