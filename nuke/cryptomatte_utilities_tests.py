@@ -1445,7 +1445,10 @@ def run_tests(test_cases, test_filter="", failfast=False):
 
         failfast stop after a failure, and skip cleanup of the nodes that were created. 
     """
+    import nuke
     import fnmatch
+    import platform
+    import cryptomatte_utilities as cu
 
     def find_test_method(traceback):
         """ Finds first "test*" function in traceback called. """
@@ -1477,6 +1480,10 @@ def run_tests(test_cases, test_filter="", failfast=False):
 
     reset_skip_cleanup_on_failure()
 
+    print "---------"
+    print 'Cryptomatte %s, Nuke %s, %s' % (cu.__version__, 
+                                           nuke.NUKE_VERSION_STRING, 
+                                           platform.platform())
     print "---------"
     for test_instance, traceback in result.failures:
         print "Failed: %s.%s" % (type(test_instance).__name__, find_test_method(traceback))
