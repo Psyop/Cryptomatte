@@ -56,8 +56,7 @@ Decoders:
 * [Houdini 16.5 Compositor (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html), [Demo](https://vimeo.com/241036613#t=2862s)
 * Blender 2.8.0 Compositor (By Tangent Animation and Blender Foundation): [Cryptomatte in Blender 2.8 Alpha 2! demo](https://www.youtube.com/watch?v=lTJJqAGnWFM), [Tutorial by Zacharias Reinhardt](https://zachariasreinhardt.com/blender-2-8-cryptomatte-tutorial), [Cycles for Animated Feature Film Production by Stefan Werner](https://www.youtube.com/watch?v=_2Ia4h8q3xs), [Docs](https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Cycles#Cryptomatte)
 * [Autodesk Flame (Autodesk)](https://knowledge.autodesk.com/support/flame-products/learn-explore/caas/CloudHelp/cloudhelp/2020/ENU/Flame-EffectsandToolsReference/files/GUID-0402116E-B47C-4E32-9010-DB8C334853E0-htm.html)
-* [Adobe After Effects 2020 (Native)](https://theblog.adobe.com/adobe-after-effects-is-faster-than-ever/)
-* [Adobe After Effects (Fnordware ProEXR plugin 2.0)](https://www.fnordware.com/ProEXR/)
+* [Adobe After Effects (Fnordware ProEXR plugin 2.0)](https://www.fnordware.com/ProEXR/)[Ships with After Effects 2020](https://theblog.adobe.com/adobe-after-effects-is-faster-than-ever/)
 * [Adobe Photoshop (EXR-IO 2)](https://www.exr-io.com/exr-io-2-00/)
 * [FilmLight Baselight v5](https://www.filmlight.ltd.uk/pdf/datasheets/FL-BL-DS-0847-Baselightv5.pdf)
 
