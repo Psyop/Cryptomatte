@@ -1,3 +1,9 @@
+### 1.2.8
+
+Nuke:
+
+* Fixed a bug with copy and pasting with "Lock Layer Selection" on  (#128)
+
 ### 1.2.7
 
 Nuke:

@@ -61,7 +61,7 @@ Gizmo {
 
  addUserKnob {20 Advanced}
  
- addUserKnob {26 cryptomatteVersion l "Cryptomatte Version" T 1.2.7}
+ addUserKnob {26 cryptomatteVersion l "Cryptomatte Version" T 1.2.8}
 }
  Input {
   inputs 0
