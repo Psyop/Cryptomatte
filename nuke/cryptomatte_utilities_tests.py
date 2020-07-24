@@ -1164,6 +1164,30 @@ class CryptomatteNukeTests(unittest.TestCase):
         self.assertEqual(decryptomatted_hash, correct_hash,
                          "Decryptomatte caused a different alpha from Cryptomatte.")
 
+    def test_decrypto_in_group(self):
+        """ Tests basic decryptomatte in a group. 
+        """
+        # Put a cryptomatte with some values on it in a group
+        import nuke
+        self.key_on_image(self.bunny_pkr)
+        gizmo_name = self.gizmo.fullName()
+        self.gizmo['selected'].setValue(True)
+        group = nuke.collapseToGroup(show=False)
+        for node in nuke.selectedNodes():
+            node['selected'].setValue(False)
+
+        # Clean up of the group will remove the gizmo as well
+        self.delete_nodes_after_test([group])
+        self._remove_later = [x for x in self._remove_later if x != self.gizmo]
+        self.gizmo = None
+        
+        # press the button
+        grouped_gizmo = nuke.toNode("%s.%s" % (group.fullName(), gizmo_name))
+        grouped_gizmo.knob("decryptomatte").execute()
+        new_node = nuke.toNode("%s.%s" % (group.fullName(), "Cryptomatte1Extract"))
+
+        assert new_node
+
     def test_decrypto_custom_channel(self):
         import cryptomatte_utilities as cu
         custom_layer = "uCryptoAsset"  # guaranteed to already exist.
