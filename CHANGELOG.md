@@ -1,3 +1,7 @@
+### 1.3.0-beta3:
+
+* Brought in fixes from 1.2.7.
+
 ### 1.3.0-beta2:
 
 * Brought in fixes from 1.2.6. 
@@ -11,6 +15,12 @@ Nuke:
 * Added support for wildcard searches of mattes.
 * The "Expand Wildcards" knob controls whether the wildcards are expanded or not.
   * If the wildcards are not expanded, wildcards are not used.
+
+### 1.2.7:
+
+Nuke:
+
+* Fixed issue where decryptomatte doesn't work inside groups (#127, contributed by Johannes Hezer)
 
 ### 1.2.6
 
