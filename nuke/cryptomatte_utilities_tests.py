@@ -894,10 +894,9 @@ class CryptomatteNukeTests(unittest.TestCase):
         
         # press the button
         grouped_gizmo = nuke.toNode("%s.%s" % (group.fullName(), gizmo_name))
+        self.assertFalse(grouped_gizmo.knob("disable").value())
         grouped_gizmo.knob("decryptomatte").execute()
-        new_node = nuke.toNode("%s.%s" % (group.fullName(), "Cryptomatte1Extract"))
-
-        assert new_node
+        self.assertTrue(grouped_gizmo.knob("disable").value())
 
     def test_decrypto_custom_channel(self):
         import cryptomatte_utilities as cu
