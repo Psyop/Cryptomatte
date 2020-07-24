@@ -473,8 +473,8 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
                 cinfo = CryptomatteInfo(node)
                 _update_cryptomatte_gizmo(node, cinfo)
             
-            # Undo user action on menu
-            knob.setValue(list(knob.values()).index(node.knob('cryptoLayer').value()))
+                # Undo user action on menu
+                knob.setValue(list(knob.values()).index(node.knob('cryptoLayer').value()))
     elif knob.name() == "pickerAdd":
         if node.knob("singleSelection").getValue():
             node.knob("matteList").setValue("")
