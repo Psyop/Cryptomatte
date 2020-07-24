@@ -1,3 +1,9 @@
+### 1.2.7
+
+Nuke:
+
+* Fixed issue where decryptomatte doesn't work inside groups (#127, contributed by Johannes Hezer)
+
 ### 1.2.6
 
 Nuke:

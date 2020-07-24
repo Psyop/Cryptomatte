@@ -9,7 +9,7 @@ The goal of releasing Cryptomatte is to turn it into an ecosystem around an open
 
 Cryptomatte is licenced using the BSD 3-clause license. See [license.txt](license.txt).
 
-Version 1.2.6. See [changelog](CHANGELOG.md) for version history. 
+Version 1.2.7. See [changelog](CHANGELOG.md) for version history. 
 
 ## Repo Contents
 
