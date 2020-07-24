@@ -1203,6 +1203,11 @@ def decryptomatte_selected(ask=False):
 
 
 def decryptomatte_button(node):
+    if "." in nuke.thisNode().fullName():
+        parent_name = ".".join(nuke.thisNode().fullName().split(".")[:-1])
+        with nuke.toNode(parent_name):
+            decryptomatte_nodes([node], False)
+            return
     with nuke.root():
         decryptomatte_nodes([node], False)
 
