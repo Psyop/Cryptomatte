@@ -20,7 +20,7 @@ https://pypi.python.org/pypi/mmh3/2.3.1
 import sys as _sys
 if (_sys.version_info > (3, 0)):
     def xrange( a, b, c ):
-        return range( a, b, c )
+        return list(range( a, b, c))
     def xencode(x):
         if isinstance(x, bytes) or isinstance(x, bytearray):
             return x
@@ -53,7 +53,7 @@ def hash( key, seed = 0x0 ):
     c2 = 0x1b873593
 
     # body
-    for block_start in xrange( 0, nblocks * 4, 4 ):
+    for block_start in range( 0, nblocks * 4, 4 ):
         # ??? big endian?
         k1 = key[ block_start + 3 ] << 24 | \
              key[ block_start + 2 ] << 16 | \
@@ -117,7 +117,7 @@ def hash128( key, seed = 0x0, x64arch = True ):
         c2 = 0x4cf5ad432745937f
 
         #body
-        for block_start in xrange( 0, nblocks * 8, 8 ):
+        for block_start in range( 0, nblocks * 8, 8 ):
             # ??? big endian?
             k1 = key[ 2 * block_start + 7 ] << 56 | \
                  key[ 2 * block_start + 6 ] << 48 | \
@@ -245,7 +245,7 @@ def hash128( key, seed = 0x0, x64arch = True ):
         c4 = 0xa1e38b93
 
         #body
-        for block_start in xrange( 0, nblocks * 16, 16 ):
+        for block_start in range( 0, nblocks * 16, 16 ):
             k1 = key[ block_start +  3 ] << 24 | \
                  key[ block_start +  2 ] << 16 | \
                  key[ block_start +  1 ] <<  8 | \
@@ -430,7 +430,7 @@ def hash_bytes( key, seed = 0x0, x64arch = True ):
 
     bytestring = ''
 
-    for i in xrange(0, 16, 1):
+    for i in range(0, 16, 1):
         lsbyte = hash_128 & 0xFF
         bytestring = bytestring + str( chr( lsbyte ) )
         hash_128 = hash_128 >> 8

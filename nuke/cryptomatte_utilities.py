@@ -160,7 +160,7 @@ class CryptomatteInfo(object):
         default_selection = None
         
         self.cachable_metadata = {}
-        for key, value in exr_metadata_dict.iteritems():
+        for key, value in exr_metadata_dict.items():
             if key == "input/filename":
                 self.filename = value
                 self.cachable_metadata[key] = value
@@ -179,16 +179,16 @@ class CryptomatteInfo(object):
                     self.cachable_metadata[key] = value
                 break
 
-        for metadata_id, value in self.cryptomattes.iteritems():
+        for metadata_id, value in self.cryptomattes.items():
             if not "name" in value:
                 value["name"] = ""
 
         if self.cryptomattes:
             default_selection = sorted(
-                self.cryptomattes.keys(), 
+                list(self.cryptomattes.keys()), 
                 key=lambda x: self.cryptomattes[x]["name"])[0]
 
-        for metadata_id, value in self.cryptomattes.iteritems():
+        for metadata_id, value in self.cryptomattes.items():
             name = value["name"]
             channels = self._identify_channels(name)
             self.cryptomattes[metadata_id]["channels"] = channels
@@ -284,7 +284,7 @@ class CryptomatteInfo(object):
     def resolve_manifest_paths(self, exr_path, sidecar_path):
         import os
         if "\\" in sidecar_path:
-            print "Cryptomatte: Invalid sidecar path (Back-slashes not allowed): ", sidecar_path
+            print("Cryptomatte: Invalid sidecar path (Back-slashes not allowed): ", sidecar_path)
             return "" # to enforce the specification. 
         joined = os.path.join(os.path.dirname(exr_path), sidecar_path)
         return os.path.normpath(joined)
@@ -300,8 +300,8 @@ class CryptomatteInfo(object):
                 self.cryptomattes[self.selection]['manifest'] = manif_str
         try:
             return json.loads(self.cryptomattes[self.selection]['manifest'])
-        except ValueError, e:
-            print "Cryptomatte: Unable to parse manifest. (%s)." % e
+        except ValueError as e:
+            print("Cryptomatte: Unable to parse manifest. (%s)." % e)
             return {}
 
     def parse_manifest(self):
@@ -328,9 +328,9 @@ class CryptomatteInfo(object):
                     with open(manif_file) as json_data:
                         manifest = json.load(json_data)
                 except:
-                    print "Cryptomatte: Unable to parse manifest, ", manif_file
+                    print("Cryptomatte: Unable to parse manifest, ", manif_file)
             else:
-                print "Cryptomatte: Unable to find manifest file: ", manif_file
+                print("Cryptomatte: Unable to find manifest file: ", manif_file)
         else:
             manifest = self.lazy_load_manifest()
 
@@ -339,7 +339,7 @@ class CryptomatteInfo(object):
 
         unpacker = struct.Struct('=f')
         packer = struct.Struct("=I")
-        for name, value in manifest.iteritems():
+        for name, value in manifest.items():
             packed = packer.pack(int(value,16))
             packed = packed = '\0' * (4 - len(packed)) + packed
             id_float = unpacker.unpack( packed )[0]
@@ -387,7 +387,7 @@ class CryptomatteInfo(object):
         errors = []
         collisions = []
         manifest = self.cryptomattes[self.selection]["names_to_IDs"]
-        for name, idvalue in manifest.iteritems():
+        for name, idvalue in manifest.items():
             if mm3hash_float(name) != idvalue:
                 errors.append("computed ID doesn't match manifest ID: (%s, %s)" % (idvalue, mm3hash_float(name)))
             else:
@@ -396,22 +396,22 @@ class CryptomatteInfo(object):
                 ids[idvalue] = name
 
         if not quiet:
-            print "Tested %s, %s names" % (self.nuke_node.name(), len(manifest))
-            print "    ", len(errors), "non-matching IDs between python and c++."
-            print "    ", len(collisions), "hash collisions in manifest."
+            print("Tested %s, %s names" % (self.nuke_node.name(), len(manifest)))
+            print("    ", len(errors), "non-matching IDs between python and c++.")
+            print("    ", len(collisions), "hash collisions in manifest.")
 
         return errors, collisions
 
 
 def print_hash_info(name):
     hash_32 = mmh3.hash(name)
-    print "Name:", name
-    print "UTF-8 bytes:", " ".join( hex(ord(x))[2:] for x in name)
-    print "Hash value (signed):", hash_32
+    print("Name:", name)
+    print("UTF-8 bytes:", " ".join( hex(ord(x))[2:] for x in name))
+    print("Hash value (signed):", hash_32)
     if hash_32 < 0:
         hash_32 = (-hash_32 - 1) ^ 0xFFFFFFFF
-    print "Hash value (unsigned):", hash_32
-    print "Float converted:", mm3hash_float(name)
+    print("Hash value (unsigned):", hash_32)
+    print("Float converted:", mm3hash_float(name))
 
 
 #############################################
@@ -456,18 +456,18 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
     elif knob.name() in ["cryptoLayerChoice"]:
         if not node.knob('cryptoLayerLock').value():
             knob_value = int(knob.getValue())
-            choice_options = knob.values()
+            choice_options = list(knob.values())
             if knob_value >= len(choice_options):
                 return
             prev_crypto_layer = node.knob('cryptoLayer').value()
-            new_crypto_layer = knob.values()[knob_value]
+            new_crypto_layer = list(knob.values())[knob_value]
             if prev_crypto_layer != new_crypto_layer:
                 node.knob('cryptoLayer').setValue(new_crypto_layer)
                 cinfo = CryptomatteInfo(node)
                 _update_cryptomatte_gizmo(node, cinfo)
             
             # Undo user action on menu
-            knob.setValue(knob.values().index(node.knob('cryptoLayer').value()))
+            knob.setValue(list(knob.values()).index(node.knob('cryptoLayer').value()))
     elif knob.name() == "pickerAdd":
         if node.knob("singleSelection").getValue():
             node.knob("matteList").setValue("")
@@ -635,7 +635,7 @@ def _set_metadata_cache(gizmo, cinfo):
 
 def _set_crypto_layer_choice_options(gizmo, cinfo):
     layer_locked = gizmo.knob('cryptoLayerLock').value()
-    values = sorted([v.get('name', '') for v in cinfo.cryptomattes.values()])
+    values = sorted([v.get('name', '') for v in list(cinfo.cryptomattes.values())])
     gizmo.knob('cryptoLayerChoice').setEnabled(not layer_locked)
     gizmo.knob("cryptoLayerChoice").setValues(values)
     return values
@@ -766,7 +766,7 @@ def _update_encyptomatte_setup_layers(gizmo):
 
     num_ch = len(GIZMO_ADD_CHANNEL_KNOBS)
     for i, ch_add, ch_remove in zip(
-            range(num_ch), GIZMO_ADD_CHANNEL_KNOBS, GIZMO_REMOVE_CHANNEL_KNOBS):
+            list(range(num_ch)), GIZMO_ADD_CHANNEL_KNOBS, GIZMO_REMOVE_CHANNEL_KNOBS):
         this_layer = "{0}{1:02d}".format(crypto_layer, i)
         # Add
         if i < num_layers:
@@ -897,7 +897,7 @@ def unload_manifest(node):
 
             progress = 0
             task = nuke.ProgressTask("Unloading Manifest")
-            for name, metadata_ID in names_to_IDs.iteritems():
+            for name, metadata_ID in names_to_IDs.items():
                 if task.isCancelled():
                     break
                 task.setMessage("Creating Cryptomatte Keyer for %s" % name)
@@ -1057,7 +1057,7 @@ def _get_knob_channel_value(knob, recursive_mode=None):
         id_list = []
     else:
         matte_list = get_mattelist_as_set(node)
-        id_list = map(_id_from_matte_name, matte_list)
+        id_list = list(map(_id_from_matte_name, matte_list))
 
     saw_bg = False
     add_mode = recursive_mode == "add"
@@ -1142,7 +1142,7 @@ def get_mattelist_as_set(gizmo):
     raw_list = _decode_csv(matte_list)
     result = set()
     for item in raw_list:
-        item = item.encode("utf-8") if type(item) is unicode else str(item)
+        item = item.encode("utf-8") if type(item) is str else str(item)
         result.add(item) 
     return result
 
@@ -1250,7 +1250,7 @@ def _decryptomatte(gizmo):
     # compile list immediate outputs to connect to
     connect_to = []
     for node in gizmo.dependent():
-        for i in xrange(node.inputs()):
+        for i in range(node.inputs()):
             input_node = node.input(i)
             if input_node and input_node.fullName() == gizmo.fullName():
                 connect_to.append((i, input_node))
