@@ -97,7 +97,7 @@ class CryptoHashing(unittest.TestCase):
 
     def test_mm3hash_float(self):
         import cryptomatte_utilities as cu
-        for name, hashvalue in self.mm3hash_float_values.iteritems():
+        for name, hashvalue in self.mm3hash_float_values.items():
             msg = "%s hash does not line up: %s %s" % (name, hashvalue, cu.mm3hash_float(name))
             self.assertEqual(cu.mm3hash_float(name), cu.single_precision(hashvalue), msg)
 
@@ -456,7 +456,7 @@ class CryptomatteNodePasting(unittest.TestCase):
         try:
             self.test_paste_with_channelmerge()
             exception = None
-        except Exception, e:
+        except Exception as e:
             exception = e
         finally:
             nuke.removeKnobChanged(callback, nodeClass='Cryptomatte')
@@ -628,7 +628,7 @@ class CryptomatteNukeTests(unittest.TestCase):
                 gizmo.knob("pickerRemove").setValue(pickerCoords(coordinates))
 
     def _sample_gizmo_assert(self, pkr, msg, inverse, **kwargs):
-        for channel, value in kwargs.iteritems():
+        for channel, value in kwargs.items():
             sample = self.gizmo.sample(channel, pkr[1][0], pkr[1][1])
             msg_resolved = "%s: (%s) %s vs %s" % (msg, channel, sample, value)
             if inverse:
@@ -663,15 +663,15 @@ class CryptomatteNukeTests(unittest.TestCase):
         width, height = node.width(), node.height()
         if pkr:
             y = pkr[1][1]
-            for x in xrange(width):
+            for x in range(width):
                 sample = node.sample(channel, x, y)
                 if precision:
                     sample = round(sample, precision)
                 anything = anything or bool(sample)
                 m.update(str(sample))
-        for y_index in xrange(num_scanlines):
+        for y_index in range(num_scanlines):
             y = (float(y_index) + 0.5) * height / (num_scanlines)
-            for x in xrange(width):
+            for x in range(width):
                 sample = node.sample(channel, x, y)
                 anything = anything or bool(sample)
                 if precision:
@@ -962,7 +962,7 @@ class CryptomatteNukeTests(unittest.TestCase):
             self.read_asset.knob("noprefix").setValue(True)
             self.gizmo.knob("forceUpdate").execute()
             self._test_keying_partial_black("Keying failed once read-node prefix was disabled.")
-        except Exception, e:
+        except Exception as e:
             exception = e
 
         self.read_asset.knob("noprefix").setValue(False)
@@ -1367,7 +1367,7 @@ class CryptomatteNukeTests(unittest.TestCase):
             cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("cryptoLayer"))
             encryptomatte.knob("setupLayers").setValue(True)
             cu.encryptomatte_knob_changed_event(encryptomatte, encryptomatte.knob("setupLayers"))
-        except Exception, e:
+        except Exception as e:
             self.fail("Invalid crypto layer name raises error: %s" % e)
 
     def test_encrypt_setup_layers_numbers(self):
@@ -1794,29 +1794,29 @@ def run_tests(test_cases, test_filter="", failfast=False):
 
     reset_skip_cleanup_on_failure()
 
-    print "---------"
-    print 'Cryptomatte %s, Nuke %s, %s' % (cu.__version__, 
+    print("---------")
+    print('Cryptomatte %s, Nuke %s, %s' % (cu.__version__, 
                                            nuke.NUKE_VERSION_STRING, 
-                                           platform.platform())
-    print "---------"
+                                           platform.platform()))
+    print("---------")
     for test_instance, traceback in result.failures:
-        print "Failed: %s.%s" % (type(test_instance).__name__, find_test_method(traceback))
-        print
-        print traceback
-        print "---------"
+        print("Failed: %s.%s" % (type(test_instance).__name__, find_test_method(traceback)))
+        print()
+        print(traceback)
+        print("---------")
     for test_instance, traceback in result.errors:
-        print "Error: %s.%s" % (type(test_instance).__name__, find_test_method(traceback))
-        print
-        print traceback
-        print "---------"
+        print("Error: %s.%s" % (type(test_instance).__name__, find_test_method(traceback)))
+        print()
+        print(traceback)
+        print("---------")
 
     if result.failures or result.errors:
-        print "TESTING FAILED: %s failed, %s errors. (%s test cases.)" % (len(result.failures),
+        print("TESTING FAILED: %s failed, %s errors. (%s test cases.)" % (len(result.failures),
                                                                           len(result.errors),
-                                                                          suite.countTestCases())
+                                                                          suite.countTestCases()))
         return result
     else:
-        print "Testing passed: %s failed, %s errors. (%s test cases.)" % (len(result.failures),
+        print("Testing passed: %s failed, %s errors. (%s test cases.)" % (len(result.failures),
                                                                           len(result.errors),
-                                                                          suite.countTestCases())
+                                                                          suite.countTestCases()))
         return None
