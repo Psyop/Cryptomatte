@@ -347,7 +347,7 @@ class CryptomatteInfo(object):
         packer = struct.Struct("=I")
         for name, value in manifest.items():
             packed = packer.pack(int(value,16))
-            packed = packed = '\0' * (4 - len(packed)) + packed
+            packed = packed = b'\0' * (4 - len(packed)) + packed
             id_float = unpacker.unpack( packed )[0]
             name_str = name.encode("utf8")
             from_names[name_str] = id_float

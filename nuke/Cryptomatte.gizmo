@@ -32,8 +32,8 @@ Gizmo {
  addUserKnob {6 unpremultiply l Unpremultiply -STARTLINE}
 
  addUserKnob {1 matteList l "Matte List" t "The list of names the mattes are built from. Color picking values with the color fields above works by populating this field. "}
- addUserKnob {22 clear l Clear t "Clears the selection in this Gizmo" T "try: \n   import cryptomatte_utilities as cu\n   cu.clear_cryptomatte_gizmo(nuke.thisNode())\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. Please check with Pipeline that the Cryptomatte python plugin is available on this project. \n\nError Traceback (send this to Pipeline): \n\n%s''' % traceback.format_exc())" +STARTLINE}
- addUserKnob {22 forceUpdate l "Force Update" t "Updates the Gizmo based on which channels are available in the input. \n\nThis happens automatically when input changes, when loading the nuke script, or when a new gizmo is created. This is how it deals with differently named channels in the different Cryptomatte layers, and different depths that it's possible to render at. " -STARTLINE T "try: \n   import cryptomatte_utilities as cu\nexcept Exception, err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())"}
+ addUserKnob {22 clear l Clear t "Clears the selection in this Gizmo" T "try: \n   import cryptomatte_utilities as cu\n   cu.clear_cryptomatte_gizmo(nuke.thisNode())\nexcept Exception as err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. Please check with Pipeline that the Cryptomatte python plugin is available on this project. \n\nError Traceback (send this to Pipeline): \n\n%s''' % traceback.format_exc())" +STARTLINE}
+ addUserKnob {22 forceUpdate l "Force Update" t "Updates the Gizmo based on which channels are available in the input. \n\nThis happens automatically when input changes, when loading the nuke script, or when a new gizmo is created. This is how it deals with differently named channels in the different Cryptomatte layers, and different depths that it's possible to render at. " -STARTLINE T "try: \n   import cryptomatte_utilities as cu\nexcept Exception as err:\n   import traceback\n   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())"}
  addUserKnob {6 stopAutoUpdate l "Stop Auto Update" t "Stops the automatic update of this copy of the Gizmo." -STARTLINE}
  addUserKnob {6 useWildcards l "Use Wildcards" t "Expands wildcard entries in the Matte List knob." -STARTLINE}
  useWildcards false
@@ -63,7 +63,7 @@ try:
   cu.troubleshoot_gizmo(nuke.thisNode())
 except ImportError, err:
   nuke.message('''Could not import cryptomatte_utilities.py, the python files are not available. \n\nError Traceback: \n\n%s''' % traceback.format_exc())
-except Exception, err:
+except Exception as err:
   import traceback
   nuke.message('''Something went wrong. If you would like to report this, please the text in this window: \n\nError Traceback: \n\n%s''' % traceback.format_exc())
 "}
@@ -75,7 +75,7 @@ except Exception, err:
 try: 
   import cryptomatte_utilities as cu
   cu.decryptomatte_button(nuke.thisNode())
-except Exception, err:
+except Exception as err:
   import traceback
   nuke.message('''Unable to run a Cryptomatte script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())
 "}
@@ -86,7 +86,7 @@ except Exception, err:
 try: 
   import cryptomatte_utilities as cu
   cu.unload_manifest(nuke.thisNode())
-except Exception, err:
+except Exception as err:
   import traceback
   nuke.message('''Unable to run a Cryptomatte script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())
 "}
@@ -97,7 +97,7 @@ except Exception, err:
 try: 
   import cryptomatte_utilities as cu
   cu.update_all_cryptomatte_gizmos()
-except Exception, err:
+except Exception as err:
   import traceback
   nuke.message('''Unable to run Cryptomatte Gizmo update script. This script is necessary for the Cryptomatte system to work properly. \n\nError Traceback: \n\n%s''' % traceback.format_exc())
 "}
