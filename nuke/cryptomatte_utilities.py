@@ -341,7 +341,7 @@ class CryptomatteInfo(object):
         packer = struct.Struct("=I")
         for name, value in manifest.items():
             packed = packer.pack(int(value,16))
-            packed = packed = '\0' * (4 - len(packed)) + packed
+            packed = packed = b'\0' * (4 - len(packed)) + packed
             id_float = unpacker.unpack( packed )[0]
             name_str = name.encode("utf8")
             from_names[name_str] = id_float
@@ -931,7 +931,7 @@ def _set_expression(gizmo, cryptomatte_channels):
     matte_list = get_mattelist_as_set(gizmo)
 
     for item in matte_list:
-        if item.startswith("<") and item.endswith(">"):
+        if item.startswith(b"<") and item.endswith(b">"):
             numstr = item[1:-1]
             if _is_number(numstr): 
                 ID_list.append(single_precision(float(numstr)))
@@ -1041,7 +1041,7 @@ def _set_preview_expression(gizmo, cryptomatte_channels):
 
 
 def _id_from_matte_name(name):
-    if name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
+    if name.startswith(b'<') and name.endswith(b'>') and _is_number(name[1:-1]):
         return single_precision(float(name[1:-1]))
     else:
         return mm3hash_float(name)
@@ -1102,27 +1102,27 @@ def _encode_csv(iterable_items):
     if it contains any of these or spaces, with a space after each comma. 
     """
     cleaned_items = []
-    need_escape_chars = '"\\'
-    need_space_chars = ' ,'
+    need_escape_chars = b'"\\'
+    need_space_chars = b' ,'
     for item in iterable_items:
         need_escape = any(x in item for x in need_escape_chars)
         need_quotes = need_escape or any(x in item for x in need_space_chars)
 
         cleaned = None
         if need_escape:
-            cleaned = ""
+            cleaned = b""
             for char in item:
                 if char in need_escape_chars:
-                    cleaned +=( '\\%s' % char )
+                    cleaned +=( b'\\%s' % char )
                 else:
                     cleaned += char
         else:
             cleaned = item
         if need_quotes:
-            cleaned_items.append('"%s"'%cleaned)
+            cleaned_items.append(b'"%s"'%cleaned)
         else:
             cleaned_items.append(cleaned)
-    result = ", ".join(cleaned_items)
+    result = b", ".join(cleaned_items)
     return result
 
 
@@ -1152,8 +1152,8 @@ def set_mattelist_from_set(gizmo, matte_items):
     matte_names_list = list(matte_items)
     matte_names_list.sort(key=lambda x: x.lower())
     matte_list_str = _encode_csv(matte_names_list)
-    matte_list_str = matte_list_str.replace("\\", "\\\\")
-    gizmo.knob("matteList").setValue(matte_list_str)
+    matte_list_str = matte_list_str.replace(b"\\", b"\\\\")
+    gizmo.knob("matteList").setValue(matte_list_str.decode("utf-8"))
 
 def _matteList_modify(gizmo, name, remove):
     def _matteList_set_add(name, matte_names):
