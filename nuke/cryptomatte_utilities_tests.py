@@ -49,15 +49,18 @@ def reset_skip_cleanup_on_failure():
 
 
 class CSVParsing(unittest.TestCase):
-    csv_str = ("""str, "str with space", "single 'quotes'", """
-               '"with_a,_comma", "with comma, and \\"quotes\\"", <123.45>, '
-               '" space_in_front", "space_at_end ", "has_escape\\\\chars", '
-               '"cyrillic \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"')
+    csv_str = (b"""str, "str with space", "single 'quotes'", """
+               b'"with_a,_comma", "with comma, and \\"quotes\\"", <123.45>, '
+               b'" space_in_front", "space_at_end ", "has_escape\\\\chars", '
+               b'"cyrillic \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"')
     name_list = [
         "str", "str with space", "single 'quotes'", "with_a,_comma", 'with comma, and "quotes"',
         "<123.45>", " space_in_front", "space_at_end ", "has_escape\\chars",
-        "cyrillic \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"
+        b"cyrillic \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"
     ]
+    if (sys.version_info > (3, 0)):
+        csv_str = csv_str.decode()
+        name_list = [item.decode() if type(item) is bytes else item for item in name_list]
 
     def test_csv_round_trip(self):
         import cryptomatte_utilities as cu
@@ -82,15 +85,21 @@ class CSVParsing(unittest.TestCase):
 
 class CryptoHashing(unittest.TestCase):
     mm3hash_float_values = {
-        "hello": 6.0705627102400005616e-17,
-        "cube": -4.08461912519e+15,
-        "sphere": 2.79018604383e+15,
-        "plane": 3.66557617593e-11,
+        b"hello": 6.0705627102400005616e-17,
+        b"cube": -4.08461912519e+15,
+        b"sphere": 2.79018604383e+15,
+        b"plane": 3.66557617593e-11,
         # utf-8 bytes for "plane" in Bulgarian
-        "\xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0": -1.3192631212399999468e-25,
+        b"\xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0": -1.3192631212399999468e-25,
         # utf-8 bytes for "girl" in German
-        "m\xc3\xa4dchen": 6.2361298211599995797e+25,
+        b"m\xc3\xa4dchen": 6.2361298211599995797e+25,
     }
+    if (sys.version_info > (3, 0)):
+        decoded_mm3hash_float_values = {}
+        for key in mm3hash_float_values:
+            if type(key) is bytes:
+                decoded_mm3hash_float_values[key.decode()] = mm3hash_float_values[key]
+        mm3hash_float_values = decoded_mm3hash_float_values
 
     def test_mm3hash_float(self):
         import cryptomatte_utilities as cu
@@ -458,7 +467,7 @@ class CryptomatteNukeTests(unittest.TestCase):
                 if precision:
                     sample = round(sample, precision)
                 anything = anything or bool(sample)
-                m.update(str(sample))
+                m.update(str(sample).encode('utf-8'))
         for y_index in range(num_scanlines):
             y = (float(y_index) + 0.5) * height / (num_scanlines)
             for x in range(width):
@@ -466,7 +475,7 @@ class CryptomatteNukeTests(unittest.TestCase):
                 anything = anything or bool(sample)
                 if precision:
                     sample = round(sample, precision)
-                m.update(str(sample))
+                m.update(str(sample).encode('utf-8'))
         return m.hexdigest() if anything else 0
 
     def hash_channel_layer(self, node, layer, channel, num_scanlines=16):
