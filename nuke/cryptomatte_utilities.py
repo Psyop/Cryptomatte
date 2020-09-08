@@ -341,9 +341,9 @@ class CryptomatteInfo(object):
         packer = struct.Struct("=I")
         for name, value in manifest.items():
             packed = packer.pack(int(value,16))
-            packed = packed = b'\0' * (4 - len(packed)) + packed
+            packed = b'\0' * (4 - len(packed)) + packed
             id_float = unpacker.unpack( packed )[0]
-            name_str = name.encode("utf8")
+            name_str = name
             from_names[name_str] = id_float
             from_ids[id_float] = name_str
 
@@ -358,9 +358,9 @@ class CryptomatteInfo(object):
         return from_names
 
     def id_to_name(self, ID_value):
-        """Checks the manifest for the ID value. 
+        """Checks the manifest for the ID value.
         Checks the last used manifest first, before decoding
-        the existing one. 
+        the existing one.
         """
         global g_cryptomatte_manf_from_IDs
         manf_cache = g_cryptomatte_manf_from_IDs
@@ -375,11 +375,11 @@ class CryptomatteInfo(object):
     def name_to_ID(self, name):
         return mm3hash_float(name)
 
-    def test_manifest(self, quiet=False):        
+    def test_manifest(self, quiet=False):
         """Testing function to check for implementation errors and hash collisions.
         Checks all names and values in the manifest in the manifest by rehashing them,
         to ensure that the entire process is sound. Also finds collisions. Returns a tuple
-        of errors and collisions. 
+        of errors and collisions.
         """
         self.parse_manifest()
 
@@ -420,7 +420,7 @@ def print_hash_info(name):
 
 
 def cryptomatte_create_gizmo():
-    return nuke.createNode("Cryptomatte") 
+    return nuke.createNode("Cryptomatte")
 
 
 def encryptomatte_create_gizmo():
@@ -447,7 +447,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
 
     if knob.name() == "inputChange":
         if unsafe_to_do_inputChange(node):
-            return # see comment in #unsafe_to_do_inputChange. 
+            return # see comment in #unsafe_to_do_inputChange.
         cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_cryptomatte_gizmo(node, cinfo)
     elif knob.name() in ["cryptoLayer", "cryptoLayerLock"]:
@@ -465,7 +465,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
                 node.knob('cryptoLayer').setValue(new_crypto_layer)
                 cinfo = CryptomatteInfo(node)
                 _update_cryptomatte_gizmo(node, cinfo)
-            
+
             # Undo user action on menu
             knob.setValue(list(knob.values()).index(node.knob('cryptoLayer').value()))
     elif knob.name() == "pickerAdd":
@@ -475,7 +475,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
-        keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
+        keyed_object = cinfo.id_to_name(ID_value) or "<{:.12g}>".format(ID_value)
         node.knob("pickerRemove").setValue([0] * 8)
         _matteList_modify(node, keyed_object, False)
         _update_cryptomatte_gizmo(node, cinfo)
@@ -485,10 +485,10 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
-        keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
+        keyed_object = cinfo.id_to_name(ID_value) or "<{:.12g}>".format(ID_value)
         node.knob("pickerAdd").setValue([0] * 8)
         _matteList_modify(node, keyed_object, True)
-        _update_cryptomatte_gizmo(node, cinfo)  
+        _update_cryptomatte_gizmo(node, cinfo)
 
     elif knob.name() == "matteList":
         cinfo = CryptomatteInfo(node)
@@ -516,7 +516,7 @@ def encryptomatte_knob_changed_event(node=None, knob=None):
     if knob.name() in ["setupLayers", "cryptoLayer", "inputChange", "cryptoLayers"]:
         if knob.name() == "inputChange":
             if unsafe_to_do_inputChange(node):
-                return # see comment in #unsafe_to_do_inputChange. 
+                return # see comment in #unsafe_to_do_inputChange.
         _update_encyptomatte_setup_layers(node)
         cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_encryptomatte_gizmo(node, cinfo)
@@ -533,9 +533,9 @@ def encryptomatte_on_create_event(node = None, knob = None):
 
 def update_cryptomatte_gizmo(node, force=False):
     """
-    Not invoked by gizmo button. 
+    Not invoked by gizmo button.
 
-    The gizmo button relies on knob changed callbacks, to avoid 
+    The gizmo button relies on knob changed callbacks, to avoid
     recursive evaluation of callbacks.
     """
     cinfo = CryptomatteInfo(node, reload_metadata=True)
@@ -563,7 +563,7 @@ def clear_encryptomatte_gizmo(node):
 
 
 #############################################
-# Utils - Update Gizmi 
+# Utils - Update Gizmi
 #       (gizmi is the plural of gizmo)
 #############################################
 
@@ -574,7 +574,7 @@ def _cancel_update(gizmo, force):
     except:
         # This happens sometimes on creation. I don't really get it, but this seems to fix it.
         return True
-    if (not force and stopAutoUpdate == 1.0): 
+    if (not force and stopAutoUpdate == 1.0):
         return True
     else:
         return False
@@ -595,12 +595,12 @@ def _force_update_all():
 def unsafe_to_do_inputChange(node):
     """
     In Nuke 8, 9, 10, 11, 12 it's been discovered that when copy and pasting certain nodes,
-    or when opening certain scripts the inputchanged knob change callback breaks the script. 
+    or when opening certain scripts the inputchanged knob change callback breaks the script.
 
-    What actually happens is the call to metadata() breaks it. 
+    What actually happens is the call to metadata() breaks it.
 
-    The only reliable way to notice that it's unsafe we've found is calling node.screenHeight(), 
-    and if zero, stopping. 
+    The only reliable way to notice that it's unsafe we've found is calling node.screenHeight(),
+    and if zero, stopping.
 
     see: https://github.com/Psyop/Cryptomatte/issues/18
     """
@@ -621,7 +621,7 @@ def _limbo_state(gizmo):
 
 
 #############################################
-# Utils - Update Gizmi 
+# Utils - Update Gizmi
 #############################################
 
 def _set_channels(gizmo, channels, layer_name):
@@ -663,7 +663,7 @@ def _update_cryptomatte_gizmo(gizmo, cinfo, force=False):
 
 
 def _legal_nuke_layer_name(name):
-    """ Blender produces channels with certain characters in the name, which Nuke 
+    """ Blender produces channels with certain characters in the name, which Nuke
     changes to "_". We have to make sure we handle Cryptomattes
     that are built this way. Doing this by only allowing alphanumeric
     output plus dash and underscores
@@ -677,7 +677,7 @@ def _legal_nuke_layer_name(name):
 def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
     if _cancel_update(gizmo, force):
         return
-    
+
     def reset_gizmo(gizmo):
         _set_channels(gizmo, [], "")
         gizmo.knob("alphaExpression").setValue("")
@@ -726,7 +726,7 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
             gizmo.knob('newLayer').setValue(True)
 
         cryptomatte_channels = [
-            crypto_layer + "{0:02d}".format(i) 
+            crypto_layer + "{0:02d}".format(i)
             for i in range(int(gizmo.knob('cryptoLayers').value()))
         ]
         _set_channels(gizmo, cryptomatte_channels, crypto_layer)
@@ -747,7 +747,7 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
         manifest_key = cinfo.get_selection_metadata_key("")
         gizmo.knob('manifestKey').setValue(manifest_key)
 
-    gizmo.knob("alphaExpression").setValue(_build_extraction_expression(cryptomatte_channels, [0.0]))    
+    gizmo.knob("alphaExpression").setValue(_build_extraction_expression(cryptomatte_channels, [0.0]))
 
 def _update_encyptomatte_setup_layers(gizmo):
     setup_layers = gizmo.knob('setupLayers').value()
@@ -931,9 +931,9 @@ def _set_expression(gizmo, cryptomatte_channels):
     matte_list = get_mattelist_as_set(gizmo)
 
     for item in matte_list:
-        if item.startswith(b"<") and item.endswith(b">"):
+        if item.startswith("<") and item.endswith(">"):
             numstr = item[1:-1]
-            if _is_number(numstr): 
+            if _is_number(numstr):
                 ID_list.append(single_precision(float(numstr)))
         else:
             ID_list.append(mm3hash_float(item))
@@ -952,9 +952,9 @@ def _build_condition(condition, IDs):
 def _build_extraction_expression(channel_list, IDs):
     if not IDs:
         return ""
-        
+
     iterated_expression = "({red_condition} ? sub_channel.green : 0.0) + ({blue_condition} ? sub_channel.alpha : 0.0) + more_work_needed"
-    
+
     subcondition_red =  "sub_channel.red == ID"
     subcondition_blue = "sub_channel.blue == ID"
 
@@ -1032,8 +1032,8 @@ def _set_preview_expression(gizmo, cryptomatte_channels):
         expressions = ["", "", "", ""]
     for i in range(4):
         gizmo.knob('previewExpression' + str(i)).setValue(expressions[i])
-    
-    
+
+
 
 #############################################
 # Utils - Manifest Processing Helpers
@@ -1041,7 +1041,7 @@ def _set_preview_expression(gizmo, cryptomatte_channels):
 
 
 def _id_from_matte_name(name):
-    if name.startswith(b'<') and name.endswith(b'>') and _is_number(name[1:-1]):
+    if name.startswith('<') and name.endswith('>') and _is_number(name[1:-1]):
         return single_precision(float(name[1:-1]))
     else:
         return mm3hash_float(name)
@@ -1099,37 +1099,37 @@ def _get_knob_channel_value(knob, recursive_mode=None):
 def _encode_csv(iterable_items):
     """
     Encodes CSVs with special characters escaped, and surrounded in quotes
-    if it contains any of these or spaces, with a space after each comma. 
+    if it contains any of these or spaces, with a space after each comma.
     """
     cleaned_items = []
-    need_escape_chars = b'"\\'
-    need_space_chars = b' ,'
+    need_escape_chars = '"\\'
+    need_space_chars = ' ,'
     for item in iterable_items:
         need_escape = any(x in item for x in need_escape_chars)
         need_quotes = need_escape or any(x in item for x in need_space_chars)
 
         cleaned = None
         if need_escape:
-            cleaned = b""
+            cleaned = ""
             for char in item:
                 if char in need_escape_chars:
-                    cleaned +=( b'\\%s' % char )
+                    cleaned +=( '\\%s' % char )
                 else:
                     cleaned += char
         else:
             cleaned = item
         if need_quotes:
-            cleaned_items.append(b'"%s"'%cleaned)
+            cleaned_items.append('"%s"'%cleaned)
         else:
             cleaned_items.append(cleaned)
-    result = b", ".join(cleaned_items)
+    result = ", ".join(cleaned_items)
     return result
 
 
 def _decode_csv(input_str):
     """ Decodes CSVs into a list of strings. """
     import csv
-    reader = csv.reader([input_str], quotechar='"', delimiter=',', escapechar="\\", 
+    reader = csv.reader([input_str], quotechar='"', delimiter=',', escapechar="\\",
         doublequote=False, quoting=csv.QUOTE_ALL, skipinitialspace=True);
     result = []
     for row in reader:
@@ -1142,7 +1142,11 @@ def get_mattelist_as_set(gizmo):
     raw_list = _decode_csv(matte_list)
     result = set()
     for item in raw_list:
-        item = item.encode("utf-8") if type(item) is str else str(item)
+        import sys as _sys
+        if (_sys.version_info > (3, 0)):
+            item = str(item)
+        else:
+            item = item.encode("utf-8") if type(item) is unicode else str(item)
         result.add(item) 
     return result
 
@@ -1152,8 +1156,8 @@ def set_mattelist_from_set(gizmo, matte_items):
     matte_names_list = list(matte_items)
     matte_names_list.sort(key=lambda x: x.lower())
     matte_list_str = _encode_csv(matte_names_list)
-    matte_list_str = matte_list_str.replace(b"\\", b"\\\\")
-    gizmo.knob("matteList").setValue(matte_list_str.decode("utf-8"))
+    matte_list_str = matte_list_str.replace("\\", "\\\\")
+    gizmo.knob("matteList").setValue(matte_list_str)
 
 def _matteList_modify(gizmo, name, remove):
     def _matteList_set_add(name, matte_names):
@@ -1173,7 +1177,7 @@ def _matteList_modify(gizmo, name, remove):
         else:
             # maybe it was selected by number before, but is being removed by name
             # (manifest was broken, now it works)
-            num_str = "<%s>" % mm3hash_float(name)
+            num_str = "<{:.12g}>".format(mm3hash_float(name))
             if num_str in matte_names:
                 matte_names.remove(num_str) # the simple case
 
