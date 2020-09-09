@@ -945,7 +945,7 @@ def _set_expression(gizmo, cryptomatte_channels):
 def _build_condition(condition, IDs):
     conditions = []
     for ID in IDs:
-        conditions.append( condition.replace("ID", str(ID)) )
+        conditions.append( condition.replace("ID", "{:.12g}".format(ID)) )
     return " || ".join(conditions)
 
 
