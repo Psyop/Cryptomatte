@@ -59,7 +59,7 @@ Gizmo {
 try: 
   import cryptomatte_utilities as cu
   cu.troubleshoot_gizmo(nuke.thisNode())
-except ImportError, err:
+except ImportError as err:
   nuke.message('''Could not import cryptomatte_utilities.py, the python files are not available. \n\nError Traceback: \n\n%s''' % traceback.format_exc())
 except Exception as err:
   import traceback
