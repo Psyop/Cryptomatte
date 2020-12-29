@@ -343,7 +343,7 @@ class CryptomatteInfo(object):
             packed = packer.pack(int(value,16))
             packed = b'\0' * (4 - len(packed)) + packed
             id_float = unpacker.unpack( packed )[0]
-            name_str = name
+            name_str = name if type(name) is str else name.encode("utf-8")
             from_names[name_str] = id_float
             from_ids[id_float] = name_str
 
