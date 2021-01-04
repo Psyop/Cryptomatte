@@ -475,7 +475,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
-        keyed_object = cinfo.id_to_name(ID_value) or "<{:.12g}>".format(ID_value)
+        keyed_object = cinfo.id_to_name(ID_value) or "<{0:.12g}>".format(ID_value)
         node.knob("pickerRemove").setValue([0] * 8)
         _matteList_modify(node, keyed_object, False)
         _update_cryptomatte_gizmo(node, cinfo)
@@ -485,7 +485,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
-        keyed_object = cinfo.id_to_name(ID_value) or "<{:.12g}>".format(ID_value)
+        keyed_object = cinfo.id_to_name(ID_value) or "<{0:.12g}>".format(ID_value)
         node.knob("pickerAdd").setValue([0] * 8)
         _matteList_modify(node, keyed_object, True)
         _update_cryptomatte_gizmo(node, cinfo)
@@ -945,7 +945,7 @@ def _set_expression(gizmo, cryptomatte_channels):
 def _build_condition(condition, IDs):
     conditions = []
     for ID in IDs:
-        conditions.append( condition.replace("ID", "{:.12g}".format(ID)) )
+        conditions.append( condition.replace("ID", "{0:.12g}".format(ID)) )
     return " || ".join(conditions)
 
 
@@ -1177,7 +1177,7 @@ def _matteList_modify(gizmo, name, remove):
         else:
             # maybe it was selected by number before, but is being removed by name
             # (manifest was broken, now it works)
-            num_str = "<{:.12g}>".format(mm3hash_float(name))
+            num_str = "<{0:.12g}>".format(mm3hash_float(name))
             if num_str in matte_names:
                 matte_names.remove(num_str) # the simple case
 
