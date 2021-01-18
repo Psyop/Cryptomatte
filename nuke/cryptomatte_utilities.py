@@ -911,6 +911,7 @@ def unload_manifest(node):
 
     names_to_IDs = cinfo.parse_manifest();
 
+
     if not names_to_IDs:
         nuke.message('No Cryptomatte manifest was found in the input. ')
         return
@@ -928,7 +929,9 @@ def unload_manifest(node):
                     break
                 task.setMessage("Creating Cryptomatte Keyer for %s" % name)
                 task.setProgress( int(float(progress) / float(len(names_to_IDs)) * 100))
-                keyer = nuke.nodes.Cryptomatte(name="ck_%s" % name, matteList=name, matteOnly=True)
+                ml = MatteList("")
+                ml.add(name)
+                keyer = nuke.nodes.Cryptomatte(name="ck_%s" % name, matteList=ml.to_nukestr, matteOnly=True)
                 keyer.setInput(0, dot)
                 _update_cryptomatte_gizmo(keyer, cinfo)
                 new_keyers.append(keyer)
