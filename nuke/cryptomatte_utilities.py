@@ -1266,7 +1266,7 @@ class MatteList(StringEncoder):
                     break
         else:
             # in mattelist by number, but is being removed by name
-            num_str = "<%s>" % mm3hash_float(rawstr)
+            num_str = "<{:.12g}>".format(mm3hash_float(rawstr))
             if num_str in self.mattes:
                 self.mattes.remove(num_str)
         self._update_raw_mattes()
