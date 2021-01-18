@@ -1,6 +1,7 @@
-### 1.3.0-beta4:
+### 1.4.0-beta4:
 
 * Updated for Python 3
+* Increased version of beta to 1.4.0-beta4 (to leave 1.3.0 for Python 3 update)
 * Brought in fixes from 1.2.8
 
 ### 1.3.0-beta3:
