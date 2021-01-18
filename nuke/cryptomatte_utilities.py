@@ -1234,11 +1234,11 @@ class MatteList(StringEncoder):
         import nuke
         self.mattes = None
 
-        if type(initializer) in (str, unicode):
-            nukestr = initializer
-        else:
+        if type(initializer) is nuke.Gizmo:
             gizmo = initializer
             nukestr = gizmo.knob("matteList").getValue()
+        else: #str or in Python 2.7, str or unicode
+            nukestr = initializer
 
         csv = self.decode_nukestr_to_csv(nukestr)
         mattestrs = self.decode_csvstr_to_mattestrs(csv)
@@ -1248,7 +1248,8 @@ class MatteList(StringEncoder):
         self._update_raw_mattes()
 
     def _ensure_utf8(self, string):
-        return string.encode("utf-8") if type(string) is unicode else str(string) 
+        return string if type(string) is str else string.encode("utf-8")
+        # return string.encode("utf-8") if type(string) is unicode else str(string) 
 
     def add(self, rawstr):
         mattestr = self.encode_rawstr_to_mattestr(rawstr)
@@ -1338,7 +1339,7 @@ class MatteList(StringEncoder):
         fn_pattern = self.encode_mattestr_to_fnmatch(mattestr)
         for manf in manifest:
             if fnmatch.fnmatchcase(manf, fn_pattern):
-                manf = manf.encode("utf-8") if type(manf) is unicode else str(manf)
+                manf = manf if type(manf) is str else manf.encode("utf-8")
                 match_set.append(self.encode_rawstr_to_mattestr(manf))
         return match_set
 
