@@ -540,14 +540,27 @@ class CryptomatteNukeTests(unittest.TestCase):
         global g_cancel_nuke_testing
         return g_cancel_nuke_testing
 
+    def list_to_reason(self, exc_list):
+        # from https://stackoverflow.com/questions/4414234/getting-pythons-unittest-results-in-a-teardown-method
+        if exc_list and exc_list[-1][0] is self:
+            return exc_list[-1][1]
+
     def skip_cleanup(self):
+        # from https://stackoverflow.com/questions/4414234/getting-pythons-unittest-results-in-a-teardown-method
         global CRYPTOMATTETEST_SKIP_CLEANUP_ON_FAILURE
-        test_ok = (sys.exc_info() == (None, None, None) or sys.exc_info()[0] is unittest.SkipTest)
-        if CRYPTOMATTETEST_SKIP_CLEANUP_ON_FAILURE and not test_ok:
-            self.set_canceled(True)  # ensure that teardownClass does not run
-            return True
-        else:
+        if not CRYPTOMATTETEST_SKIP_CLEANUP_ON_FAILURE:
             return False
+        if hasattr(self, '_outcome'):  # Python 3.4+
+            result = self.defaultTestResult()  # These two methods have no side effects
+            self._feedErrorsToResult(result, self._outcome.errors)
+        else:  # Python 3.2 - 3.3 or 3.0 - 3.1 and 2.7
+            result = getattr(self, '_outcomeForDoCleanups', self._resultForDoCleanups)
+        error = self.list_to_reason(result.errors)
+        failure = self.list_to_reason(result.failures)
+        ok = not error and not failure
+        if not ok:
+            self.set_canceled(True)
+        return not ok
 
     def setUp(self):
         import nuke
