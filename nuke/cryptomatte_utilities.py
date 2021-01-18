@@ -1242,14 +1242,11 @@ class MatteList(StringEncoder):
 
         csv = self.decode_nukestr_to_csv(nukestr)
         mattestrs = self.decode_csvstr_to_mattestrs(csv)
-        # TODO: determine if still necessary to ensure utf8
-        matte_list = map(self._ensure_utf8, mattestrs)
         self.mattes = set(mattestrs)
         self._update_raw_mattes()
 
     def _ensure_utf8(self, string):
         return string if type(string) is str else string.encode("utf-8")
-        # return string.encode("utf-8") if type(string) is unicode else str(string) 
 
     def add(self, rawstr):
         mattestr = self.encode_rawstr_to_mattestr(rawstr)
@@ -1288,7 +1285,7 @@ class MatteList(StringEncoder):
                 return single_precision(float(name[1:-1]))
             else:
                 return mm3hash_float(name)
-        return map(_id_from_matte_name, self.raw_mattes)    
+        return list(map(_id_from_matte_name, self.raw_mattes))
 
     def expand_wildcards(self, cinfo):
         if not self.has_wildcards:
