@@ -69,7 +69,7 @@ except Exception as err:
 
  addUserKnob {20 Advanced}
  
- addUserKnob {26 cryptomatteVersion l "Cryptomatte Version" T "1.3.0-beta3"}
+ addUserKnob {26 cryptomatteVersion l "Cryptomatte Version" T "1.3.0-beta4"}
 }
  Input {
   inputs 0

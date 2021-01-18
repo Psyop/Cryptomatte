@@ -1,3 +1,8 @@
+### 1.3.0-beta4:
+
+* Updated for Python 3
+* Brought in fixes from 1.2.8
+
 ### 1.3.0-beta3:
 
 * Brought in fixes from 1.2.7.
