@@ -1,3 +1,9 @@
+### 1.3.0
+
+Nuke:
+
+* Updated to support both Python 3 and Python 2.7 with the same code (#134, thanks @PumpingPixels).
+
 ### 1.2.8
 
 Nuke:
