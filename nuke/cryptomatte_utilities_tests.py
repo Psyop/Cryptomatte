@@ -59,8 +59,12 @@ class CSVParsing(unittest.TestCase):
         b"cyrillic \xd1\x80\xd0\xb0\xd0\xb2\xd0\xbd\xd0\xb8\xd0\xbd\xd0\xb0"
     ]
     if (sys.version_info > (3, 0)):
-        csv_str = csv_str.decode()
-        name_list = [item.decode() if type(item) is bytes else item for item in name_list]
+        long_csv = long_csv.decode()
+        long_csv_name_list = [
+            item.decode() 
+            if type(item) is bytes else item 
+            for item in long_csv_name_list
+        ]
 
     def test_csv_round_trip(self):
         import cryptomatte_utilities as cu
