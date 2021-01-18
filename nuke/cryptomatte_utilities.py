@@ -349,7 +349,7 @@ class CryptomatteInfo(object):
             packed = packer.pack(int(value,16))
             packed = packed = b'\0' * (4 - len(packed)) + packed
             id_float = unpacker.unpack( packed )[0]
-            name_str = name.encode("utf8")
+            name_str = name if type(name) is str else name.encode("utf-8")
             from_names[name_str] = id_float
             from_ids[id_float] = name_str
 
@@ -364,9 +364,9 @@ class CryptomatteInfo(object):
         return from_names
 
     def id_to_name(self, ID_value):
-        """Checks the manifest for the ID value. 
+        """Checks the manifest for the ID value.
         Checks the last used manifest first, before decoding
-        the existing one. 
+        the existing one.
         """
         global g_cryptomatte_manf_from_IDs
         manf_cache = g_cryptomatte_manf_from_IDs
@@ -381,11 +381,11 @@ class CryptomatteInfo(object):
     def name_to_ID(self, name):
         return mm3hash_float(name)
 
-    def test_manifest(self, quiet=False):        
+    def test_manifest(self, quiet=False):
         """Testing function to check for implementation errors and hash collisions.
         Checks all names and values in the manifest in the manifest by rehashing them,
         to ensure that the entire process is sound. Also finds collisions. Returns a tuple
-        of errors and collisions. 
+        of errors and collisions.
         """
         self.parse_manifest()
 
@@ -426,7 +426,7 @@ def print_hash_info(name):
 
 
 def cryptomatte_create_gizmo():
-    return nuke.createNode("Cryptomatte") 
+    return nuke.createNode("Cryptomatte")
 
 
 def encryptomatte_create_gizmo():
@@ -482,7 +482,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
-        keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
+        keyed_object = cinfo.id_to_name(ID_value) or "<{0:.12g}>".format(ID_value)
         node.knob("pickerRemove").setValue([0] * 8)
         _modify_mattelist_with_keyer(node, keyed_object, False)
         _update_cryptomatte_gizmo(node, cinfo)
@@ -492,7 +492,7 @@ def cryptomatte_knob_changed_event(node = None, knob = None):
         if ID_value == 0.0:
             return
         cinfo = CryptomatteInfo(node)
-        keyed_object = cinfo.id_to_name(ID_value) or "<%s>" % ID_value
+        keyed_object = cinfo.id_to_name(ID_value) or "<{0:.12g}>".format(ID_value)
         node.knob("pickerAdd").setValue([0] * 8)
         _modify_mattelist_with_keyer(node, keyed_object, True)
         _update_cryptomatte_gizmo(node, cinfo)  
@@ -527,7 +527,7 @@ def encryptomatte_knob_changed_event(node=None, knob=None):
     if knob.name() in ["setupLayers", "cryptoLayer", "inputChange", "cryptoLayers"]:
         if knob.name() == "inputChange":
             if unsafe_to_do_inputChange(node):
-                return # see comment in #unsafe_to_do_inputChange. 
+                return # see comment in #unsafe_to_do_inputChange.
         _update_encyptomatte_setup_layers(node)
         cinfo = CryptomatteInfo(node, reload_metadata=True)
         _update_encryptomatte_gizmo(node, cinfo)
@@ -543,9 +543,9 @@ def encryptomatte_on_create_event(node = None, knob = None):
 
 def update_cryptomatte_gizmo(node, force=False):
     """
-    Not invoked by gizmo button. 
+    Not invoked by gizmo button.
 
-    The gizmo button relies on knob changed callbacks, to avoid 
+    The gizmo button relies on knob changed callbacks, to avoid
     recursive evaluation of callbacks.
     """
     cinfo = CryptomatteInfo(node, reload_metadata=True)
@@ -573,7 +573,7 @@ def clear_encryptomatte_gizmo(node):
 
 
 #############################################
-# Utils - Update Gizmi 
+# Utils - Update Gizmi
 #       (gizmi is the plural of gizmo)
 #############################################
 
@@ -584,7 +584,7 @@ def _cancel_update(gizmo, force):
     except:
         # This happens sometimes on creation. I don't really get it, but this seems to fix it.
         return True
-    if (not force and stopAutoUpdate == 1.0): 
+    if (not force and stopAutoUpdate == 1.0):
         return True
     else:
         return False
@@ -605,12 +605,12 @@ def _force_update_all():
 def unsafe_to_do_inputChange(node):
     """
     In Nuke 8, 9, 10, 11, 12 it's been discovered that when copy and pasting certain nodes,
-    or when opening certain scripts the inputchanged knob change callback breaks the script. 
+    or when opening certain scripts the inputchanged knob change callback breaks the script.
 
-    What actually happens is the call to metadata() breaks it. 
+    What actually happens is the call to metadata() breaks it.
 
-    The only reliable way to notice that it's unsafe we've found is calling node.screenHeight(), 
-    and if zero, stopping. 
+    The only reliable way to notice that it's unsafe we've found is calling node.screenHeight(),
+    and if zero, stopping.
 
     see: https://github.com/Psyop/Cryptomatte/issues/18
     """
@@ -631,7 +631,7 @@ def _limbo_state(gizmo):
 
 
 #############################################
-# Utils - Update Gizmi 
+# Utils - Update Gizmi
 #############################################
 
 def _set_channels(gizmo, channels, layer_name):
@@ -689,7 +689,7 @@ def _set_ui(gizmo):
 
 
 def _legal_nuke_layer_name(name):
-    """ Blender produces channels with certain characters in the name, which Nuke 
+    """ Blender produces channels with certain characters in the name, which Nuke
     changes to "_". We have to make sure we handle Cryptomattes
     that are built this way. Doing this by only allowing alphanumeric
     output plus dash and underscores
@@ -703,7 +703,7 @@ def _legal_nuke_layer_name(name):
 def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
     if _cancel_update(gizmo, force):
         return
-    
+
     def reset_gizmo(gizmo):
         _set_channels(gizmo, [], "")
         gizmo.knob("alphaExpression").setValue("")
@@ -752,7 +752,7 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
             gizmo.knob('newLayer').setValue(True)
 
         cryptomatte_channels = [
-            crypto_layer + "{0:02d}".format(i) 
+            crypto_layer + "{0:02d}".format(i)
             for i in range(int(gizmo.knob('cryptoLayers').value()))
         ]
         _set_channels(gizmo, cryptomatte_channels, crypto_layer)
@@ -773,7 +773,7 @@ def _update_encryptomatte_gizmo(gizmo, cinfo, force=False):
         manifest_key = cinfo.get_selection_metadata_key("")
         gizmo.knob('manifestKey').setValue(manifest_key)
 
-    gizmo.knob("alphaExpression").setValue(_build_extraction_expression(cryptomatte_channels, [0.0]))    
+    gizmo.knob("alphaExpression").setValue(_build_extraction_expression(cryptomatte_channels, [0.0]))
 
 def _update_encyptomatte_setup_layers(gizmo):
     setup_layers = gizmo.knob('setupLayers').value()
@@ -951,7 +951,7 @@ def _set_expression(gizmo, cryptomatte_channels):
 def _build_condition(condition, IDs):
     conditions = []
     for ID in IDs:
-        conditions.append( condition.replace("ID", str(ID)) )
+        conditions.append( condition.replace("ID", "{0:.12g}".format(ID)) )
     return " || ".join(conditions)
 
 
@@ -960,7 +960,7 @@ def _build_extraction_expression(channel_list, IDs):
         return ""
     sorted_ids = sorted(IDs)
     iterated_expression = "({red_condition} ? sub_channel.green : 0.0) + ({blue_condition} ? sub_channel.alpha : 0.0) + more_work_needed"
-    
+
     subcondition_red =  "sub_channel.red == ID"
     subcondition_blue = "sub_channel.blue == ID"
 
