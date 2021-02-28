@@ -7,46 +7,22 @@ Created by : Cédric Duriau         [duriau.cedric@live.be]
 Version    : 1.2.8
 --]]
 
--- module table
-cryptomatte_utilities = {}
-
--- =============================================================================
--- constants
--- =============================================================================
-REGEX_METADATA = "%a+/([a-z0-9]+)/(.+)"
-REGEX_MATTE_LIST = "([^,]+),?%s*"
-REGEX_LAYER_CHANNEL = "(.+)[.](.+)"
-METADATA_PREFIX = "cryptomatte/"
-METADATA_KEY_NAME = "name"
-METADATA_KEY_MANIFEST = "manifest"
-METADATA_KEY_FILENAME = "Filename"
-METADATA_KEY_MANIF_FILE = "manif_file"
-
--- =============================================================================
--- ffi C utils
--- =============================================================================
--- int / float representation of hash
-ffi.cdef [[ union int_flt { uint32_t i; float f; }; ]]
-local int_flt = ffi.new("union int_flt")
-
--- =============================================================================
+-- ============================================================================
 -- third party modules
--- =============================================================================
+-- ============================================================================
 function prefered_load(first, second)
-    -- Loads first module, if that fails, loads second module.
     --[[
     Loads first module, if that fails, loads second module.
 
-    :param first: name of preferred module to load first, if loading this module
-                  fails, the second one will be loaded
+    :param first: Name of preferred module to load first, if loading this module
+                  fails, the second one will be loaded.
     :type first: string
 
-    :param second: name of second module to load if the first module could not
+    :param second: Name of second module to load if the first module could not
                    be loaded. If this fails, the default error when loading a
-                   non-existing module will be raised
+                   non-existing module will be raised.
     :type second: string
 
-    :return: table of module that could be loaded
     :rtype: table
     -- ]]
     local status, module = pcall(require, first)
@@ -59,569 +35,86 @@ end
 -- load cjson module if present, if not, load Fusion stdlib dkjson module
 local json = prefered_load("cjson", "dkjson")
 
--- =============================================================================
--- utils
--- =============================================================================
-function string_starts_with(str, start)
+-- ============================================================================
+-- constants
+-- ============================================================================
+ENV_VAR_LOG_LEVEL = "CRYPTOMATTE_LOG_LEVEL"
+METADATA_PREFIX = "cryptomatte/"
+REGEX_METADATA = "%a+/([a-z0-9]+)/(.+)"
+METADATA_KEY_NAME = "name"
+METADATA_KEY_FILENAME = "Filename"
+REGEX_MATTE_LIST = "([^,]+),?%s*"
+REGEX_LAYER_CHANNEL = "(.+)([0-9]+)[.](.+)"
+CHANNEL_NAME_MAP = {r="r", red="r",
+                    g="g", green="g",
+                    b="b", blue="b",
+                    a="a", alpha="a"}
+BACKGROUND_MATTE_NAME = "Background (value RGBA=0000)"
+
+-- ============================================================================
+-- ffi C utils
+-- ============================================================================
+-- int / float representation of hash
+ffi.cdef [[ union int_flt { uint32_t i; float f; }; ]]
+local int_flt = ffi.new("union int_flt")
+
+-- ============================================================================
+-- fusion centric functions (EXRIO/scanline)
+-- ============================================================================
+function get_layer_images(input_image, layer_name, channel_hierarchy, exr, partnum)
     --[[
-    Checks if the given string starts with the given substring.
+    Returns the images for all indices of layer.
 
-    :param str: string to check if start matches with given start string
-    :type str: string
-
-    :param start: part to check if the given string starts with
-    :type start: string
-
-    :return: whether the given string starts with the given start string
-    :rtype: boolean
-    -- ]]
-    return string.sub(str, 1, string.len(start)) == start
-end
-
-function split_string(str, pattern)
-    --[[
-    Splits the given string to an array of strings using given pattern.
-
-    :param str: string to split/convert to an array
-    :type str: string
-
-    :param pattern: pattern to split string with
-    :type pattern: string
-
-    :return: given string split to an array of strings using given pattern
-    :rtype: string
-    -- ]]
-    local matte_names = {}
-    for matte in string.gmatch(str, pattern) do
-        -- strip the leading and trailing double quotes
-        matte = string.sub(matte, 2, matte:len() - 1)
-        table.insert(matte_names, matte)
-    end
-    return matte_names
-end
-
-function is_key_in_table(key, t)
-    --[[
-    Checks whether the given key exists in given table.
-
-    :param key: key to check if it exists given table
-    :type key: string
-
-    :param t: table to check for key
-    :type: t: table
-
-    :return: whether the given key exists in given table
-    :rtype: boolean
-    -- ]]
-    for k, v in pairs(t) do
-        if key == k then
-            return true
-        end
-    end
-    return false
-end
-
-function build_sidecar_manifest_path(exr_path, sidecar_path)
-    --[[
-    Builds the absolute sidecar manifest file path.
-
-    :param exr_path: path of the exr frame to get relative sidecar manifest from
-    :type exr_path: string
-
-    :param sidecar_path: path of sidecar manifest file relative to exr frame
-    :type sidecar_path: string
-
-    :return: absolute sidecar manifest file path
-    :rtype: string
-    -- ]]
-    local exr_dir = exr_path:match("(.*/)")
-    return exr_dir .. sidecar_path
-end
-
-function get_screen_pixel(image, x, y)
-    --[[
-    Get the pixel object from given image at given coordinates.
-
-    :param x: absolute x position in pixel unit
-    :type x: int
-
-    :param y: absolute y position in pixel unit
-    :type y: int
-
-    :return: pixel object from given image at given coordinates
-    :rtype: Pixel
-    -- ]]
-    local pixel = Pixel()
-    image:GetPixel(x, y, pixel)
-    return pixel
-end
-
-function create_matte_image_init()
-    --[[
-    Initializer function for scanline function "create_matte_image_scanline".
-
-    This function initializes pixel objects and pointers to re-use in scanline
-    function. This avoids the creation of these objects at every X or Y pass,
-    improving the overall performance.
-
-    ! FOLLOWING PARAMTERS ARE PASSED INDIRECTLY, SEE `DoMultiProcess` USAGE !
-
-    :param dod: domain of definition passed to restrict the scanline process
-                to this rectangle
-    :type dod: FuRectInt
-
-    :param layer_image: cryptomatte image of a layer, containing the source image
-                       "{LAYER}.{RGBA}" channel information in respective RBGA
-                       channels.
-                       Example: - CryptoAsset00.R -> layer_image.R
-                                - CryptoAsset00.G -> layer_image.G
-                                - CryptoAsset00.B -> layer_image.B
-                                - CryptoAsset00.A -> layer_image.A
-    :type layer_image: Image
-
-    :param layer_intermediate_image: intermediate image containing all filtered
-                                    G and A channel information needed to build
-                                    a matte for the layer
-    :type layer_intermediate_image: string
-
-    :param id_float_values: table of id float values built as a set, containing
-                            all float id values of name hashes used to filter
-                            G and A channel information to build a layer matte
-                            Example: manifest = {"bunny": 13851a76}
-                                     (hash) 13851a76 = (float) 3.3600012625093e-27
-                                     If R or B match this float value, G or A
-                                     will be stored respectively.
-    :type id_float_values: table
-    -- ]]
-    global_p = Pixel()
-    local_p = Pixel()
-    pixptr_in = PixPtr(layer_image, global_p)
-    pixptr_out = PixPtr(layer_intermediate_image, local_p)
-end
-
-function create_matte_image_scanline(n)
-    --[[
-    Scanline function that creates a matte.
-
-    :param n: absolute Y coordinate to execute scanline (left to right) pass
-    :type n: int
-
-    ! FOLLOWING PARAMTERS ARE PASSED INDIRECTLY, SEE `DoMultiProcess` USAGE !
-
-    :param dod: domain of definition passed to restrict the scanline process
-                to this rectangle
-    :type dod: FuRectInt
-
-    :param layer_image: cryptomatte image of a layer, containing the source image
-                        "{LAYER}.{RGBA}" channel information in respective RBGA channels.
-                        Example: - CryptoAsset00.R -> layer_image.R
-                                 - CryptoAsset00.G -> layer_image.G
-                                 - CryptoAsset00.B -> layer_image.B
-                                 - CryptoAsset00.A -> layer_image.A
-    :type layer_image: Image
-
-    :param layer_intermediate_image: intermediate image containing all filtered
-                                    G and A channel information needed to build
-                                    a matte for the layer
-    :type layer_intermediate_image: string
-
-    :param id_float_values: table of id float values built as a set, containing
-                            all float id values of name hashes used to filter
-                            G and A channel information to build a layer matte
-                            Example: manifest = {"bunny": 13851a76}
-                                     (hash) 13851a76 = (float) 3.3600012625093e-27
-                                     If R or B match this float value, G or A
-                                     will be stored respectively.
-    :type id_float_values: table
-    -- ]]
-
-    -- calculate real scanline y position relative to dod
-    local y = n + dod.bottom
-
-    -- set start X position for scanline pass
-    pixptr_in:GotoXY(dod.left, y)
-    pixptr_out:GotoXY(dod.left, y)
-
-    for x = dod.left, dod.right - 1 do
-        -- go to correct X position
-        pixptr_in:GetNextPixel(global_p)
-
-        -- reset placeholder pixel RGBA values
-        local_p.R = 0.0
-        local_p.G = 0.0
-        local_p.B = 0.0
-        local_p.A = 0.0
-
-        -- check if id float value occurs in R or B channel value
-        local r_in_array = id_float_values[global_p.R]
-        local b_in_array = id_float_values[global_p.B]
-        if r_in_array or b_in_array then
-            -- rank match in R, counterpart is G
-            if r_in_array then
-                local_p.G = global_p.G
-            end
-            -- rank match in B, counterpart is A
-            if b_in_array then
-                local_p.A = global_p.A
-            end
-            -- set output pixel pointer to match
-            pixptr_out:SetNextPixel(local_p)
-        else
-            -- continue if no match was found
-            pixptr_out:NextPixel()
-        end
-    end
-end
-
-function create_preview_image_init()
-    --[[
-    Initializer function for the scanline function "create_preview_image".
-
-    This function initializes pixel objects and pointers to re-use in scanline
-    function. This avoids the creation of these objects at every X or Y pass,
-    improving the overall performance.
-
-    ! FOLLOWING PARAMTERS ARE PASSED INDIRECTLY, SEE `DoMultiProcess` USAGE !
-
-    :param preview_image: preview image to write pixel information to
-    :type preview_image: Image
-
-    :param layer_0_image: image for the layer 0
-    :type layer_0_image: Image
-
-    :param layer_1_image: image for the layer 1
-    :type layer_1_image: Image
-    -- ]]
-    global_p_c00 = Pixel()
-    global_p_c01 = Pixel()
-    local_p = Pixel()
-
-    pixptr_00 = PixPtr(layer_0_image, global_p_c00)
-    pixptr_01 = PixPtr(layer_1_image, global_p_c01)
-    pixptr_out = PixPtr(preview_image, local_p)
-end
-
-function create_preview_image_scanline(n)
-    --[[
-    Scanline function that creates the keyable surface preview image.
-
-    This function builds the keyable surface preview image. The algorithm used
-    to calculate the pixel information was provided by Jonah Friedman in a Nuke
-    sample which I translated to Lua.
-
-    :param n: absolute Y coordinate to execute scanline (left to right) pass
-    :type n: int
-
-    ! FOLLOWING PARAMTERS ARE PASSED INDIRECTLY, SEE `DoMultiProcess` USAGE !
-
-    :param preview_image: preview image to write pixel information to
-    :type preview_image: Image
-
-    :param layer_0_image: image for the layer 0
-    :type layer_0_image: Image
-
-    :param layer_1_image: image for the layer 1
-    :type layer_1_image: Image
-    -- ]]
-    -- calculate real scanline y position
-    local y = n + preview_image.DataWindow.bottom
-
-    -- set start X position for scanline pass
-    pixptr_00:GotoXY(preview_image.DataWindow.left, y)
-    pixptr_01:GotoXY(preview_image.DataWindow.left, y)
-    pixptr_out:GotoXY(preview_image.DataWindow.left, y)
-
-    for x = preview_image.DataWindow.left, preview_image.DataWindow.right - 1 do
-        -- go to correct X position
-        pixptr_00:GetNextPixel(global_p_c00)
-        pixptr_01:GetNextPixel(global_p_c01)
-
-        -- get mantissa of R and B channels of both layer 0 and 1
-        m00_rg, _ = math.frexp(math.abs(global_p_c00.R))
-        m00_ba, _ = math.frexp(math.abs(global_p_c00.B))
-        m01_rg, _ = math.frexp(math.abs(global_p_c01.R))
-        m01_ba, _ = math.frexp(math.abs(global_p_c01.B))
-
-        -- calculate RGB channel values for final id colored image
-        -- red
-        r_c00_rg = (m00_rg * 1 % 0.25) * global_p_c00.G
-        r_c00_ba = (m00_ba * 1 % 0.25) * global_p_c00.A
-        r_c01_rg = (m01_rg * 1 % 0.25) * global_p_c01.G
-        r_c01_ba = (m01_ba * 1 % 0.25) * global_p_c01.A
-        red = r_c00_rg + r_c00_ba + r_c01_rg + r_c01_ba
-
-        -- green
-        g_c00_rg = (m00_rg * 4 % 0.25) * global_p_c00.G
-        g_c00_ba = (m00_ba * 4 % 0.25) * global_p_c00.A
-        g_c01_rg = (m01_rg * 4 % 0.25) * global_p_c01.G
-        g_c01_ba = (m01_ba * 4 % 0.25) * global_p_c01.A
-        green = g_c00_rg + g_c00_ba + g_c01_rg + g_c01_ba
-
-        -- blue
-        b_c00_rg = (m00_rg * 16 % 0.25) * global_p_c00.G
-        b_c00_ba = (m00_ba * 16 % 0.25) * global_p_c00.A
-        b_c01_rg = (m01_rg * 16 % 0.25) * global_p_c01.G
-        b_c01_ba = (m01_ba * 16 % 0.25) * global_p_c01.A
-        blue = b_c00_rg + b_c00_ba + b_c01_rg + b_c01_ba
-
-        -- store calculated R,G and B values
-        local_p.R = red
-        local_p.G = green
-        local_p.B = blue
-
-        -- set output pixel pointer
-        pixptr_out:SetNextPixel(local_p)
-    end
-end
-
-function create_matte_image(layer_images, id_float_values, output_image)
-    --[[
-    Creates an image containing all mattes built from given id float values.
-
-    :param layer_images: cryptomatte layer images by layer index as string
-                        Example: layer_images["1"] = (Image)CrytpoAsset01(RGBA)
-    :type layer_images: table[string, Image]
-
-    :param id_float_values: table of id float values built as a set, containing
-                            all float id values of name hashes used to filter
-                            G and A channel information to build a layer matte
-                            Example: manifest = {"bunny": 13851a76}
-                                     (hash) 13851a76 = (float) 3.3600012625093e-27
-                                     id_float_values = {3.3600012625093e-27 = true}
-    :type id_float_values: table[float, boolean]
-
-    :param output_image: image used to build output combined matte image to
-                         match resolution and dod
-    :type output_image: Image
-
-    :return: mono channel image containing all mattes built from id float values
-    :rtype: Image
-    -- ]]
-    -- create monochannel combined matte image from all layer matte images and
-    -- keep the input resolution and DoD
-    local combined_matte_image = Image({IMG_Like = output_image,
-                                        IMG_CopyChannels = false,
-                                        {IMG_Channel = "Alpha"}})
-    combined_matte_image:Clear()
-    local dod = output_image.DataWindow
-
-    for _, layer_image in pairs(layer_images) do
-        -- create an intermediate image from the layer image holding the data
-        -- to build a layer matte
-        local layer_intermediate_image = Image({IMG_Like = layer_image})
-        layer_intermediate_image:Clear()
-
-        -- process pixels to retrieve the pixels matching the id float value
-        local args = {dod = dod,
-                      layer_image = layer_image,
-                      layer_intermediate_image = layer_intermediate_image,
-                      id_float_values = id_float_values}
-        self:DoMultiProcess(create_matte_image_init,
-                            args,
-                            dod.top - dod.bottom,
-                            create_matte_image_scanline)
-
-        -- create mono channel matte image for current layer
-        local layer_matte_image = Image({IMG_Like = layer_image,
-                                        IMG_CopyChannels = false,
-                                        {IMG_Channel = "Alpha"}})
-        layer_matte_image = layer_matte_image:ChannelOpOf("Add", layer_intermediate_image, {A = "fg.G"})
-        layer_matte_image = layer_matte_image:ChannelOpOf("Add", layer_intermediate_image, {A = "fg.A"})
-
-        -- add layer matte image to combined matte image
-        combined_matte_image = combined_matte_image:ChannelOpOf("Add", layer_matte_image, {A = "fg.A"})
-    end
-
-    return combined_matte_image
-end
-
-function create_preview_image(layer_0_image, layer_1_image, input_image)
-    --[[
-    Creates the keyable surface preview image.
-
-    :param layer_0_image: image for the cryptomatte layer 0
-    :type layer_0_image: Image
-
-    :param layer_1_image: image for the cryptomatte layer 1
-    :type layer_1_image: Image
-
-    :param input_image: image used to build output preview image to match
-                        resolution and dod
+    :param input_image: Source Cryptomatte image.
     :type input_image: Image
 
-    :return: keyable surface preview image
-    :rtype: Image
-    -- ]]
-    local preview_image = input_image:CopyOf()
-    preview_image:Clear()
-    local args = {preview_image = preview_image,
-                  layer_0_image = layer_0_image,
-                  layer_1_image = layer_1_image}
-    self:DoMultiProcess(create_preview_image_init,
-                        args,
-                        preview_image.DataWindow.top - preview_image.DataWindow.bottom,
-                        create_preview_image_scanline)
-    return preview_image
-end
+    :param layer_name: Name of the layer to get all index images for.
+    :type layer_name: string
 
-function exr_get_channels(exr, partnum, type_name)
-    --[[
-    Gets the channels matching given type name.
+    :param channel_hierarchy: Channel datastructure by layer and index.
+    :type channel_hierarchy: table
 
-    :param exr: EXRIO module
-    :type exr: table
+    :param exr: EXRIO module instance loaded with the input EXR image.
+    :type exr: EXRIO
 
-    :param partnum: part of the exr to read data from
-    :type partnum: int
+    :param partnum: EXR multipart index.
+    :type partnum: number
 
-    :param type_name: name of the layer to get channels from (channel prefix)
-                         Example: type_name = "CryptoAsset"
-                                              "CryptoAsset00.R",  -- rank 0
-                                              "CryptoAsset00.G",
-                                              "CryptoAsset00.B",  -- rank 1
-                                              "CryptoAsset00.A"
-                                              "CryptoAsset01.R",  -- rank 2
-                                              "CryptoAsset01.G",
-                                              "CryptoAsset01.B",  -- rank 3
-                                              "CryptoAsset01.A"
-                                              "CryptoAsset02.R",  -- rank 4
-                                              "CryptoAsset02.G",
-                                              "CryptoAsset02.B",  -- rank 5
-                                              "CryptoAsset02.A"}
-    :type type_name: string
-
-    :return: channels for the given crytomatte layer
-    :rtype: table[string]
-    --]]
-    local channel_names = {}
-    -- get all channels
-    local channels = exr:GetChannels(partnum)
-    for i, channel in ipairs(channels) do
-        local channel_name = channel["Name"]
-        -- store channels matching type name prefix
-        if string.find(channel_name, type_name) then
-            table.insert(channel_names, channel_name)
-        end
-    end
-    return channel_names
-end
-
-function sort_channels_by_layer_index(channels)
-    --[[
-    Sorts the array of channels in a table by layer index.
-
-    Example: channels = {"CryptoAsset00.R",
-                         "CryptoAsset00.G",
-                         "CryptoAsset00.B",
-                         "CryptoAsset00.A"
-                         "CryptoAsset01.R",
-                         "CryptoAsset01.G",
-                         "CryptoAsset01.B",
-                         "CryptoAsset01.A"
-                         "CryptoAsset02.R",
-                         "CryptoAsset02.G",
-                         "CryptoAsset02.B",
-                         "CryptoAsset02.A"}
-             by_index = {"0" = {"r" = "CryptoAsset00.R"
-                                "g" = "CryptoAsset00.G"
-                                "b" = "CryptoAsset00.B"
-                                "a" = "CryptoAsset00.A"},
-                         "1" = {"r" = "CryptoAsset01.R"
-                                "g" = "CryptoAsset01.G"
-                                "b" = "CryptoAsset01.B"
-                                "a" = "CryptoAsset01.A"},
-                         "2" = {"r" = "CryptoAsset02.R"
-                                "g" = "CryptoAsset02.G"
-                                "b" = "CryptoAsset02.B"
-                                "a" = "CryptoAsset02.A"}}
-
-    :return: table with layer index string as key and RGBA channel name maping
-             table as value
-    :rtype: table[string, table[string, string]]
-    --]]
-    local layers_by_index = {}
-    for i, channel in ipairs(channels) do
-        -- get layer and channel name from channel
-        local layer, name = string.match(channel, REGEX_LAYER_CHANNEL)
-
-        if layer ~= nil and name ~= nil then
-            -- get layer index
-            local index = string.match(layer, "[0-9]+$")
-
-            if index ~= nil then
-                -- first tonumber to avoid leading numbers, then tostring again
-                -- to ensure string keys
-                index = tostring(tonumber(index))
-                if not is_key_in_table(index, layers_by_index) then
-                    layers_by_index[index] = {}
-                end
-
-                -- store the layer channels under respective lowercase short form
-                local _channel = string.lower(name)
-                if _channel == "r" or _channel == "red" then
-                    layers_by_index[index]["r"] = channel
-                elseif _channel == "g" or _channel == "green" then
-                    layers_by_index[index]["g"] = channel
-                elseif _channel == "b" or _channel == "blue" then
-                    layers_by_index[index]["b"] = channel
-                elseif _channel == "a" or _channel == "alpha" then
-                    layers_by_index[index]["a"] = channel
-                end
-            end
-        end
-    end
-    return layers_by_index
-end
-
-function exr_get_layer_images_by_index(exr, channels_by_index, partnum, input_image)
-    --[[
-    Gets the layer images by layer index.
-
-    :param exr: EXRIO module
-    :type exr: table
-
-    :param channels_by_index: layer channels by layer index
-    :type channels_by_index: table[string]
-
-    :param partnum: part of the exr to read data from
-    :type partnum: int
-
-    :param input_image: input image to get resolution information from
-    :type input_image: Image
-
-    :return: layer image by layer index as string
     :rtype: table[string, Image]
-    --]]
-    local layer_images_by_index = {}
+    ]]
+    -- calculate datawindow to keep/scan
     local dispw = exr:DisplayWindow(partnum)
+    local ox = dispw.left
+    local oy = dispw.bottom
+    local w = dispw.right - dispw.left
+    local h = dispw.top - dispw.bottom
     local dataw = exr:DataWindow(partnum)
-    local ox, oy = dispw.left, dispw.bottom
-    local w, h = dispw.right - dispw.left, dispw.top - dispw.bottom
     local imgw = ImgRectI(dataw)
     imgw:Offset(-ox, -oy)
+
+    -- get pixel aspect ratio
     local pixel_aspect_ratio = exr:PixelAspectRatio(partnum)
 
-    -- read part with given index
+    -- select EXR part to load
     exr:Part(partnum)
 
-    for index, channels in pairs(channels_by_index) do
+    local images = {}
+    for index, channels in pairs(channel_hierarchy[layer_name]) do
+        -- create image from scratch
         local image = Image({IMG_Width = w,
                              IMG_Height = h,
                              IMG_Depth = IMDP_128bitFloat,
                              IMG_DataWindow = imgw,
                              IMG_YScale = 1.0 / pixel_aspect_ratio})
 
-        -- read layer RGBA channels
+        -- write out loaded EXR part image channels to layer image
         exr:Channel(channels["r"], ANY_TYPE, 1, CHAN_RED)
         exr:Channel(channels["g"], ANY_TYPE, 1, CHAN_GREEN)
         exr:Channel(channels["b"], ANY_TYPE, 1, CHAN_BLUE)
         exr:Channel(channels["a"], ANY_TYPE, 1, CHAN_ALPHA)
-
-        -- store the image as value to the layer index in string format as key
         exr:ReadPart(partnum, {image})
 
-        -- if proxy mode is enabled, resize the EXR image to the affacted input
-        -- image size, EXRIO does not take proxy into consideration
+        -- handle proxy scaling
         local result = image
         if input_image.ProxyScale ~= 1 then
             local resized_image = Image({IMG_Like = image,
@@ -632,26 +125,394 @@ function exr_get_layer_images_by_index(exr, channels_by_index, partnum, input_im
                                          RSZ_Height = input_image.Height})
             result = resized_image
         end
-        layer_images_by_index[tostring(index)] = result
+        images[tonumber(index)] = result
     end
 
-    return layer_images_by_index
+    return images
 end
 
-function is_position_in_rect(rect, x, y)
+function create_preview_image_colors_init()
+    --[[
+    Scanline initializer function for the "colors" preview image.
+
+    This function initializes pixel objects and pointers to re-use in scanline
+    function. This avoids the creation of these objects at every X or Y pass,
+    improving the overall performance.
+
+    ! FOLLOWING PARAMTERS ARE PASSED INDIRECTLY, SEE `DoMultiProcess` USAGE !
+
+    :param output_image: Preview image to write pixel information to.
+    :type output_image: Image
+
+    :param layer_0_image: Image for the layer 0.
+    :type layer_0_image: Image
+
+    :param layer_1_image: Image for the layer 1.
+    :type layer_1_image: Image
+    -- ]]
+    global_p_00 = Pixel()
+    global_p_01 = Pixel()
+    local_p = Pixel()
+
+    pixptr_00 = PixPtr(layer_0_image, global_p_00)
+    pixptr_01 = PixPtr(layer_1_image, global_p_01)
+    pixptr_out = PixPtr(output_image, local_p)
+end
+
+function create_preview_image_colors_scanline(n)
+    --[[
+    Scanline function that creates the "colors" preview image.
+
+    This function builds the keyable surface preview image. The algorithm used
+    to calculate the pixel information was provided by Jonah Friedman in a Nuke
+    sample which I translated to Lua.
+
+    :param n: Absolute Y coordinate to execute scanline (left to right) pass.
+    :type n: number
+
+    ! FOLLOWING PARAMTERS ARE PASSED INDIRECTLY, SEE `DoMultiProcess` USAGE !
+
+    :param output_image: Preview image to write pixel information to.
+    :type output_image: Image
+
+    :param layer_0_image: Image for the layer 0.
+    :type layer_0_image: Image
+
+    :param layer_1_image: Image for the layer 1.
+    :type layer_1_image: Image
+    -- ]]
+    -- calculate real scanline y position
+    local y = n + output_image.DataWindow.bottom
+
+    -- set start X position for scanline pass
+    pixptr_00:GotoXY(output_image.DataWindow.left, y)
+    pixptr_01:GotoXY(output_image.DataWindow.left, y)
+    pixptr_out:GotoXY(output_image.DataWindow.left, y)
+
+    for x = output_image.DataWindow.left, output_image.DataWindow.right - 1 do
+        -- go to correct X position
+        pixptr_00:GetNextPixel(global_p_00)
+        pixptr_01:GetNextPixel(global_p_01)
+
+        -- get mantissa of R and B channels of both layer 0 and 1
+        m00_rg, _ = math.frexp(math.abs(global_p_00.R))
+        m00_ba, _ = math.frexp(math.abs(global_p_00.B))
+        m01_rg, _ = math.frexp(math.abs(global_p_01.R))
+        m01_ba, _ = math.frexp(math.abs(global_p_01.B))
+
+        -- calculate RGB channel values for final id colored image
+        -- red
+        r_00_rg = (m00_rg * 1 % 0.25) * global_p_00.G
+        r_00_ba = (m00_ba * 1 % 0.25) * global_p_00.A
+        r_01_rg = (m01_rg * 1 % 0.25) * global_p_01.G
+        r_01_ba = (m01_ba * 1 % 0.25) * global_p_01.A
+
+        -- green
+        g_00_rg = (m00_rg * 4 % 0.25) * global_p_00.G
+        g_00_ba = (m00_ba * 4 % 0.25) * global_p_00.A
+        g_01_rg = (m01_rg * 4 % 0.25) * global_p_01.G
+        g_01_ba = (m01_ba * 4 % 0.25) * global_p_01.A
+
+        -- blue
+        b_00_rg = (m00_rg * 16 % 0.25) * global_p_00.G
+        b_00_ba = (m00_ba * 16 % 0.25) * global_p_00.A
+        b_01_rg = (m01_rg * 16 % 0.25) * global_p_01.G
+        b_01_ba = (m01_ba * 16 % 0.25) * global_p_01.A
+
+        -- store calculated R,G and B values
+        local_p.R = (r_00_rg + r_00_ba + r_01_rg + r_01_ba)
+        local_p.G = (g_00_rg + g_00_ba + g_01_rg + g_01_ba)
+        local_p.B = (b_00_rg + b_00_ba + b_01_rg + b_01_ba)
+
+        -- set output pixel pointer
+        pixptr_out:SetNextPixel(local_p)
+    end
+end
+
+function create_matte_image_init()
+    --[[
+    Scanline initializer function that creates the matte image.
+
+    ! FOLLOWING PARAMTERS ARE PASSED INDIRECTLY, SEE `DoMultiProcess` USAGE !
+
+    :param layer_image: Image of an isolated Cryptomatte layer.
+    :type layer_image: Image
+
+    :param matte_values: Matte ID float values to match.
+    :type matte_values: table[number, boolean]
+
+    :param dod: Datawindow to process pixels for.
+    :type dod: FuRect
+
+    :param output_image: Image to store mattes in.
+    :type output_image: Image
+    ]]
+    input_p = Pixel()
+    output_p = Pixel()
+    pixptr_in = PixPtr(layer_image, input_p)
+    pixptr_out = PixPtr(output_image, output_p)
+end
+
+function create_matte_image_scanline(n)
+    --[[
+    Scanline function that creates the matte image.
+
+    :param n: Absolute Y coordinate to execute scanline (left to right) pass.
+    :type n: number
+
+    ! FOLLOWING PARAMTERS ARE PASSED INDIRECTLY, SEE `DoMultiProcess` USAGE !
+
+    :param layer_image: Image of an isolated Cryptomatte layer.
+    :type layer_image: Image
+
+    :param matte_values: Known matte float ID values from manifest.
+    :type matte_values: table[number, boolean]
+
+    :param dod: Datawindow to process pixels for.
+    :type dod: FuRect
+
+    Algorithm:
+    - matte_pixel.A += pixel.G if pixel.R in matte_float_id_values else 0
+    - matte_pixel.A += pixel.A if pixel.B in matte_float_id_values else 0
+
+    :param output_image: Image to store mattes in.
+    :type output_image: Image
+    ]]
+    local y = n + dod.bottom
+
+    -- set start X position for scanline pass
+    pixptr_in:GotoXY(dod.left, y)
+    pixptr_out:GotoXY(dod.left, y)
+
+    local update = false
+    for x = dod.left, dod.right - 1 do
+        -- go to correct X position
+        pixptr_in:GetNextPixel(input_p)
+        pixptr_out:GetPixel(output_p)
+
+        -- reset flag
+        update = false
+
+        -- detect rank 1 match (red match = add green)
+        if matte_values[input_p.R] then
+            output_p.A = output_p.A + input_p.G
+            update = true
+        end
+
+        -- detect rank 2 match (blue match = add alpha)
+        if matte_values[input_p.B] then
+            output_p.A = output_p.A + input_p.A
+            update = true
+        end
+
+        if update then
+            pixptr_out:SetNextPixel(output_p)
+        else
+            pixptr_out:NextPixel()
+        end
+    end
+end
+
+function get_screen_pixel(image, x, y)
+    --[[
+    Gets the pixel object from given image at given coordinates.
+
+    :param x: Absolute x position in pixel units.
+    :type x: number
+
+    :param y: Absolute y position in pixel units.
+    :type y: number
+
+    :rtype: Pixel
+    -- ]]
+    local pixel = Pixel()
+    image:GetPixel(x, y, pixel)
+    return pixel
+end
+
+-- ============================================================================
+-- module
+-- ============================================================================
+module = {}
+
+-- private
+function module._log(level, msg)
+    --[[
+    Logs a message.
+
+    :param level: Name of the log level.
+    :type level: string
+
+    :param msg: Message to log.
+    :type msg: string
+    ]]
+    print(string.format("[Cryptomatte][%s] %s", level, msg))
+end
+
+function module._get_log_level()
+    --[[
+    Returns the log level.
+
+    Log levels:
+    - 0: no logging
+    - 1: error (default)
+    - 2: info
+
+    Setting the log level to a high number than specified log levels will
+    result in applying all lower log levels.
+
+    :rtype: number 
+    ]]
+    local log_level = os.getenv(ENV_VAR_LOG_LEVEL)
+    if log_level == nil then
+        return 1
+    end
+    return tonumber(log_level)
+end
+
+function module._string_starts_with(str, substr)
+    --[[
+    Returns whether the given string starts with the given substring.
+
+    :param str: Text to match with substring.
+    :type str: string
+
+    :param substr: Substring to match text with.
+    :type substr: string
+
+    :rtype: boolean
+    ]]
+    return string.sub(str, 1, string.len(substr)) == substr
+end
+
+function module._string_ends_with(str, substr)
+    --[[
+    Returns whether the given string ends with the given substring.
+
+    :param str: Text to match with substring.
+    :type str: string
+
+    :param substr: Substring to match text with.
+    :type substr: string
+
+    :rtype: boolean
+    ]]
+    return string.sub(str, -string.len(substr), -1) == substr
+end
+
+function module._string_split(str, pattern)
+    --[[
+    Splits the given string to an array of strings using given pattern.
+
+    :param str: String to split/convert to an array.
+    :type str: string
+
+    :param pattern: Pattern to split string with.
+    :type pattern: string
+
+    :rtype: table[string]
+    -- ]]
+    local parts = {}
+    for part in string.gmatch(str, pattern) do
+        table.insert(parts, part)
+    end
+    return parts
+end
+
+function module._solve_channel_name(name)
+    --[[
+    Returns the internal representation of a channel.
+
+    :param name: Channel name to get internal representation of
+    :type name: string
+
+    :rtype: string
+    ]]
+    return CHANNEL_NAME_MAP[string.lower(name)]
+end
+
+function module._get_channel_hierarchy(layer_name, channels)
+    --[[
+    Returns the channels of all indices of a layer.
+
+    :param layer_name: Name of the layer to get channels of.
+    :type layer_name: string
+
+    :param channels: All channel objects of an EXR file.
+    :type channels: table[number, table]
+
+    :rtype: table
+    ]]
+    local hierarchy = {}
+    for i, channel in ipairs(channels) do
+        full_channel_name = channel["Name"]
+        if module._string_starts_with(full_channel_name, layer_name) then
+            -- get layer name & index info from channel name
+            local _layer_name, layer_index, channel_name = string.match(full_channel_name, REGEX_LAYER_CHANNEL)
+
+            -- get internal channel name representation
+            local internal_channel_name = nil
+            if layer_index and channel_name then
+                internal_channel_name = module._solve_channel_name(channel_name)
+
+                -- skip error for matching layer without index (beauty layer)
+                if layer_index and not internal_channel_name then
+                    module.log_error(string.format("failed to get internal name for channel: %s", full_channel_name))
+                end
+            end
+
+            if internal_channel_name ~= nil then
+                if hierarchy[layer_name] == nil then
+                    hierarchy[layer_name] = {}
+                end
+
+                if hierarchy[layer_name][layer_index] == nil then
+                    hierarchy[layer_name][layer_index] = {}
+                end
+
+                if hierarchy[layer_name][layer_index][internal_channel_name] == nil then
+                    hierarchy[layer_name][layer_index][internal_channel_name] = full_channel_name
+                end
+            end
+        end
+    end
+    return hierarchy
+end
+
+function module._get_absolute_position(width, height, rel_x, rel_y)
+    --[[
+    Gets the absolute values for given relative coordinates.
+
+    :param width: Reference width.
+    :type width: number
+
+    :param width: Reference height.
+    :type width: number
+
+    :param rel_x: Relative x coordinate.
+    :type rel_x: number
+
+    :param rel_y: Relative y coordinate.
+    :type rel_y: number
+
+    :rtype: number, number
+    --]]
+    return math.floor(width / (1 / rel_x)), math.floor(height / (1 / rel_y))
+end
+
+function module._is_position_in_rect(rect, x, y)
     --[[
     Validates if the given x and y coordinates are in the given rect bounds.
-
-    :param rect: integer rectangle position to validate x and y position  with
+   
+    :param rect: Integer rectangle position to validate x and y position with.
     :type rect: FuRectInt
-
-    :param x: x position to validate
-    :type x: int
-
-    :param y: y position to validate
-    :type y: int
-
-    :return: true if the given position is inside the given rect, false if not
+   
+    :param x: Y position to validate.
+    :type x: number
+   
+    :param y: Y position to validate.
+    :type y: number
+   
     :rtype: bool
     --]]
     if x < rect.left or x > rect.right then
@@ -663,468 +524,387 @@ function is_position_in_rect(rect, x, y)
     return true
 end
 
-function get_absolute_position(image, relative_x, relative_y)
+function module._hex_to_float(hex)
     --[[
-    Gets the absolute values for given relative coordinates in given image.
+    Returns the float representation of a hexademical string.
 
-    :param image: image to use as reference to calcuate absolute values from
-    :type image: Image
+    :param hex: Hexadecimal string.
+    :type hex: string
 
-    :param relative_x: relative x coordinate
-    :type relative_x: float
-
-    :param relative_y: relative y coordinate in image to get absolute value for
-    :type relative_y: float
-
-    :return: absolute values for given relative coordinates in given image
-    :rtype: tuple(int, int)
-    --]]
-    local abs_x = math.floor(image.Width / (1 / relative_x))
-    local abs_y = math.floor(image.Height / (1 / relative_y))
-    return abs_x, abs_y
+    :rtype: number
+    ]]
+    int_flt.i = tonumber(hex, 16)
+    return int_flt.f
 end
 
--- =============================================================================
--- CryptomatteInfo class
--- =============================================================================
-local CryptomatteInfo = {}
-CryptomatteInfo.__index = CryptomatteInfo
-setmetatable(CryptomatteInfo, {__call = function(cls) return cls:new() end})
-function CryptomatteInfo:new()
+-- public
+function module.log_error(msg)
     --[[
-    Constructor of the CryptomatteInfo class.
+    Logs an error message.
 
-    :param metadata: metadata to get cryptomatte specific metadata from
+    :param msg: Message to log.
+    ]]
+    local log_level = module._get_log_level()
+    if log_level > 0 then
+        module._log("ERROR", msg)
+    end
+end
+
+function module.log_info(msg)
+    --[[
+    Logs an information message.
+
+    :param msg: Message to log.
+    ]]
+    local log_level = module._get_log_level()
+    if log_level > 1 then
+        module._log("INFO", msg)
+    end
+end
+
+function module.get_cryptomatte_metadata(metadata)
+    --[[
+    Reads the Cryptomatte metadata of an EXR file.
+
+    :param metadata: Source Cryptomatte EXR metadata.
     :type metadata: table
 
-    :param layer_name: cryptomatte exr layer to get information for
-    :type layer_name: string
-
-    :return: CryptomatteInfo object
     :rtype: table
-    --]]
-    local self = setmetatable({}, CryptomatteInfo)
+    ]]
+    local exr_path = nil
+    local layer_data_by_id = {}
 
-    -- members
-    self.nr_of_metadata_layers = nil
-    self.cryptomattes = nil
-    self.index_to_layer_name = nil
-    self.layer_name_to_index = nil
-    self.selection = nil
-    self.exr_path = nil
+    local id_to_name = {}
+    local name_to_id = {}
 
-    return self
-end
-
-function CryptomatteInfo:initialize(metadata, layer_name)
-    --[[
-    Initializes the object.
-
-    :param metadata: metadata to get cryptomatte specific metadata from
-    :type metadata: table
-
-    :param layer_name: cryptomatte exr layer to get information for
-    :type layer_name: string
-    --]]
-    self:get_cryptomatte_metadata(metadata, layer_name)
-    local manifest_string = self:get_manifest_string()
-    local manifest = self:load_manifest(manifest_string)
-    self:parse_manifest(manifest)
-end
-
--- functions
-function CryptomatteInfo:get_cryptomatte_metadata(metadata, layer_name)
-    --[[
-    Gets the cryptomatte metadata from the given exr metadata for given layer.
-
-    :param metadata: metadata of the input cryptomatte image
-    :type metadata: table
-
-    :param layer_name: name of the layer to get metadata of
-    :type layer_name: string
-    --]]
-    local exr_path = ""
-    local cryptomattes = {}
-    local default_selection = nil
-    local fallback_selection = nil
     local index = 0
-    local index_to_layer_name = {}
-    local layer_name_to_index = {}
+    local id_to_index = {}
+    local index_to_id = {}
 
     for k, v in pairs(metadata) do
-        if string_starts_with(k, METADATA_PREFIX) then
-            -- e.g. cryptomatte/0/name/uCryptoObject
-            local metadata_id, partial_key = string.match(k, REGEX_METADATA)
+        if module._string_starts_with(k, METADATA_PREFIX) then
+            -- get layer ID and cryptomatte metadata key
+            local layer_id, partial_key = string.match(k, REGEX_METADATA)
 
-            -- store cryptomatte data by metadata layer id
-            if not is_key_in_table(metadata_id, cryptomattes) then
-                cryptomattes[metadata_id] = {}
+            local layer_data = layer_data_by_id[layer_id]
+            if layer_data == nil then
+                layer_data = {}
+                layer_data_by_id[layer_id] = layer_data
             end
-            cryptomattes[metadata_id][partial_key] = v
 
-            -- store layer name by index and reverse for fast lookups
+            -- store cryptomatte layer metadata
+            layer_data[partial_key] = v
+
+            -- store mapping tables for easy lookups
             if partial_key == METADATA_KEY_NAME then
+                id_to_name[layer_id] = v
+                name_to_id[v] = layer_id
+
                 index = index + 1
-                index_to_layer_name[index] = v
-                layer_name_to_index[v] = index
+                id_to_index[layer_id] = index
+                index_to_id[index] = layer_id
             end
 
-            -- if the given selected layer name was found inside the metadata,
-            -- store the id to set as default selection, else store current
-            -- metadata layer id as fallback selection
-            fallback_selection = metadata_id
-            if partial_key == METADATA_KEY_NAME and v == layer_name then
-                default_selection = metadata_id
-            end
         elseif k == METADATA_KEY_FILENAME then
-            -- ensure all path separators are converted to single forward slash
             exr_path = v:gsub("([\\])", "/")
         end
     end
 
-    self.nr_of_metadata_layers = index
-    self.cryptomattes = cryptomattes
-    self.index_to_layer_name = index_to_layer_name
-    self.layer_name_to_index = layer_name_to_index
-
-    -- set layer selection
-    if default_selection ~= nil then
-        self.selection = default_selection
-    else
-        self.selection = fallback_selection
-    end
-
-    -- store normalized exr path if found, else empty string
-    self.exr_path = exr_path
+    local crypto_metadata = {}
+    crypto_metadata["path"] = exr_path
+    crypto_metadata["layer_count"] = index
+    crypto_metadata["id_to_name"] = id_to_name
+    crypto_metadata["name_to_id"] = name_to_id
+    crypto_metadata["index_to_id"] = index_to_id
+    crypto_metadata["id_to_index"] = id_to_index
+    crypto_metadata["layers"] = layer_data_by_id
+    return crypto_metadata
 end
 
-function CryptomatteInfo:get_manifest_string()
+function module.read_manifest_file(exr_path, sidecar_file_path)
     --[[
-    Gets the manifest as string from the metadata.
+    Reads the manifest of an EXR sidecar file.
+
+    :param exr_path: Absolute path of an EXR file.
+    :type exr_path: string
+
+    :param sidecar_file_path: Path of a sidecar file relative to the EXR file.
+    :type sidecar_file_path: string
 
     :rtype: string
-    --]]
-    -- first check if the metadata contains a sidecar manifest key, if so, parse
-    -- the file
-    local sidecar_path = self.cryptomattes[self.selection][METADATA_KEY_MANIF_FILE]
-    if sidecar_path ~= nil then
-        -- get the absolute path of the sidecar manifest file
-        local path = build_sidecar_manifest_path(self.exr_path, sidecar_path)
+    ]]
+    -- build absolute sidecar file path
+    local path = exr_path:match("(.*/)") .. sidecar_file_path
 
-        -- read the manifest file
-        local fp = io.open(path, "r")
-        if fp == nil then
-            error(string.format("ERROR: following sidecar file path does not exist: %s", path))
-        else
-            -- read all lines from file into a string
-            manifest_str = fp:read("*all")
-            -- close the file
-            fp:close()
-        end
+    local fp = io.open(path, "r")
+    if fp == nil then
+        module.log_error(string.format("unable to open manifest file: %s", path))
+        return ""
     else
-        -- get the string from the metadata
-        manifest_str = self.cryptomattes[self.selection][METADATA_KEY_MANIFEST]
+        local manifest_str = fp:read("*all")
+        fp:close()
+        return manifest_str
     end
-    return manifest_str
 end
 
-function CryptomatteInfo:load_manifest(manifest_string)
+function module.decode_manifest(raw_manifest)
     --[[
-    Loads the given manifest json string as a table.
+    Deserializes a manifest from JSON string to table.
 
-    :param manifest_string: manifest as json string
-    :type manifest_string: string
+    :param raw_manifest: Serialized manifest.
+    :type raw_manifest: string
 
-    :raises error: if the manifest string is nil or empty
-    :raises error: if the manifest string is not a string
-    :raises error: if the loaded manifest is not a json table
-
-    :return: manifest json table
-    :rtype: table
-    --]]
-    -- raise error if the manifest string is nil or empty
-    assert(manifest_string ~= nil or manifest_string == "", "manifest string is empty or nil")
-
-    -- raise error if the manifest string is not a string
-    assert(type(manifest_string) == "string", "manifest is metadata is not a json string")
-
-    -- load the string using the json module (can be cjson or dkjson module)
-    local manifest = json.decode(manifest_str)
-
-    -- raise error if the loaded manifest is not a json table
-    assert(type(manifest) == "table", string.format("invalid manifest string: %s", manifest_string))
-    return manifest
-end
-
-function CryptomatteInfo:parse_manifest(manifest)
-    --[[
-    Parse the manifest to store matte id and name information for fast lookup.
-
-    :param manifest: manifest to parse
-    :type manifest: table
-    --]]
-    local from_names = {}
-    local from_ids = {}
-    local all_names = {}
-    local all_ids = {}
-
-    for name, hex in pairs(manifest) do
-        -- decode hash to int
-        int_flt.i = tonumber(hex, 16)
-        -- decode int to float
-        local id_float = int_flt.f
-        local name_str = tostring(name)
-        -- store name by id float
-        from_names[name_str] = id_float
-        -- store id float by name
-        from_ids[id_float] = name_str
-        -- store name in set
-        all_names[name_str] = true
-        -- store id float in set
-        all_ids[id_float] = true
+    :rtype: table[string, string]
+    ]]
+    if raw_manifest == nil or raw_manifest == "" then
+        module.log_error("no manifest to decode")
+        return {}
     end
-
-    -- create name to id from hexadecimal value of names
-    self.cryptomattes[self.selection]["name_to_id"] = from_names
-    self.cryptomattes[self.selection]["id_to_name"] = from_ids
-    self.cryptomattes[self.selection]["names"] = all_names
-    self.cryptomattes[self.selection]["ids"] = all_ids
+    return json.decode(raw_manifest)
 end
 
--- =============================================================================
--- cryptomatte_utilities module
--- =============================================================================
-function cryptomatte_utilities:create_cryptomatte_info(metadata, layer_name)
+function module.get_matte_names(matte_str)
     --[[
-    Creates a CryptomatteInfo object.
+    Returns the matte names from an input string.
 
-    :param metadata: metadata to get cryptomatte specific metadata from
-    :type metadata: table
+    :param matte_str: Matte input string. Example: '"bunny", "flower"'
+    :type matte_str: Matte input string.
 
-    :param layer_name: cryptomatte exr layer to get information for
+    :rtype: table[string, bool]
+    ]]
+    -- get matte entries
+    local name_array = module._string_split(matte_str, REGEX_MATTE_LIST)
+
+    local name_set = {}
+    for _, matte in ipairs(name_array) do
+        -- detect double quote leading & trailing character
+        if module._string_starts_with(matte, "\"") and module._string_ends_with(matte, "\"") then
+            name = string.sub(matte, 2, matte:len() - 1)
+            name_set[name] = true
+        else
+            module.log_error(string.format("invalid syntax for matte: %s", matte))
+        end
+    end
+    return name_set
+end
+
+function module.get_layer_images(input_image, exr_path, layer_name, partnum)
+    --[[
+    Returns the images for all indices of layer.
+
+    :param input_image: Source Cryptomatte image.
+    :type input_image: Image
+
+    :param exr_path: Absolite path to the EXR file.
+    :type exr_path: string
+
+    :param layer_name: Name of the layer to get all index images for.
     :type layer_name: string
 
-    :return: CryptomatteInfo object
-    :rtype: table
-    --]]
-    -- create cryptomatte info and populate cryptomattes data from given metadata
-    cinfo = CryptomatteInfo()
-    cinfo:initialize(metadata, layer_name)
-    return cinfo
-end
+    :param partnum: EXR multipart index.
+    :type partnum: number
 
-function cryptomatte_utilities:get_id_float_value(cInfo, screen_pos, layer_images, input_image)
-    --[[
-    Gets the id float value for given relative screen position.
-
-    :param cInfo: CryptomatteInfo object
-    :type cInfo: table
-
-    :param screen_pos: relative screen position to get id float value from
-    :type screen_pos: Point
-
-    :param layer_images: layer images by index to find id float value in
-    :type layer_images: table[string, Image]
-
-    :param input_image: image the screen position is relative to
-    :type input_image: Image
-
-    :return: id float value for given relative screen position
-    :rtype: float || nil
-    --]]
-    -- get absolute pixel position from relative screen position
-    local abs_x, abs_y = get_absolute_position(input_image, screen_pos.X, screen_pos.Y)
-
-    -- validate if absolute pixel position is in dod or not
-    local is_position_valid = is_position_in_rect(input_image.DataWindow, abs_x, abs_y)
-    if not is_position_valid then
-        return nil
-    end
-    local id_float_value = nil
-
-    -- sort layer indices to loop over layer images with layer index ascending
-    local keys = {}
-    for k, _ in pairs(layer_images) do
-        table.insert(keys, tonumber(k))
-    end
-    table.sort(keys)
-
-    -- check for every layer image, index ascending, if the pixel at absolute
-    -- position has RGBA channel information which is present in the set of id
-    -- float values inside the manifest
-    local known_id_float_values = cInfo.cryptomattes[cInfo.selection]["ids"]
-    for _, index in ipairs(keys) do
-        -- get layer image
-        local layer_image = layer_images[tostring(index)]
-
-        -- get pixel from layer image at absolute position
-        local pixel = get_screen_pixel(layer_image, abs_x, abs_y)
-
-        -- check if one of the RGBA pixel values are present inside the total
-        -- list of ids found in the manifest
-        for _, val in ipairs({pixel.R, pixel.G, pixel.B, pixel.A}) do
-            if val ~= 0.0 and known_id_float_values[val] then
-                id_float_value = val
-                break
-            end
-        end
-        -- stop searching at first match
-        if id_float_value ~= nil then
-            break
-        end
-    end
-
-    if id_float_value == nil then
-        -- check if the background is being parsed (RGB=0,0,0)
-        local pixel = get_screen_pixel(input_image, abs_x, abs_y)
-        if pixel.R == 0.0 and pixel.G == 0.0 and pixel.B == 0.0 then
-            id_float_value = 0.0
-        end
-    end
-
-    return id_float_value
-end
-
-function cryptomatte_utilities:create_matte_image(cInfo, matte_names, layer_images, output_image)
-    --[[
-    Creates an image containing all mattes of given matte names.
-
-    :param cInfo: CryptomatteInfo object
-    :type cInfo: table
-
-    :param matte_names: matte name set to build combined matte image from
-    :type matte_names: table[string, boolean]
-
-    :param layer_images: cryptomatte layer images by layer index as string
-                         Example: layer_images["1"] = (Image)CrytpoAsset01(RGBA)
-    :type layer_images: table[string, Image]
-
-    :param output_image: image used to build output combined matte image to
-                         match resolution and dod
-    :type output_image: Image
-
-    :return: image containing all mattes of given matte names
-    :rtype: Image
-    --]]
-    -- build set of ids from given set of matte names
-    local ids = {}
-    local name_to_id = cInfo.cryptomattes[cInfo.selection]["name_to_id"]
-
-    for name, _ in pairs(matte_names) do
-        local id = name_to_id[name]
-        if id then
-            ids[id] = true
-        end
-    end
-
-    -- create the combined matte image
-    if ids then
-        return create_matte_image(layer_images, ids, output_image)
-    end
-    return nil
-end
-
-function cryptomatte_utilities:create_preview_image(layer_0_image, layer_1_image, input_image)
-    --[[
-    Creates the keyable surface preview image.
-
-    There are two functions called "create_preview_image", this one which is
-    inside the cryptomatte_utilities module and one standalone. The reason for
-    this is that "self" in standalone context is the Fuse, and "self" in a
-    module context is the module. Inside the standalone function we build the
-    preview image using the Fuse scanline multi threaded function
-    "DoMultiProcess". This function cannot be called from the current function
-    due to the "self" being the module, does not have this function.
-
-    Long story short, I wanted this function to be public, so I had to make two
-    of them to avoid any clashes.
-
-    :param layer_0_image: image for the cryptomatte layer 0
-    :type layer_0_image: Image
-
-    :param layer_1_image: image for the cryptomatte layer 1
-    :type layer_1_image: Image
-
-    :param input_image: image used to build output preview image to match
-                        resolution and dod
-    :type input_image: Image
-
-    :return: keyable surface preview image
-    :rtype: Image
-    --]]
-    return create_preview_image(layer_0_image, layer_1_image, input_image)
-end
-
-function cryptomatte_utilities:get_exr_layer_images(cInfo, type_name, input_image)
-    --[[
-    Gets the numbered exr layer images by index matching given type name.
-
-    :param cInfo: CryptomatteInfo object
-    :type cInfo: table
-
-    :param type_name: prefix of the exr layer to get layer images for
-    :type type_name: string
-
-    :param input_image: input image to get resolution information from
-    :type input_image: Image
-
-    :raises error: if any error occured within the EXRIO module
-
-    :return: numbered exr layer images by index matching given type name
     :rtype: table[string, Image]
-    --]]
-    local partnum = 1
-    local layer_images = {}
-
-    -- create EXRIO pointer
+    ]]
+    -- load EXR file for current time
     local exr = EXRIO()
+    exr:ReadOpen(exr_path, -1)
 
-    -- read the input exr
-    exr:ReadOpen(cInfo.exr_path, -1)
-
+    local layer_images = {}
     if exr:ReadHeader() then
-        -- get the channel names
-        local channels = exr_get_channels(exr, partnum, type_name)
-        -- sort channels by layer index
-        local channels_by_layer_index = sort_channels_by_layer_index(channels)
-        -- create image by layer index
-        layer_images = exr_get_layer_images_by_index(exr, channels_by_layer_index, partnum, input_image)
+        local channels = exr:GetChannels(partnum)
+        local channel_hierarchy = module._get_channel_hierarchy(layer_name, channels)
+        layer_images = get_layer_images(input_image, layer_name, channel_hierarchy, exr, partnum)
     end
 
-    -- close the context manager
+    -- close EXR file pointer
     exr:Close()
 
-    -- raise last EXRIO related error
+    -- log EXRIO internal errors
     local exrio_error = exr:GetLastError()
     if exrio_error ~= "" then
-        error(string.format("ERROR: could not read EXR data (EXRIO ERROR: %s)", exrio_error))
+        module.log_error(exrio_error)
     end
 
     return layer_images
 end
 
-function cryptomatte_utilities:get_matte_names_from_selection(cInfo, matte_selection)
+function module.create_preview_image_colors(input_image, layer_images)
     --[[
-    Gets the matte names from the given selection string.
+    Creates the preview image of view mode "edges".
 
-    :param cInfo: CryptomatteInfo object
-    :type cInfo: table
+    :param input_image: Source Cryptomatte image.
+    :type input_image: Image
 
-    :param matte_selection: selection string containing matte names to split
-    :type matte_selection: string
+    :param layer_images: Cryptomatte layer images.
+    :type layer_images: table[number, Image]
 
-    :return: matte names from the given selection string
-    :rtype: table[string, boolean]
-    --]]
-    -- returns the a set of mattes from the matte list input string
-    local mattes = {}
-    local matte_name_array = split_string(matte_selection, REGEX_MATTE_LIST)
-    -- convert array to set
-    for _, matte in ipairs(matte_name_array) do
-        mattes[matte] = true
-    end
-    return mattes
+    Algorithm:
+    - see `create_preview_image_colors_scanline` function documentation
+
+    :rtype: Image
+    ]]
+    local output_image = input_image:CopyOf()
+    output_image:Clear()
+    self:DoMultiProcess(create_preview_image_colors_init,
+                        {output_image = output_image,
+                         layer_0_image = layer_images[0],
+                         layer_1_image = layer_images[1]},
+                        output_image.DataWindow.top - output_image.DataWindow.bottom,
+                        create_preview_image_colors_scanline)
+    return output_image
 end
 
--- return module
-return cryptomatte_utilities
+function module.create_preview_image_edges(input_image, layer_images)
+    --[[
+    Creates the preview image of view mode "edges".
+
+    :param input_image: Source Cryptomatte image.
+    :type input_image: Image
+
+    :param layer_images: Cryptomatte layer images.
+    :type layer_images: table[number, Image]
+
+    Algorithm:
+    - output.r = input.r
+    - output.g = input.g + (layer[0].a * 2)
+    - output.b = input.b + (layer[0].a * 2)
+    - output.a = input.a
+
+    :rtype: Image
+    ]]
+    local coverage = layer_images[0]:CopyOf()
+    coverage:Gain(1.0, 1.0, 1.0, 2.0)
+    return input_image:ChannelOpOf("Add", coverage, {G="fg.A", B="fg.A"})
+end
+
+function module.create_matte_image(input_image, layer_images, manifest, matte_names)
+    --[[
+    Creates the monochannel matte images for selected names.
+
+    :param input_image: Source Cryptomatte image
+    :type input_image: Image
+
+    :param layer_images: Cryptomatte layer images.
+    :type layer_images: table[number, Image]
+
+    :param manifest: Manifest storing matte id by name.
+    :type manifest: table[string, string]
+
+    :param matte_names: Selected mattes to isolate.
+    :type matte_names: table[string, bool]
+
+    Algorithm:
+    - see `create_matte_image_scanline` function documentation
+
+    :rtype: Image
+    ]]
+    local matte_values = {}
+    for matte_name, _ in pairs(matte_names) do
+        -- support background matte picking
+        if matte_name == BACKGROUND_MATTE_NAME then
+            matte_values[0.0] = true
+        else
+            local matte_id = manifest[matte_name]
+            if matte_id == nil then
+                module.log_error(string.format("matte not present in manifest: %s", matte_name))
+            else
+                local matte_value = module._hex_to_float(matte_id)
+                matte_values[matte_value] = true
+            end
+        end
+    end
+
+    -- build monochannel matte image
+    local output_image = Image({IMG_Like = input_image,
+                                IMG_CopyChannels = false,
+                                {IMG_Channel = "Alpha"}})
+    output_image:Clear()
+    local dod = input_image.DataWindow
+
+    if matte_values then
+        for _, layer_image in pairs(layer_images) do
+            self:DoMultiProcess(create_matte_image_init,
+                                {layer_image = layer_image,
+                                 matte_values = matte_values,
+                                 dod = dod,
+                                 output_image = output_image},
+                                dod.top - dod.bottom,
+                                create_matte_image_scanline)
+        end
+    end
+
+    return output_image
+end
+
+function module.get_screen_matte_name(input_image, layer_images, screen_pos, manifest)
+    --[[
+    Gets the name of a matte at given screen position.
+
+    :param input_image: Source Cryptomatte image.
+    :type input_image: Image
+
+    :param layer_images: Cryptomatte layer images.
+    :type layer_images: table[number, Image]
+
+    :param screen_pos: Relative mouse position on canvas.
+    :type screen_pos: Point
+
+    :param manifest: Manifest storing matte id by name.
+    :type manifest: table[string, string]
+
+    :rtype: string or nil
+    ]]
+    -- get absolute screen position
+    local x, y = module._get_absolute_position(input_image.Width, input_image.Height, screen_pos.X, screen_pos.Y)
+
+    local dod = input_image.DataWindow
+    if not module._is_position_in_rect(dod, x, y) then
+        module.log_info(string.format("pixel (%s,%s) not present in data window (%s)", x, y, dod))
+        return nil
+    end
+
+    -- get matte values from manifest to detect pixel matches from
+    local matte_values = {}
+    local matte_names_by_value = {}
+    for matte_name, matte_id in pairs(manifest) do
+        local matte_value = module._hex_to_float(matte_id)
+        matte_values[matte_value] = true
+        matte_names_by_value[matte_value] = matte_name
+    end
+
+    -- add background matte name/value
+    matte_values[0.0] = true
+    matte_names_by_value[0.0] = BACKGROUND_MATTE_NAME
+
+    local matte_value = nil
+    for layer_index, layer_image in pairs(layer_images) do
+        -- get pixel at screen coordinates for current layer image
+        local pixel = get_screen_pixel(layer_image, x, y)
+
+        if pixel.R == 0.0 and pixel.G == 0.0 and pixel.B == 0.0 and pixel.A == 0.0 then
+            -- background is being picked
+            matte_value = 0.0
+        else
+            -- detect if any RGBA channel value matches a known matte float ID
+            for _, value in ipairs({pixel.R, pixel.G, pixel.B, pixel.A}) do
+                if value ~= 0.0 and matte_values[value] then
+                    matte_value = value
+                    break
+                end
+            end
+        end
+
+        if matte_value ~= nil then
+            break
+        end
+    end
+
+    if matte_value ~= nil then
+        return matte_names_by_value[matte_value]
+    end
+
+    return nil
+end
+
+return module
