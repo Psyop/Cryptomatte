@@ -27,7 +27,7 @@ VIEW_MODE_EDGES = "Edges"
 VIEW_MODE_COLORS = "Colors"
 VIEW_MODE_NONE = "None"
 VIEW_MODES = {VIEW_MODE_EDGES, VIEW_MODE_COLORS, VIEW_MODE_NONE}
-SHOW_CALLBACKS = true
+SHOW_CALLBACKS = false
 
 
 -- ============================================================================
