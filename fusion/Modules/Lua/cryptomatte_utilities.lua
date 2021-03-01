@@ -189,7 +189,7 @@ function create_preview_image_colors_scanline(n)
     pixptr_01:GotoXY(output_image.DataWindow.left, y)
     pixptr_out:GotoXY(output_image.DataWindow.left, y)
 
-    for x = output_image.DataWindow.left, output_image.DataWindow.right - 1 do
+    for _ = output_image.DataWindow.left, output_image.DataWindow.right - 1 do
         -- go to correct X position
         pixptr_00:GetNextPixel(global_p_00)
         pixptr_01:GetNextPixel(global_p_01)
@@ -284,8 +284,8 @@ function create_matte_image_scanline(n)
     pixptr_in:GotoXY(dod.left, y)
     pixptr_out:GotoXY(dod.left, y)
 
-    local update = false
-    for x = dod.left, dod.right - 1 do
+    local update
+    for _ = dod.left, dod.right - 1 do
         -- go to correct X position
         pixptr_in:GetNextPixel(input_p)
         pixptr_out:GetPixel(output_p)
@@ -439,16 +439,16 @@ function module._get_channel_hierarchy(layer_name, channels)
     :type layer_name: string
 
     :param channels: All channel objects of an EXR file.
-    :type channels: table[number, table]
+    :type channels: table[table]
 
     :rtype: table
     ]]
     local hierarchy = {}
-    for i, channel in ipairs(channels) do
+    for _, channel in ipairs(channels) do
         full_channel_name = channel["Name"]
         if module._string_starts_with(full_channel_name, layer_name) then
             -- get layer name & index info from channel name
-            local _layer_name, layer_index, channel_name = string.match(full_channel_name, REGEX_LAYER_CHANNEL)
+            local _, layer_index, channel_name = string.match(full_channel_name, REGEX_LAYER_CHANNEL)
 
             -- get internal channel name representation
             local internal_channel_name = nil
@@ -635,7 +635,6 @@ function module.read_manifest_file(exr_path, sidecar_file_path)
     ]]
     -- build absolute sidecar file path
     local path = exr_path:match("(.*/)") .. sidecar_file_path
-
     local fp = io.open(path, "r")
     if fp == nil then
         module.log_error(string.format("unable to open manifest file: %s", path))
@@ -878,7 +877,7 @@ function module.get_screen_matte_name(input_image, layer_images, screen_pos, man
     matte_names_by_value[0.0] = BACKGROUND_MATTE_NAME
 
     local matte_value = nil
-    for layer_index, layer_image in pairs(layer_images) do
+    for _, layer_image in pairs(layer_images) do
         -- get pixel at screen coordinates for current layer image
         local pixel = get_screen_pixel(layer_image, x, y)
 
