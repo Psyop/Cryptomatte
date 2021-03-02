@@ -202,6 +202,10 @@ function module.test_log_error()
     -- TODO
 end
 
+function module.test_log_warning()
+    -- TODO
+end
+
 function module.test_log_info()
     -- TODO
 end
