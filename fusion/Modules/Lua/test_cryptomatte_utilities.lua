@@ -229,19 +229,28 @@ function cryptomatte_test_log_warning()
     old_self = self
     old_print = _G["print"]
 
-    -- mock
+    -- mock with matching log level
     _G["os"]['getenv'] = mock_log_level_warning
     self = mock_self_node()
     _G["print"] = mock_print
 
     cryptoutils.log_warning("HELP")
+    local pr1 = storage["print_return"]
+    storage["print_return"] = nil  -- clear print result for next run
+
+    -- mock with non matching log level
+    _G["os"]['getenv'] = mock_log_level_unset
+
+    cryptoutils.log_warning("HELP")
+    local pr2 = storage["print_return"]
 
     -- reset mock
     _G["os"]["getenv"] = old_get_env
     self = old_self
     _G["print"] = old_print
 
-    assert_equal(storage["print_return"], "[Cryptomatte][NODE1][WARNING] HELP")
+    assert_equal(pr1, "[Cryptomatte][NODE1][WARNING] HELP")
+    assert_equal(pr2, nil)  -- never got called
 end
 
 function cryptomatte_test_log_info()
@@ -256,13 +265,22 @@ function cryptomatte_test_log_info()
     _G["print"] = mock_print
 
     cryptoutils.log_info("HELP")
+    local pr1 = storage["print_return"]
+    storage["print_return"] = nil  -- clear print result for next run
+
+    -- mock with non matching log level
+    _G["os"]['getenv'] = mock_log_level_unset
+
+    cryptoutils.log_info("HELP")
+    local pr2 = storage["print_return"]
 
     -- reset mock
     _G["os"]["getenv"] = old_get_env
     self = old_self
     _G["print"] = old_print
 
-    assert_equal(storage["print_return"], "[Cryptomatte][NODE1][INFO] HELP")
+    assert_equal(pr1, "[Cryptomatte][NODE1][INFO] HELP")
+    assert_equal(pr2, nil)  -- never got called
 end
 
 function cryptomatte_test_get_cryptomatte_metadata()
