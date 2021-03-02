@@ -336,17 +336,19 @@ end
 module = {}
 
 -- private
-function module._log(level, msg)
+function module._format_log(level, message)
     --[[
-    Logs a message.
+    Returns a formatted message to log.
 
     :param level: Name of the log level.
     :type level: string
 
-    :param msg: Message to log.
-    :type msg: string
+    :param message: Message to log.
+    :type message: string
+
+    :rtype: string
     ]]
-    print(string.format("[Cryptomatte][%s] %s", level, msg))
+    return string.format("[Cryptomatte][%s][%s] %s", self.Name, level, message)
 end
 
 function module._get_log_level()
@@ -365,7 +367,7 @@ function module._get_log_level()
     ]]
     local log_level = os.getenv(ENV_VAR_LOG_LEVEL)
     if log_level == nil then
-        return 1
+        return 0
     end
     return tonumber(log_level)
 end
@@ -538,40 +540,43 @@ function module._hex_to_float(hex)
 end
 
 -- public
-function module.log_error(msg)
+function module.log_error(message)
     --[[
     Logs an error message.
 
-    :param msg: Message to log.
+    :param message: Message to log.
+    :type message: string
     ]]
     local log_level = module._get_log_level()
     if log_level >= 0 then
-        module._log("ERROR", msg)
+        print(module._format_log("ERROR", message))
     end
     error("ERROR")
 end
 
-function module.log_warning(msg)
+function module.log_warning(message)
     --[[
-    Logs an error message.
+    Logs an warning message.
 
-    :param msg: Message to log.
+    :param message: Message to log.
+    :type message: string
     ]]
     local log_level = module._get_log_level()
     if log_level >= 1 then
-        module._log("WARNING", msg)
+        print(module._format_log("WARNING", message))
     end
 end
 
-function module.log_info(msg)
+function module.log_info(message)
     --[[
     Logs an information message.
 
-    :param msg: Message to log.
+    :param message: Message to log.
+    :type message: string
     ]]
     local log_level = module._get_log_level()
-    if log_level > 2 then
-        module._log("INFO", msg)
+    if log_level >= 2 then
+        print(module._format_log("INFO", message))
     end
 end
 
