@@ -354,8 +354,8 @@ function module._get_log_level()
     Returns the log level.
 
     Log levels:
-    - 0: no logging
-    - 1: error (default)
+    - 0: error (default)
+    - 1: warning
     - 2: info
 
     Setting the log level to a high number than specified log levels will
@@ -545,8 +545,21 @@ function module.log_error(msg)
     :param msg: Message to log.
     ]]
     local log_level = module._get_log_level()
-    if log_level > 0 then
+    if log_level >= 0 then
         module._log("ERROR", msg)
+    end
+    error("ERROR")
+end
+
+function module.log_warning(msg)
+    --[[
+    Logs an error message.
+
+    :param msg: Message to log.
+    ]]
+    local log_level = module._get_log_level()
+    if log_level >= 1 then
+        module._log("WARNING", msg)
     end
 end
 
@@ -557,7 +570,7 @@ function module.log_info(msg)
     :param msg: Message to log.
     ]]
     local log_level = module._get_log_level()
-    if log_level > 1 then
+    if log_level > 2 then
         module._log("INFO", msg)
     end
 end
@@ -681,7 +694,7 @@ function module.get_matte_names(matte_str)
             name = string.sub(matte, 2, matte:len() - 1)
             name_set[name] = true
         else
-            module.log_error(string.format("invalid syntax for matte: %s", matte))
+            module.log_warning(string.format("invalid syntax for matte: %s", matte))
         end
     end
     return name_set
@@ -713,6 +726,9 @@ function module.get_layer_images(input_image, exr_path, layer_name, partnum)
     if exr:ReadHeader() then
         local channels = exr:GetChannels(partnum)
         local channel_hierarchy = module._get_channel_hierarchy(layer_name, channels)
+        if channel_hierarchy == {} or channel_hierarchy[layer_name] == nil then
+            module.log_error(string.format("failed to read layer/index/channel information for layer: %s", layer_name))
+        end
         layer_images = get_layer_images(input_image, layer_name, channel_hierarchy, exr, partnum)
     end
 
@@ -806,7 +822,7 @@ function module.create_matte_image(input_image, layer_images, manifest, matte_na
         else
             local matte_id = manifest[matte_name]
             if matte_id == nil then
-                module.log_error(string.format("matte not present in manifest: %s", matte_name))
+                module.log_warning(string.format("matte not present in manifest: %s", matte_name))
             else
                 local matte_value = module._hex_to_float(matte_id)
                 matte_values[matte_value] = true
