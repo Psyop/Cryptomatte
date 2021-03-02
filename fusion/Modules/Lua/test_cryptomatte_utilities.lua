@@ -79,8 +79,9 @@ end
 
 -- mock funtions
 storage = {}
-function mock_print(msg)
-    storage["print_return"] = msg
+
+function mock_print(message)
+    storage["print_return"] = message
 end
 
 function mock_log_level_unset()
@@ -99,7 +100,7 @@ function mock_log_level_info()
     return "2"
 end
 
-function mock_node()
+function mock_self_node()
     return {Name="NODE1"}
 end
 
@@ -107,11 +108,10 @@ end
 module = {}
 
 function module.test__format_log()
-    old_self = self
-    self = mock_node()
-    local result = cryptoutils._format_log("LEVEL", "MESSAGE")
+    local old_self = self
+    self = mock_self_node()
+    assert_equal(cryptoutils._format_log("LEVEL", "MESSAGE"), "[Cryptomatte][NODE1][LEVEL] MESSAGE")
     self = old_self
-    assert_equal(result, "[Cryptomatte][NODE1][LEVEL] MESSAGE")
 end
 
 function module.test__get_log_level()
