@@ -87,11 +87,11 @@ function mock_log_level_unset()
     return nil
 end
 
-function mock_log_level_none()
+function mock_log_level_error()
     return "0"
 end
 
-function mock_log_level_error()
+function mock_log_level_warning()
     return "1"
 end
 
@@ -99,16 +99,19 @@ function mock_log_level_info()
     return "2"
 end
 
+function mock_node()
+    return {Name="NODE1"}
+end
+
 -- tests
 module = {}
 
-function module.test__log()
-    old_print = print
-    print = mock_print
-    cryptoutils._log("LEVEL", "MESSAGE")
-    print = old_print
-
-    assert_equal(storage["print_return"], "[Cryptomatte][LEVEL] MESSAGE")
+function module.test__format_log()
+    old_self = self
+    self = mock_node()
+    local result = cryptoutils._format_log("LEVEL", "MESSAGE")
+    self = old_self
+    assert_equal(result, "[Cryptomatte][NODE1][LEVEL] MESSAGE")
 end
 
 function module.test__get_log_level()
@@ -118,9 +121,9 @@ function module.test__get_log_level()
     os.getenv = mock_log_level_unset
     local r1 = cryptoutils._get_log_level()
     os.getenv = old_get_env
-    assert_equal(r1, 1)
+    assert_equal(r1, 0)
 
-    -- mock log level set in environment (string -> number cast)
+    -- mock log level info set in environment (string -> number cast)
     os.getenv = mock_log_level_info
     local r2 = cryptoutils._get_log_level()
     os.getenv = old_get_env
@@ -216,10 +219,6 @@ function module.test_decode_manifest()
 end
 
 function module.test_get_matte_names()
-    -- TODO
-end
-
-function module.test_get_screen_matte_name()
     -- TODO
 end
 
