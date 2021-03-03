@@ -8,6 +8,7 @@ Version    : 1.2.8
 --]]
 
 local cryptoutils = require("cryptomatte_utilities")
+local json = require("dkjson")
 
 -- utils
 function collect_tests()
@@ -67,7 +68,15 @@ function assert_equal(x, y)
 
     :rtype: boolean
     ]]
-    if x == y then
+    local _x, _y = x, y
+
+    -- transform values for equality
+    if type(x) == "table" and type(y) == "table" then
+        _x = json.encode(_x)
+        _y = json.encode(_y)
+    end
+
+    if _x == _y then
         return true
     else
         error(string.format("%s\nassertion failed: %s != %s", debug.traceback(), x, y))
@@ -121,7 +130,7 @@ function cryptomatte_test__get_log_level()
     _G["os"]["getenv"] = mock_log_level_unset
     local r1 = cryptoutils._get_log_level()
     _G["os"]["getenv"] = old_get_env
-    assert_equal(r1, 0)
+    assert_equal(r1, 1)
 
     -- mock log level info set in environment (string -> number cast)
     _G["os"]["getenv"] = mock_log_level_info
@@ -176,7 +185,26 @@ function cryptomatte_test__solve_channel_name()
 end
 
 function cryptomatte_test__get_channel_hierarchy()
-    -- TODO
+    local channels = {
+        {Name="Layer.R"},  -- will be skipped
+        {Name="Layer.G"},  -- will be skipped
+        {Name="Layer.B"},  -- will be skipped
+        {Name="Layer.A"},  -- will be skipped
+        {Name="Layer00.R"},
+        {Name="Layer00.G"},
+        {Name="Layer00.B"},
+        {Name="Layer00.A"},
+        {Name="Layer01.R"},
+        {Name="Layer01.G"},
+        {Name="Layer01.B"},
+        {Name="Layer01.A"}
+    }
+    local result = cryptoutils._get_channel_hierarchy("Layer", channels)
+    local expected = {}
+    expected["Layer"] = {}
+    expected["Layer"]["0"] = {r="Layer00.R",g="Layer00.G",b="Layer00.B",a="Layer00.A"}
+    expected["Layer"]["1"] = {r="Layer01.R",g="Layer01.G",b="Layer01.B",a="Layer01.A"}
+    assert_equal(result, expected)
 end
 
 function cryptomatte_test__get_absolute_position()
@@ -239,7 +267,7 @@ function cryptomatte_test_log_warning()
     storage["print_return"] = nil  -- clear print result for next run
 
     -- mock with non matching log level
-    _G["os"]['getenv'] = mock_log_level_unset
+    _G["os"]['getenv'] = mock_log_level_error
 
     cryptoutils.log_warning("HELP")
     local pr2 = storage["print_return"]
