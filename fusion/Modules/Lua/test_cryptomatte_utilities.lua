@@ -43,16 +43,29 @@ function run_tests()
     local ntests = #tests
     print(string.format("detected %s test(s) ...", ntests))
 
+    print("running tests ...")
     local count = 0
     for _, name in ipairs(tests) do
         count = count + 1
+
+        -- build progess percentage
         local percentage = (count / ntests) * 100
         local percentage_str = string.format("%.0f%%", percentage)
         local padding = string.rep(" ", 4 - string.len(percentage_str))
         percentage_str = string.format("%s%s", padding, percentage_str)
+
+        -- build test report
         local report = string.format("[%s] %s ... ", percentage_str, name)
 
+        -- add leading spaces to allign results
+        while report:len() < 60 do
+            report = report.." "
+        end
+
+        -- safe call test function
         local status, err = pcall(_G[name])
+
+        -- error handling & final report update
         if status then
             report = string.format("%s [%s]", report, "OK")
         else
