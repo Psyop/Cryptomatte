@@ -318,7 +318,8 @@ function cryptomatte_test_read_manifest_file()
 end
 
 function cryptomatte_test_decode_manifest()
-    -- TODO
+    local result = cryptoutils.decode_manifest("{\"bunny\": \"3f800000\"}")
+    assert_equal(result, {bunny="3f800000"})
 end
 
 function cryptomatte_test_get_matte_names()
