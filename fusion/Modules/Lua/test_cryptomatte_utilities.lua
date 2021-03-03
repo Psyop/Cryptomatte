@@ -314,7 +314,36 @@ function cryptomatte_test_get_cryptomatte_metadata()
 end
 
 function cryptomatte_test_read_manifest_file()
-    -- TODO
+    -- valid manifest file
+    local tmp_file = os.tmpname()
+    local fp = io.open(tmp_file, "w")
+    fp:write("{\"bunny\": \"3f800000\"}")
+    fp:close()
+
+    local dir, file = string.match(tmp_file, "(.-)([^\\/]-%.?[^%.\\/]*)$")
+    local result = cryptoutils.read_manifest_file(dir, file)
+    os.remove(tmp_file)
+    assert_equal(result, "{\"bunny\": \"3f800000\"}")
+
+    -- invalid manifest file, file does not exist
+    -- store original pre mock
+    old_print = _G["print"]
+    old_self = self
+    old_error = _G["error"]
+
+    -- mock
+    _G["print"] = mock_print
+    self = mock_self_node
+    _G["error"] = mock_error
+
+    local result = cryptoutils.read_manifest_file(dir, file)
+
+    -- reset mock
+    _G["print"] = old_print
+    self = old_self
+    _G["error"] = old_error
+
+    assert_equal(result, "")
 end
 
 function cryptomatte_test_decode_manifest()
