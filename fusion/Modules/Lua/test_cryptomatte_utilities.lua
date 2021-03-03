@@ -110,14 +110,12 @@ function mock_log_level_info()
     return "2"
 end
 
-function mock_self_node()
-    return {Name="NODE1"}
-end
+mock_self_node = {Name="NODE1"}
 
 -- tests
 function cryptomatte_test__format_log()
     local old_self = self
-    self = mock_self_node()
+    self = mock_self_node
     assert_equal(cryptoutils._format_log("LEVEL", "MESSAGE"), "[Cryptomatte][NODE1][LEVEL] MESSAGE")
     self = old_self
 end
@@ -235,7 +233,7 @@ function cryptomatte_test_log_error()
 
     -- mock
     _G["os"]['getenv'] = mock_log_level_error
-    self = mock_self_node()
+    self = mock_self_node
     _G["print"] = mock_print
     _G["error"] = mock_error
 
@@ -259,7 +257,7 @@ function cryptomatte_test_log_warning()
 
     -- mock with matching log level
     _G["os"]['getenv'] = mock_log_level_warning
-    self = mock_self_node()
+    self = mock_self_node
     _G["print"] = mock_print
 
     cryptoutils.log_warning("HELP")
@@ -289,7 +287,7 @@ function cryptomatte_test_log_info()
 
     -- mock
     _G["os"]['getenv'] = mock_log_level_info
-    self = mock_self_node()
+    self = mock_self_node
     _G["print"] = mock_print
 
     cryptoutils.log_info("HELP")
@@ -324,7 +322,55 @@ function cryptomatte_test_decode_manifest()
 end
 
 function cryptomatte_test_get_matte_names()
-    -- TODO
+    -- valid single name string
+    assert_equal(cryptoutils.get_matte_names("\"bunny\""), {bunny=true})
+
+    -- valid multiple names string
+    assert_equal(cryptoutils.get_matte_names("\"bunny\", \"flower\""), {bunny=true, flower=true})
+
+    -- valid name string with numbers
+    assert_equal(cryptoutils.get_matte_names("\"bunny123\""), {bunny123=true})
+
+    -- valid name string with escaped quotes (single & double)
+    local result = cryptoutils.get_matte_names("\"bunny'\"\"")
+    local expected = {}
+    expected["bunny'\""] = true
+    assert_equal(result, expected)
+
+    -- valid name string with spaces
+    result = cryptoutils.get_matte_names("\"b u n n y\"")
+    expected = {}
+    expected["b u n n y"] = true
+    assert_equal(result, expected)
+
+    -- valid name string with latin encoding characters
+    result = cryptoutils.get_matte_names("\"itsabunnyé\"")
+    expected = {}
+    expected["itsabunnyé"] = true
+    assert_equal(result, expected)
+
+    -- valid name string in Russian cyrillic
+    result = cryptoutils.get_matte_names("\"кролик\"")
+    expected = {}
+    expected["кролик"] = true
+    assert_equal(result, expected)
+
+    -- invalid name strings
+    -- store original pre mock
+    old_self = self
+    old_print = _G["print"]
+
+    -- mock
+    self = mock_self_node
+    _G["print"] = mock_print
+
+    local no_quotes = cryptoutils.get_matte_names("bunny")
+
+    -- reset mock
+    self = old_self
+    _G["print"] = old_print
+
+    assert_equal(no_quotes, {})
 end
 
 run_tests()
