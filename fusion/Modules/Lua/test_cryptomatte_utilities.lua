@@ -79,7 +79,7 @@ function assert_equal(x, y)
     if _x == _y then
         return true
     else
-        error(string.format("%s\nassertion failed: %s != %s", debug.traceback(), x, y))
+        error(string.format("%s\nassertion failed: %s != %s", debug.traceback(), _x, _y))
     end
 end
 
@@ -343,6 +343,12 @@ function cryptomatte_test_get_matte_names()
     expected["b u n n y"] = true
     assert_equal(result, expected)
 
+    -- valid name string with special characters
+    result = cryptoutils.get_matte_names("\"bunny?!\"")
+    expected = {}
+    expected["bunny?!"] = true
+    assert_equal(result, expected)
+
     -- valid name string with latin encoding characters
     result = cryptoutils.get_matte_names("\"itsabunnyé\"")
     expected = {}
@@ -365,12 +371,14 @@ function cryptomatte_test_get_matte_names()
     _G["print"] = mock_print
 
     local no_quotes = cryptoutils.get_matte_names("bunny")
+    local comma = cryptoutils.get_matte_names("bu,nny")
 
     -- reset mock
     self = old_self
     _G["print"] = old_print
 
     assert_equal(no_quotes, {})
+    assert_equal(comma, {})
 end
 
 run_tests()
