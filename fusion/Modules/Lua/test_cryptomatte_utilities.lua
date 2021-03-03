@@ -310,7 +310,33 @@ function cryptomatte_test_log_info()
 end
 
 function cryptomatte_test_get_cryptomatte_metadata()
-    -- TODO
+    local metadata = {}
+    metadata["cryptomatte/123456/conversion"] = "uint32_to_float32"
+    metadata["cryptomatte/123456/hash"] = "MurmurHash3_32"
+    metadata["cryptomatte/123456/manifest"] = "{\"bunny\": \"3f800000\"}"
+    metadata["cryptomatte/123456/name"] = "Layer"
+    metadata["Filename"] = "/tmp/foo"
+
+    local result = cryptoutils.get_cryptomatte_metadata(metadata)
+    local expected = {}
+    expected["path"] = "/tmp/foo"
+    expected["layer_count"] = 1
+    expected["id_to_name"] = {}
+    expected["id_to_name"]["123456"]="Layer"
+    expected["name_to_id"] = {}
+    expected["name_to_id"]["Layer"] = "123456"
+    expected["index_to_id"] = {}
+    expected["index_to_id"]["123456"] = 1
+    expected["id_to_index"] = {}
+    expected["id_to_index"]["1"] = "123456"
+    expected["layers"] = {}
+    expected["layers"]["123456"] = {}
+    expected["layers"]["123456"]["conversion"] = "uint32_to_float32"
+    expected["layers"]["123456"]["hash"] = "MurmurHash3_32"
+    expected["layers"]["123456"]["manifest"] = "{\"bunny\": \"3f800000\"}"
+    expected["layers"]["123456"]["name"] = "Layer"
+
+    assert_equal(result, expected)
 end
 
 function cryptomatte_test_read_manifest_file()
