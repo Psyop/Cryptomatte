@@ -367,7 +367,7 @@ function module._get_log_level()
     ]]
     local log_level = os.getenv(ENV_VAR_LOG_LEVEL)
     if log_level == nil then
-        return 0
+        return 1
     end
     return tonumber(log_level)
 end
