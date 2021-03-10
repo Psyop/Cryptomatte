@@ -34,6 +34,7 @@ end
 
 -- load cjson module if present, if not, load Fusion stdlib dkjson module
 local json = prefered_load("cjson", "dkjson")
+local bit = require("bit")
 
 -- ============================================================================
 -- constants
@@ -536,6 +537,12 @@ function module._hex_to_float(hex)
     :rtype: number
     ]]
     int_flt.i = tonumber(hex, 16)
+    --fix exponent if required
+    local exp = bit.rshift(int_flt.i, 23)
+    exp = bit.band(exp, 255)
+    if exp == 0 or exp == 255 then
+        int_flt.i = bit.bxor(int_flt.i, bit.lshift(1, 23))
+    end
     return int_flt.f
 end
 
