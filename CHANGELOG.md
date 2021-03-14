@@ -4,6 +4,13 @@
 * Increased version of beta to 1.4.0-beta4 (to leave 1.3.0 for Python 3 update)
 * Brought in fixes from 1.2.8
 * Fixed unload manifest with special characters in names
+* Fixed #138- load metadata for this view only
+
+### 1.3.0:
+
+* Updated to support both Python 3 and Python 2.7 with the same code (#134, thanks @PumpingPixels).
+* Python 2.6 is no longer supported. This means Nuke 6 and Nuke 7 are no longer supported. 
+* Fixed #138- load metadata for this view only
 
 ### 1.3.0-beta3:
 

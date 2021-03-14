@@ -48,14 +48,14 @@ Encoders:
 * [Redshift 2.6.11](https://www.redshift3d.com)
 * [Arnold 4 (AlShaders), by Jonah Friedman, Andy Jones, Anders Langlands.](http://www.anderslanglands.com/alshaders/index.html)
 * [Arnold 5 (CryptomatteArnold) by Jonah Friedman, Andy Jones, Anders Langlands.](https://github.com/anderslanglands/alShaders2)
-* Nuke 7+ "Encryptomatte", by Andy Jones. In this repo.
+* Nuke 8+ "Encryptomatte", by Andy Jones. In this repo.
 * [Appleseed 2.1.0 by Sergo Pogosyan, Jon Dent](https://appleseedhq.net/2019/09/21/appleseed-2-1-0-beta-Released.html)
 * [Autodesk VRed](https://knowledge.autodesk.com/support/vred-products/learn-explore/caas/CloudHelp/cloudhelp/2020/ENU/VRED/files/Rendering/VRED-Rendering-How-to-Use-the-Cryptomatte-Options-html-html.html)
 * [Octane for Cinema4D](http://www.aoktar.com/octane/OCTANE%20HELP%20MANUAL.html?Cryptomatte.html)
 
 Decoders:
 
-* Nuke 7+, by Jonah Friedman, Andy Jones. In this repo.
+* Nuke 8+, by Jonah Friedman, Andy Jones. In this repo.
 * Fusion: by C&eacute;dric Duriau and Kristof Indeherberge at Grid. In this repo.
 * [Houdini 16.5 Compositor (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html), [Demo](https://vimeo.com/241036613#t=2862s)
 * Blender 2.8.0 Compositor (By Tangent Animation and Blender Foundation): [Cryptomatte in Blender 2.8 Alpha 2! demo](https://www.youtube.com/watch?v=lTJJqAGnWFM), [Tutorial by Zacharias Reinhardt](https://zachariasreinhardt.com/blender-2-8-cryptomatte-tutorial), [Cycles for Animated Feature Film Production by Stefan Werner](https://www.youtube.com/watch?v=_2Ia4h8q3xs), [Docs](https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Cycles#Cryptomatte)
