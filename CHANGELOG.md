@@ -3,6 +3,7 @@
 Nuke:
 
 * Updated to support both Python 3 and Python 2.7 with the same code (#134, thanks @PumpingPixels).
+* Python 2.6 is no longer supported. This means Nuke 6 and Nuke 7 are no longer supported. 
 * Fixed #138- load metadata for this view only
 
 ### 1.2.8
