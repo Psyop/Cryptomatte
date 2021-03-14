@@ -3,6 +3,7 @@
 Nuke:
 
 * Updated to support both Python 3 and Python 2.7 with the same code (#134, thanks @PumpingPixels).
+* Fixed #138- load metadata for this view only
 
 ### 1.2.8
 
