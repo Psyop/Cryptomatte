@@ -293,7 +293,7 @@ class CryptomatteInfo(object):
         import json
         if 'manifest' not in self.cryptomattes[self.selection]:
             manif_key = self.get_selection_metadata_key('manifest')
-            manif_str = self.nuke_node.metadata(manif_key)
+            manif_str = self.nuke_node.metadata(manif_key, view=nuke.thisView())
             if manif_str is None:
                 return {}
             else:
