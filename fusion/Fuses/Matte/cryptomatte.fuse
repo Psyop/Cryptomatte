@@ -284,7 +284,7 @@ function Process(req)
     if layer_index > layer_count then
         layer_index = 1
     end
-    local layer_id = metadata["index_to_id"][current_layer_index]
+    local layer_id = metadata["index_to_id"][tostring(current_layer_index)]
     local layer_name = metadata["id_to_name"][layer_id]
 
     -- apply GUI updates

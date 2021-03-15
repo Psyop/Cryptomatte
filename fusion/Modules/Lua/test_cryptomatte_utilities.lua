@@ -359,7 +359,17 @@ function cryptomatte_test_get_cryptomatte_metadata()
     metadata["cryptomatte/123456/name"] = "Layer"
     metadata["Filename"] = "/tmp/foo"
 
+    -- store original pre mock
+    old_self = _G["self"]
+
+    -- mock
+    _G["self"] = mock_self_node
+
     local result = cryptoutils.get_cryptomatte_metadata(metadata)
+
+    -- reset mock
+    _G["self"] = old_self
+
     local expected = {}
     expected["path"] = "/tmp/foo"
     expected["layer_count"] = 1
@@ -368,16 +378,15 @@ function cryptomatte_test_get_cryptomatte_metadata()
     expected["name_to_id"] = {}
     expected["name_to_id"]["Layer"] = "123456"
     expected["index_to_id"] = {}
-    expected["index_to_id"]["123456"] = 1
+    expected["index_to_id"]["1"] = "123456"
     expected["id_to_index"] = {}
-    expected["id_to_index"]["1"] = "123456"
+    expected["id_to_index"]["123456"] = "1"
     expected["layers"] = {}
     expected["layers"]["123456"] = {}
     expected["layers"]["123456"]["conversion"] = "uint32_to_float32"
     expected["layers"]["123456"]["hash"] = "MurmurHash3_32"
     expected["layers"]["123456"]["manifest"] = "{\"bunny\": \"3f800000\"}"
     expected["layers"]["123456"]["name"] = "Layer"
-
     assert_equal(result, expected)
 end
 

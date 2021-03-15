@@ -640,8 +640,8 @@ function module.get_cryptomatte_metadata(metadata)
                 name_to_id[v] = layer_id
 
                 index = index + 1
-                id_to_index[layer_id] = index
-                index_to_id[index] = layer_id
+                id_to_index[layer_id] = tostring(index)
+                index_to_id[tostring(index)] = layer_id
             end
         end
     end
