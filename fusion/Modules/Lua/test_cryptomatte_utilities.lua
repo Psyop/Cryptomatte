@@ -17,7 +17,7 @@ function collect_tests()
 
     Functions with names starting with "test_" will be picked up.
 
-    :rtype: table[stri]
+    :rtype: table[string]
     ]]
     local tests = {}
     local substr = "cryptomatte_test_"
@@ -127,15 +127,15 @@ mock_self_node = {Name="NODE1", Comp=fusion}
 
 -- tests
 function cryptomatte_test__format_log()
-    local old_self = self
-    self = mock_self_node
+    local old_self = _G["self"]
+    _G["self"] = mock_self_node
     assert_equal(cryptoutils._format_log("LEVEL", "MESSAGE"), "[Cryptomatte][NODE1][LEVEL] MESSAGE")
-    self = old_self
+    _G["self"] = old_self
 end
 
 function cryptomatte_test__get_log_level()
     -- store original function pre mock
-    old_get_env = _G["os"]["getenv"]
+    local old_get_env = _G["os"]["getenv"]
 
     -- mock log level not set in environment
     _G["os"]["getenv"] = mock_log_level_unset
@@ -161,9 +161,9 @@ function cryptomatte_test__string_ends_with()
 end
 
 function cryptomatte_test__string_split()
-    result = cryptoutils._string_split("foo, bar,bunny", "([^,]+),?%s*")
+    local result = cryptoutils._string_split("foo, bar,bunny", "([^,]+),?%s*")
     assert_equal(#result, 3)
-    expected = {"foo", "bar", "bunny"}
+    local expected = {"foo", "bar", "bunny"}
     for i, v in ipairs(result) do
         assert_equal(v, expected[i])
     end
@@ -171,7 +171,7 @@ end
 
 function cryptomatte_test__get_absolute_path()
     -- store original pre mock
-    old_self = _G["self"]
+    local old_self = _G["self"]
 
     -- mock
     _G["self"] = mock_self_node
@@ -268,14 +268,14 @@ end
 
 function cryptomatte_test_log_error()
     -- store original pre mock
-    old_get_env = _G["os"]["getenv"]
-    old_self = self
-    old_print = _G["print"]
-    old_error = _G["error"]
+    local old_get_env = _G["os"]["getenv"]
+    local old_self = _G["self"]
+    local old_print = _G["print"]
+    local old_error = _G["error"]
 
     -- mock
     _G["os"]['getenv'] = mock_log_level_error
-    self = mock_self_node
+    _G["self"] = mock_self_node
     _G["print"] = mock_print
     _G["error"] = mock_error
 
@@ -283,7 +283,7 @@ function cryptomatte_test_log_error()
 
     -- reset mock
     _G["os"]["getenv"] = old_get_env
-    self = old_self
+    _G["self"] = old_self
     _G["print"] = old_print
     _G["error"] = old_error
 
@@ -293,13 +293,13 @@ end
 
 function cryptomatte_test_log_warning()
     -- store original pre mock
-    old_get_env = _G["os"]["getenv"]
-    old_self = self
-    old_print = _G["print"]
+    local old_get_env = _G["os"]["getenv"]
+    local old_self = _G["self"]
+    local old_print = _G["print"]
 
     -- mock with matching log level
     _G["os"]['getenv'] = mock_log_level_warning
-    self = mock_self_node
+    _G["self"] = mock_self_node
     _G["print"] = mock_print
 
     cryptoutils.log_warning("HELP")
@@ -314,7 +314,7 @@ function cryptomatte_test_log_warning()
 
     -- reset mock
     _G["os"]["getenv"] = old_get_env
-    self = old_self
+    _G["self"] = old_self
     _G["print"] = old_print
 
     assert_equal(pr1, "[Cryptomatte][NODE1][WARNING] HELP")
@@ -323,13 +323,13 @@ end
 
 function cryptomatte_test_log_info()
     -- store original pre mock
-    old_get_env = _G["os"]["getenv"]
-    old_self = self
-    old_print = _G["print"]
+    local old_get_env = _G["os"]["getenv"]
+    local old_self = _G["self"]
+    local old_print = _G["print"]
 
     -- mock
     _G["os"]['getenv'] = mock_log_level_info
-    self = mock_self_node
+    _G["self"] = mock_self_node
     _G["print"] = mock_print
 
     cryptoutils.log_info("HELP")
@@ -344,7 +344,7 @@ function cryptomatte_test_log_info()
 
     -- reset mock
     _G["os"]["getenv"] = old_get_env
-    self = old_self
+    _G["self"] = old_self
     _G["print"] = old_print
 
     assert_equal(pr1, "[Cryptomatte][NODE1][INFO] HELP")
@@ -360,7 +360,7 @@ function cryptomatte_test_get_cryptomatte_metadata()
     metadata["Filename"] = "/tmp/foo"
 
     -- store original pre mock
-    old_self = _G["self"]
+    local old_self = _G["self"]
 
     -- mock
     _G["self"] = mock_self_node
@@ -404,20 +404,20 @@ function cryptomatte_test_read_manifest_file()
 
     -- invalid manifest file, file does not exist
     -- store original pre mock
-    old_print = _G["print"]
-    old_self = self
-    old_error = _G["error"]
+    local old_print = _G["print"]
+    local old_self = _G["self"]
+    local old_error = _G["error"]
 
     -- mock
     _G["print"] = mock_print
-    self = mock_self_node
+    _G["self"] = mock_self_node
     _G["error"] = mock_error
 
     local result = cryptoutils.read_manifest_file(dir, file)
 
     -- reset mock
     _G["print"] = old_print
-    self = old_self
+    _G["self"] = old_self
     _G["error"] = old_error
 
     assert_equal(result, "")
@@ -470,18 +470,18 @@ function cryptomatte_test_get_matte_names()
 
     -- invalid name strings
     -- store original pre mock
-    old_self = self
-    old_print = _G["print"]
+    local old_self = _G["self"]
+    local old_print = _G["print"]
 
     -- mock
-    self = mock_self_node
+    _G["self"] = mock_self_node
     _G["print"] = mock_print
 
     local no_quotes = cryptoutils.get_matte_names("bunny")
     local comma = cryptoutils.get_matte_names("bu,nny")
 
     -- reset mock
-    self = old_self
+    _G["self"] = old_self
     _G["print"] = old_print
 
     assert_equal(no_quotes, {})
