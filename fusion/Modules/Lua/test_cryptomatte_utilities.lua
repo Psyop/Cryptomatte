@@ -123,7 +123,7 @@ function mock_log_level_info()
     return "2"
 end
 
-mock_self_node = {Name="NODE1"}
+mock_self_node = {Name="NODE1", Comp=fusion}
 
 -- tests
 function cryptomatte_test__format_log()
@@ -166,6 +166,35 @@ function cryptomatte_test__string_split()
     expected = {"foo", "bar", "bunny"}
     for i, v in ipairs(result) do
         assert_equal(v, expected[i])
+    end
+end
+
+function cryptomatte_test__get_absolute_path()
+    -- store original pre mock
+    old_self = _G["self"]
+
+    -- mock
+    _G["self"] = mock_self_node
+
+    -- linux absolute path with forward path sep
+    local r1 = cryptoutils._get_absolute_path("/tmp/test.exr")
+
+    -- windows absolute path with double backward path sep
+    local r2 = cryptoutils._get_absolute_path("C:\\Temp\\test.exr")
+
+    -- windows absolute path with double backward path sep
+    local r3 = cryptoutils._get_absolute_path("Temp:/test.exr")
+
+    -- reset mock
+    _G["self"] = old_self
+
+    assert_equal(r1, "/tmp/test.exr")
+    assert_equal(r2, "C:/Temp/test.exr")
+    local pathsep = package.config:sub(1,1)
+    if pathsep == "/" then
+        assert_equal(r3, "/tmp/test.exr")
+    else
+        assert_equal(r3, "C:\\Temp\\test.exr")
     end
 end
 

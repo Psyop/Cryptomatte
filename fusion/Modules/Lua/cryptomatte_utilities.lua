@@ -422,6 +422,19 @@ function module._string_split(str, pattern)
     return parts
 end
 
+function module._get_absolute_path(path)
+    --[[
+    Returns the absolute representation of a relative path.
+
+    :param path: Relative path.
+    :type path: string
+
+    :rtype: string
+    ]]
+    local abs_path = self.Comp:MapPath(path)
+    return abs_path:gsub("([\\])", "/")
+end
+
 function module._solve_channel_name(name)
     --[[
     Returns the internal representation of a channel.
@@ -606,6 +619,7 @@ function module.get_cryptomatte_metadata(metadata)
     local id_to_index = {}
     local index_to_id = {}
 
+    -- cryptomatte metadata
     for k, v in pairs(metadata) do
         if module._string_starts_with(k, METADATA_PREFIX) then
             -- get layer ID and cryptomatte metadata key
@@ -629,10 +643,15 @@ function module.get_cryptomatte_metadata(metadata)
                 id_to_index[layer_id] = index
                 index_to_id[index] = layer_id
             end
-
-        elseif k == METADATA_KEY_FILENAME then
-            exr_path = v:gsub("([\\])", "/")
         end
+    end
+
+    -- exr path metadata
+    local filename = metadata[METADATA_KEY_FILENAME]
+    if filename ~= nil then
+        exr_path = module._get_absolute_path(filename)
+    else
+        module.log_error("metadata key 'Filename' empty/not set")
     end
 
     local crypto_metadata = {}
