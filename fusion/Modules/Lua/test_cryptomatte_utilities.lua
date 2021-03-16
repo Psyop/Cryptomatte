@@ -182,7 +182,7 @@ function cryptomatte_test__get_absolute_path()
     -- windows absolute path with double backward path sep
     local r2 = cryptoutils._get_absolute_path("C:\\Temp\\test.exr")
 
-    -- windows absolute path with double backward path sep
+    -- path relative to path map system keyword
     local r3 = cryptoutils._get_absolute_path("Temp:/test.exr")
 
     -- reset mock
