@@ -267,9 +267,9 @@ function Process(req)
 
     -- read current settings
     local current_layer_count = SliderCryptoLayer:GetAttr("INP_MaxAllowed")
-    local current_layer_index = SliderCryptoLayer:GetSource(0).Value
-    local current_layer_name = TextCryptoLayer:GetSource(0).Value
-    local current_matte_names_str = TextMatteList:GetSource(0).Value
+    local current_layer_index = SliderCryptoLayer:GetSource(req.Time).Value
+    local current_layer_name = TextCryptoLayer:GetSource(req.Time).Value
+    local current_matte_names_str = TextMatteList:GetSource(req.Time).Value
 
     -- get input image
     local input_image = InImage:GetValue(req)
@@ -297,12 +297,12 @@ function Process(req)
 
     if layer_index ~= current_layer_index then
         cryptoutils.log_info(string.format("setting layer index: %s", layer_index))
-        SliderCryptoLayer:SetSource(Number(layer_index), 0, 0)
+        SliderCryptoLayer:SetSource(Number(layer_index), req.Time, 0)
     end
 
     if layer_name ~= current_layer_name then
         cryptoutils.log_info(string.format("setting layer name: %s", layer_name))
-        TextCryptoLayer:SetSource(Text(layer_name), 0, 0)
+        TextCryptoLayer:SetSource(Text(layer_name), req.Time, 0)
     end
 
     -- read raw manifest from file
@@ -327,13 +327,13 @@ function Process(req)
     local matte_name_str = current_matte_names_str
 
     -- apply callbacks
-    local callback_add = CheckboxAdd:GetSource(0).Value
-    local callback_remove = CheckboxRemove:GetSource(0).Value
-    local callback_toggle = CheckboxToggle:GetSource(0).Value
+    local callback_add = CheckboxAdd:GetSource(req.Time).Value
+    local callback_remove = CheckboxRemove:GetSource(req.Time).Value
+    local callback_toggle = CheckboxToggle:GetSource(req.Time).Value
 
     if callback_add == 1 or callback_remove == 1 or callback_toggle == 1 then
         cryptoutils.log_info("processing callbacks ...")
-        local screen_pos = LocatorMatte:GetSource(0)
+        local screen_pos = LocatorMatte:GetSource(req.Time)
         local matte_name = module.get_screen_matte_name(input_image, layer_images, screen_pos, manifest)
         local update = false
 
@@ -345,7 +345,7 @@ function Process(req)
                     update = true
                 end
             end
-            CheckboxAdd:SetSource(Number(0), 0, 0)
+            CheckboxAdd:SetSource(Number(0), req.Time, 0)
         end
         if callback_remove == 1 then
             if matte_name ~= nil then
@@ -355,7 +355,7 @@ function Process(req)
                     update = true
                 end
             end
-            CheckboxRemove:SetSource(Number(0), 0, 0)
+            CheckboxRemove:SetSource(Number(0), req.Time, 0)
         end
         if callback_toggle == 1 then
             if matte_name ~= nil then
@@ -369,7 +369,7 @@ function Process(req)
                     update = true
                 end
             end
-            CheckboxToggle:SetSource(Number(0), 0, 0)
+            CheckboxToggle:SetSource(Number(0), req.Time, 0)
         end
 
         if update then
@@ -380,7 +380,7 @@ function Process(req)
                 end
             end
             matte_name_str = table.concat(name_array, ", ")
-            TextMatteList:SetSource(Text(matte_name_str), 0, 0)
+            TextMatteList:SetSource(Text(matte_name_str), req.Time, 0)
         end
     end
 
@@ -388,11 +388,11 @@ function Process(req)
     local checker_locator_visible = LocatorName:GetAttr("PC_Visible")
     if checker_locator_visible then
         cryptoutils.log_info("updating name checker ...")
-        local checker_screen_pos = LocatorName:GetSource(0)
+        local checker_screen_pos = LocatorName:GetSource(req.Time)
         local checker_matte_name = module.get_screen_matte_name(input_image, layer_images, checker_screen_pos, manifest)
-        local current_matte_name = TextMatteName:GetSource(0).Value
+        local current_matte_name = TextMatteName:GetSource(req.Time).Value
         if checker_matte_name ~= current_matte_name then
-            TextMatteName:SetSource(Text(checker_matte_name), 0, 0)
+            TextMatteName:SetSource(Text(checker_matte_name), req.Time, 0)
         end
     end
 
@@ -401,15 +401,15 @@ function Process(req)
     local matte_image = cryptoutils.create_matte_image(input_image, layer_images, manifest, matte_names)
 
     -- set output image
-    local matte_only = CheckboxMatteOnly:GetSource(0).Value
+    local matte_only = CheckboxMatteOnly:GetSource(req.Time).Value
     if matte_only == 1 then
         OutImage:Set(req, matte_image)
     else
         -- get view mode
-        local view_mode_enabled = CheckboxViewMode:GetSource(0).Value
+        local view_mode_enabled = CheckboxViewMode:GetSource(req.Time).Value
         local view_mode = VIEW_MODE_NONE
         if view_mode_enabled == 1 then
-            local view_mode_index = ComboViewMode:GetSource(0).Value
+            local view_mode_index = ComboViewMode:GetSource(req.Time).Value
             view_mode = VIEW_MODES[view_mode_index + 1]
         end
 
@@ -446,22 +446,22 @@ function NotifyChanged(inp, param, time)
     :type param: Parameter
 
     :param time: Current frame number.
-    :type time: float
+    :type time: number
     ]]
     -- trigger callbacks
     if param and param.Value == 1 then
         if inp == ButtonAdd then
-            CheckboxAdd:SetSource(Number(1), 0, 0)
+            CheckboxAdd:SetSource(Number(1), time, 0)
         elseif inp == ButtonRemove then
-            CheckboxRemove:SetSource(Number(1), 0, 0)
+            CheckboxRemove:SetSource(Number(1), time, 0)
         elseif inp == ButtonToggle then
-            CheckboxToggle:SetSource(Number(1), 0, 0)
+            CheckboxToggle:SetSource(Number(1), time, 0)
         elseif inp == ButtonClear then
-            TextMatteList:SetSource(Text(""), 0, 0)
+            TextMatteList:SetSource(Text(""), time, 0)
         elseif inp == ButtonShow then
             LocatorName:SetAttrs({PC_Visible = true})
         elseif inp == ButtonHide then
-            TextMatteName:SetSource(Text(""), 0, 0)
+            TextMatteName:SetSource(Text(""), time, 0)
             LocatorName:SetAttrs({PC_Visible = false})
         end
     end
