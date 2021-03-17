@@ -62,6 +62,27 @@ local int_flt = ffi.new("union int_flt")
 -- ============================================================================
 -- fusion centric functions (EXRIO/scanline)
 -- ============================================================================
+function get_scale_factor()
+    --[[
+    Returns the scale factor to resize all images with.
+
+    Two scale factors are possible, Proxy Scale and Auto Proxy Scale.
+    The latter is only taken into account if Auto Proxy is enabled.
+
+    :rtype: number
+    ]]
+    local prefs = self.Comp:GetPrefs()
+    local proxy_prefs = prefs["Comp"]["Interactive"]["Proxy"]
+    local proxy_scale = proxy_prefs["Scale"]
+    local auto_proxy_enabled = proxy_prefs["Auto"]
+    local auto_proxy_scale = proxy_prefs["AutoScale"]
+    local scale = proxy_scale
+    if auto_proxy_enabled then
+        scale = auto_proxy_scale
+    end
+    return scale
+end
+
 function get_layer_images(input_image, layer_name, channel_hierarchy, exr, partnum)
     --[[
     Returns the images for all indices of layer.
@@ -96,6 +117,9 @@ function get_layer_images(input_image, layer_name, channel_hierarchy, exr, partn
     -- get pixel aspect ratio
     local pixel_aspect_ratio = exr:PixelAspectRatio(partnum)
 
+    -- get scale factor to apply
+    local scale = get_scale_factor()
+
     -- select EXR part to load
     exr:Part(partnum)
 
@@ -117,7 +141,7 @@ function get_layer_images(input_image, layer_name, channel_hierarchy, exr, partn
 
         -- handle proxy scaling
         local result = image
-        if input_image.ProxyScale ~= 1 then
+        if scale ~= 1 then
             local resized_image = Image({IMG_Like = image,
                                          IMG_Width = input_image.Width,
                                          IMG_Height = input_image.Height})
