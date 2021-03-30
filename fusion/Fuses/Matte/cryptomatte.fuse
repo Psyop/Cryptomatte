@@ -457,8 +457,8 @@ function NotifyChanged(inp, param, time)
             VIEW_MODE_LAST_STATE = param.Value
         elseif inp == CheckboxMatteOnly then
             if param.Value == 0 then
-                CheckboxViewMode:SetSource(Number(VIEW_MODE_LAST_STATE), time, 0)
                 CheckboxViewMode:SetAttrs({INP_Disabled = false})
+                CheckboxViewMode:SetSource(Number(VIEW_MODE_LAST_STATE), time, 0)
                 ComboViewMode:SetAttrs({INP_Disabled = false})
             elseif param.Value == 1 then
                 CheckboxViewMode:SetSource(Number(0), time, 0)
