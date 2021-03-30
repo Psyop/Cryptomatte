@@ -120,20 +120,17 @@ function Create()
         LINKID_DataType = "Number",
         INPID_InputControl = "CheckboxControl",
         INP_Integer = true,
-        INP_Default = 0.0,
-        ICD_Width = 0.5
+        INP_Default = 0.0
     })
 
-    ComboViewMode = self:AddInput("", "ViewMode", {
+    ComboViewMode = self:AddInput("Mode:", "ViewMode", {
         LINKID_DataType = "Number",
         INPID_InputControl = "ComboControl",
         INP_Default = 0.0,
         INP_Integer = true,
-        ICD_Width = 0.5,
         { CCS_AddString = VIEW_MODES[1] },
         { CCS_AddString = VIEW_MODES[2] },
-        { CCS_AddString = VIEW_MODES[3] },
-        CC_LabelPosition = "Vertical"
+        { CCS_AddString = VIEW_MODES[3] }
     })
 
     CheckboxMatteOnly = self:AddInput("Matte Only", "MatteOnly", {
@@ -141,7 +138,6 @@ function Create()
         INPID_InputControl = "CheckboxControl",
         INP_Integer = true,
         INP_Default = 0.0,
-        ICD_Width = 1 / 3,
         INP_DoNotifyChanged = true
     })
 
@@ -161,11 +157,9 @@ function Create()
         LINKS_Name = "Clear",
         LINKID_DataType = "Number",
         INPID_InputControl = "ButtonControl",
-        INP_Integer = false,
-        ICD_Width = 0.5,
+        INP_Integer = true,
         INP_DoNotifyChanged = true
     })
-
 
     create_separator()
 
@@ -180,7 +174,7 @@ function Create()
     })
 
     TextCryptoLayer = self:AddInput("Crypto Layer", "CryptoLayer", {
-        LINKS_Name = "",
+        LINKS_Name = "Layer Name",
         LINKID_DataType = "Text",
         INPID_InputControl = "TextEditControl",
         TEC_Lines = 1,
