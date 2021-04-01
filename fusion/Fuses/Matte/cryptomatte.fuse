@@ -25,10 +25,10 @@ FUSE_VERSION = 128
 SEPARATOR_INDEX = 1
 VIEW_MODE_EDGES = "Edges"
 VIEW_MODE_COLORS = "Colors"
-VIEW_MODE_NONE = "None"
-VIEW_MODES = {VIEW_MODE_EDGES, VIEW_MODE_COLORS, VIEW_MODE_NONE}
+VIEW_MODE_BEAUTY = "Beauty"
+VIEW_MODE_MATTE = "Matte"
+VIEW_MODES = {VIEW_MODE_COLORS, VIEW_MODE_EDGES, VIEW_MODE_BEAUTY, VIEW_MODE_MATTE}
 SHOW_CALLBACKS = false
-VIEW_MODE_LAST_STATE = 0
 
 
 -- ============================================================================
@@ -116,14 +116,6 @@ function Create()
     create_separator()
 
     -- preview
-    CheckboxViewMode = self:AddInput("Keyable Surface", "KeyableSurface", {
-        LINKID_DataType = "Number",
-        INPID_InputControl = "CheckboxControl",
-        INP_Integer = true,
-        INP_Default = 0.0,
-        INP_DoNotifyChanged = true
-    })
-
     ComboViewMode = self:AddInput("View Mode", "ViewMode", {
         LINKID_DataType = "Number",
         INPID_InputControl = "ComboControl",
@@ -131,15 +123,8 @@ function Create()
         INP_Integer = true,
         { CCS_AddString = VIEW_MODES[1] },
         { CCS_AddString = VIEW_MODES[2] },
-        { CCS_AddString = VIEW_MODES[3] }
-    })
-
-    CheckboxMatteOnly = self:AddInput("Matte Only", "MatteOnly", {
-        LINKID_DataType = "Number",
-        INPID_InputControl = "CheckboxControl",
-        INP_Integer = true,
-        INP_Default = 0.0,
-        INP_DoNotifyChanged = true
+        { CCS_AddString = VIEW_MODES[3] },
+        { CCS_AddString = VIEW_MODES[4] }
     })
 
     create_separator()
@@ -394,35 +379,34 @@ function Process(req)
     cryptoutils.log_info("creating matte image ...")
     local matte_image = cryptoutils.create_matte_image(input_image, layer_images, manifest, matte_names)
 
-    -- set output image
-    local matte_only = CheckboxMatteOnly:GetSource(req.Time).Value
-    if matte_only == 1 then
-        OutImage:Set(req, matte_image)
-    else
-        -- get view mode
-        local view_mode_enabled = CheckboxViewMode:GetSource(req.Time).Value
-        local view_mode = VIEW_MODE_NONE
-        if view_mode_enabled == 1 then
-            local view_mode_index = ComboViewMode:GetSource(req.Time).Value
-            view_mode = VIEW_MODES[view_mode_index + 1]
-        end
+    -- get view mode
+    local view_mode_index = ComboViewMode:GetSource(req.Time).Value
+    local view_mode = VIEW_MODES[view_mode_index + 1]
+    if view_mode == nil then
+        cryptoutils.log_error(string.format("unknown view mode: %s", view_mode))
+    end
 
-        -- create preview image
-        cryptoutils.log_info(string.format("creating '%s' preview image ...", view_mode))
-        local preview_image
+    -- create preview image
+    cryptoutils.log_info(string.format("creating '%s' preview image ...", view_mode))
+    local output_image
+
+    if view_mode == VIEW_MODE_MATTE then
+        output_image = matte_image
+    else
         if view_mode == VIEW_MODE_EDGES then
-            preview_image = cryptoutils.create_preview_image_edges(input_image, layer_images)
+            output_image = cryptoutils.create_preview_image_edges(input_image, layer_images)
         elseif view_mode == VIEW_MODE_COLORS then
-            preview_image = cryptoutils.create_preview_image_colors(input_image, layer_images)
-        elseif view_mode == VIEW_MODE_NONE then
-            preview_image = input_image:CopyOf()
+            output_image = cryptoutils.create_preview_image_colors(input_image, layer_images)
+        elseif view_mode == VIEW_MODE_BEAUTY then
+            output_image = input_image:CopyOf()
         end
 
         -- apply matte image
-        preview_image = preview_image:ChannelOpOf("Add", matte_image, { R = "fg.A", G = "fg.A"})
-        preview_image = preview_image:ChannelOpOf("Copy", matte_image, { A = "fg.A"})
-        OutImage:Set(req, preview_image)
+        output_image = output_image:ChannelOpOf("Add", matte_image, { R = "fg.A", G = "fg.A"})
+        output_image = output_image:ChannelOpOf("Copy", matte_image, { A = "fg.A"})
     end
+
+    OutImage:Set(req, output_image)
 
     local t_end = os.clock() - t_start
     cryptoutils.log_info(string.format("elapsed time: %.3f", t_end))
@@ -443,38 +427,20 @@ function NotifyChanged(inp, param, time)
     :type time: number
     ]]
     -- trigger callbacks
-    if param then
-        -- checkboxes
-        if inp == CheckboxViewMode then
-            VIEW_MODE_LAST_STATE = param.Value
-        elseif inp == CheckboxMatteOnly then
-            if param.Value == 0 then
-                CheckboxViewMode:SetAttrs({INP_Disabled = false})
-                CheckboxViewMode:SetSource(Number(VIEW_MODE_LAST_STATE), time, 0)
-                ComboViewMode:SetAttrs({INP_Disabled = false})
-            elseif param.Value == 1 then
-                CheckboxViewMode:SetSource(Number(0), time, 0)
-                CheckboxViewMode:SetAttrs({INP_Disabled = true})
-                ComboViewMode:SetAttrs({INP_Disabled = true})
-            end
-        end
-
-        -- buttons
-        if param.Value == 1 then
-            if inp == ButtonAdd then
-                CheckboxAdd:SetSource(Number(1), time, 0)
-            elseif inp == ButtonRemove then
-                CheckboxRemove:SetSource(Number(1), time, 0)
-            elseif inp == ButtonToggle then
-                CheckboxToggle:SetSource(Number(1), time, 0)
-            elseif inp == ButtonClear then
-                TextMatteList:SetSource(Text(""), time, 0)
-            elseif inp == ButtonShow then
-                LocatorName:SetAttrs({PC_Visible = true})
-            elseif inp == ButtonHide then
-                TextMatteName:SetSource(Text(""), time, 0)
-                LocatorName:SetAttrs({PC_Visible = false})
-            end
+    if param and param.Value == 1 then
+        if inp == ButtonAdd then
+            CheckboxAdd:SetSource(Number(1), time, 0)
+        elseif inp == ButtonRemove then
+            CheckboxRemove:SetSource(Number(1), time, 0)
+        elseif inp == ButtonToggle then
+            CheckboxToggle:SetSource(Number(1), time, 0)
+        elseif inp == ButtonClear then
+            TextMatteList:SetSource(Text(""), time, 0)
+        elseif inp == ButtonShow then
+            LocatorName:SetAttrs({PC_Visible = true})
+        elseif inp == ButtonHide then
+            TextMatteName:SetSource(Text(""), time, 0)
+            LocatorName:SetAttrs({PC_Visible = false})
         end
     end
 end
