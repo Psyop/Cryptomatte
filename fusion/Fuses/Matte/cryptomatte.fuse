@@ -83,11 +83,10 @@ function Create()
     })
 
     -- locator
-    LocatorMatte = self:AddInput("Locator", "Locator", {
+    LocatorMatte = self:AddInput("Matte Locator", "Locator", {
         LINKID_DataType = "Point",
         INPID_InputControl = "OffsetControl",
-        INPID_PreviewControl = "CrosshairControl",
-        ICS_Name = "Matte Locator"
+        INPID_PreviewControl = "CrosshairControl"
     })
 
     ButtonAdd = self:AddInput("Add", "Add", {
@@ -122,20 +121,17 @@ function Create()
         INPID_InputControl = "CheckboxControl",
         INP_Integer = true,
         INP_Default = 0.0,
-        ICD_Width = 0.5,
         INP_DoNotifyChanged = true
     })
 
-    ComboViewMode = self:AddInput("", "ViewMode", {
+    ComboViewMode = self:AddInput("View Mode", "ViewMode", {
         LINKID_DataType = "Number",
         INPID_InputControl = "ComboControl",
         INP_Default = 0.0,
         INP_Integer = true,
-        ICD_Width = 0.5,
         { CCS_AddString = VIEW_MODES[1] },
         { CCS_AddString = VIEW_MODES[2] },
-        { CCS_AddString = VIEW_MODES[3] },
-        CC_LabelPosition = "Vertical"
+        { CCS_AddString = VIEW_MODES[3] }
     })
 
     CheckboxMatteOnly = self:AddInput("Matte Only", "MatteOnly", {
@@ -143,7 +139,6 @@ function Create()
         INPID_InputControl = "CheckboxControl",
         INP_Integer = true,
         INP_Default = 0.0,
-        ICD_Width = 1 / 3,
         INP_DoNotifyChanged = true
     })
 
@@ -163,16 +158,14 @@ function Create()
         LINKS_Name = "Clear",
         LINKID_DataType = "Number",
         INPID_InputControl = "ButtonControl",
-        INP_Integer = false,
-        ICD_Width = 0.5,
+        INP_Integer = true,
         INP_DoNotifyChanged = true
     })
-
 
     create_separator()
 
     -- layer selection
-    SliderCryptoLayer = self:AddInput("Crypto Layer Selection", "CryptoLayerSlider", {
+    SliderCryptoLayer = self:AddInput("Layer Index", "LayerIndex", {
         LINKID_DataType = "Number",
         INPID_InputControl = "SliderControl",
         IC_Steps = 1,
@@ -181,8 +174,7 @@ function Create()
         INP_MaxAllowed = 100
     })
 
-    TextCryptoLayer = self:AddInput("Crypto Layer", "CryptoLayer", {
-        LINKS_Name = "",
+    TextCryptoLayer = self:AddInput("Layer Name", "LayerName", {
         LINKID_DataType = "Text",
         INPID_InputControl = "TextEditControl",
         TEC_Lines = 1,
