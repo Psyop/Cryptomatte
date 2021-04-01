@@ -86,7 +86,8 @@ function Create()
     LocatorMatte = self:AddInput("Matte Locator", "Locator", {
         LINKID_DataType = "Point",
         INPID_InputControl = "OffsetControl",
-        INPID_PreviewControl = "CrosshairControl"
+        INPID_PreviewControl = "CrosshairControl",
+        INP_External = false,
     })
 
     ButtonAdd = self:AddInput("Add", "Add", {
@@ -124,7 +125,8 @@ function Create()
         { CCS_AddString = VIEW_MODES[1] },
         { CCS_AddString = VIEW_MODES[2] },
         { CCS_AddString = VIEW_MODES[3] },
-        { CCS_AddString = VIEW_MODES[4] }
+        { CCS_AddString = VIEW_MODES[4] },
+        INP_External = true
     })
 
     create_separator()
@@ -136,7 +138,8 @@ function Create()
         INPID_InputControl = "TextEditControl",
         TEC_Lines = 1,
         TEC_Wrap = false,
-        TEC_DeferSetInputs = true
+        TEC_DeferSetInputs = true,
+        INP_External = true
     })
 
     ButtonClear = self:AddInput("Clear", "Clear", {
@@ -144,7 +147,8 @@ function Create()
         LINKID_DataType = "Number",
         INPID_InputControl = "ButtonControl",
         INP_Integer = true,
-        INP_DoNotifyChanged = true
+        INP_DoNotifyChanged = true,
+        INP_External = false
     })
 
     create_separator()
@@ -156,14 +160,16 @@ function Create()
         IC_Steps = 1,
         INP_Integer = true,
         INP_MinAllowed = 1,
-        INP_MaxAllowed = 100
+        INP_MaxAllowed = 100,
+        INP_External = true
     })
 
     TextCryptoLayer = self:AddInput("Layer Name", "LayerName", {
         LINKID_DataType = "Text",
         INPID_InputControl = "TextEditControl",
         TEC_Lines = 1,
-        TEC_ReadOnly = true
+        TEC_ReadOnly = true,
+        INP_External = false
     })
 
     -- advanced
@@ -177,7 +183,8 @@ function Create()
         INPID_PreviewControl = "CrosshairControl",
         ICS_Name = "Name Checker Locator",
         ICS_ControlPage = "Advanced",
-        PC_Visible = false
+        PC_Visible = false,
+        INP_External = false
     })
 
     ButtonShow = self:AddInput("Show", "Show", {
@@ -202,7 +209,8 @@ function Create()
         INPID_InputControl = "TextEditControl",
         TEC_Lines = 1,
         TEC_Wrap = false,
-        TEC_ReadOnly = true
+        TEC_ReadOnly = true,
+        INP_External = false
     })
 
     create_separator()
@@ -214,7 +222,8 @@ function Create()
         INPID_InputControl = "CheckboxControl",
         INP_Integer = true,
         INP_Default = 0.0,
-        IC_Visible = SHOW_CALLBACKS
+        IC_Visible = SHOW_CALLBACKS,
+        INP_External = false
     })
 
     CheckboxRemove = self:AddInput("Remove Callback", "RemoveCallback", {
@@ -222,7 +231,8 @@ function Create()
         INPID_InputControl = "CheckboxControl",
         INP_Integer = true,
         INP_Default = 0.0,
-        IC_Visible = SHOW_CALLBACKS
+        IC_Visible = SHOW_CALLBACKS,
+        INP_External = false
     })
 
     CheckboxToggle = self:AddInput("Toggle Callback", "ToggleCallback", {
@@ -230,7 +240,8 @@ function Create()
         INPID_InputControl = "CheckboxControl",
         INP_Integer = true,
         INP_Default = 0.0,
-        IC_Visible = SHOW_CALLBACKS
+        IC_Visible = SHOW_CALLBACKS,
+        INP_External = false
     })
 end
 
