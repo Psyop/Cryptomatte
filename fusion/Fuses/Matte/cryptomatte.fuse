@@ -265,6 +265,9 @@ function Process(req)
     -- get input image
     local input_image = InImage:GetValue(req)
 
+    -- validate input image depth
+    module.validate_image_depth(input_image)
+
     -- read metadata
     cryptoutils.log_info("reading metadata ...")
     local metadata = cryptoutils.get_cryptomatte_metadata(input_image.Metadata)

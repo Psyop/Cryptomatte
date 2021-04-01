@@ -977,4 +977,18 @@ function module.get_screen_matte_name(input_image, layer_images, screen_pos, man
     return nil
 end
 
+function module.validate_image_depth(image)
+    --[[
+    Validates the depth of provided image.
+
+    Log a warning if the given image is not 32bit RGBA EXR.
+
+    :param image: Image to validate.
+    :type image: Image
+    ]]
+    if image.Depth ~= 8 then
+        module.log_warning("input image is not 32bit RGBA EXR")
+    end
+end
+
 return module
