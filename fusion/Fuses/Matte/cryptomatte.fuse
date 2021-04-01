@@ -22,7 +22,7 @@ FUSE_HELP = "https://www.steakunderwater.com/wesuckless/viewtopic.php?f=6&t=1027
 FUSE_URL = "https://github.com/Psyop/Cryptomatte"
 FUSE_VERSION = 128
 
-SEPARATOR_INDEX = 1
+SEPARATOR_INDEX = 0
 VIEW_MODE_EDGES = "Edges"
 VIEW_MODE_COLORS = "Colors"
 VIEW_MODE_BEAUTY = "Beauty"
@@ -41,7 +41,8 @@ function create_separator()
     :rtype: Input
     ]]
     SEPARATOR_INDEX = SEPARATOR_INDEX + 1
-    return self:AddInput("Separator" , string.format("Separator%s", SEPARATOR_INDEX) , {
+    local name = string.format("Separator%s", SEPARATOR_INDEX)
+    return self:AddInput(name, name, {
         INPID_InputControl = "SeparatorControl",
         IC_Visible = true,
         INP_External = false,
@@ -213,10 +214,10 @@ function Create()
         INP_External = false
     })
 
-    create_separator()
+    separator = create_separator()
 
     -- callbacks
-    SeparatorCallbacks:SetAttrs({IC_Visible = SHOW_CALLBACKS})
+    separator:SetAttrs({IC_Visible = SHOW_CALLBACKS})
     CheckboxAdd = self:AddInput("Add Callback", "AddCallback", {
         LINKID_DataType = "Number",
         INPID_InputControl = "CheckboxControl",
