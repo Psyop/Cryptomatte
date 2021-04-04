@@ -633,17 +633,23 @@ function module.get_cryptomatte_metadata(metadata)
 
     :rtype: table
     ]]
+    -- exr path metadata
     local exr_path = nil
-    local layer_data_by_id = {}
+    local filename = metadata[METADATA_KEY_FILENAME]
+    if filename ~= nil then
+        exr_path = module._get_absolute_path(filename)
+    else
+        module.log_error("metadata key 'Filename' empty/not set")
+    end
 
+    -- cryptomatte metadata
+    local layer_data_by_id = {}
+    local layer_names = {}
     local id_to_name = {}
     local name_to_id = {}
-
-    local index = 0
     local id_to_index = {}
     local index_to_id = {}
 
-    -- cryptomatte metadata
     for k, v in pairs(metadata) do
         if module._string_starts_with(k, METADATA_PREFIX) then
             -- get layer ID and cryptomatte metadata key
@@ -658,29 +664,27 @@ function module.get_cryptomatte_metadata(metadata)
             -- store cryptomatte layer metadata
             layer_data[partial_key] = v
 
-            -- store mapping tables for easy lookups
+            -- store layer name/id mapping for fast lookup
             if partial_key == METADATA_KEY_NAME then
-                id_to_name[layer_id] = v
+                table.insert(layer_names, v)
                 name_to_id[v] = layer_id
-
-                index = index + 1
-                id_to_index[layer_id] = tostring(index)
-                index_to_id[tostring(index)] = layer_id
+                id_to_name[layer_id] = v
             end
         end
     end
 
-    -- exr path metadata
-    local filename = metadata[METADATA_KEY_FILENAME]
-    if filename ~= nil then
-        exr_path = module._get_absolute_path(filename)
-    else
-        module.log_error("metadata key 'Filename' empty/not set")
+    -- store layer index/id mapping for fast lookup
+    table.sort(layer_names)
+    for i, layer_name in ipairs(layer_names) do
+        local layer_id = name_to_id[layer_name]
+        local layer_index = tostring(i)
+        index_to_id[layer_index] = layer_id
+        id_to_index[layer_id] = layer_index
     end
 
     local crypto_metadata = {}
     crypto_metadata["path"] = exr_path
-    crypto_metadata["layer_count"] = index
+    crypto_metadata["layer_count"] = #layer_names
     crypto_metadata["id_to_name"] = id_to_name
     crypto_metadata["name_to_id"] = name_to_id
     crypto_metadata["index_to_id"] = index_to_id
