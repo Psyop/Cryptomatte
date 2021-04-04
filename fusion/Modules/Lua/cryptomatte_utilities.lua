@@ -802,11 +802,17 @@ function module.get_layer_images(input_image, exr_path, layer_name, partnum)
     local exr = EXRIO()
     exr:ReadOpen(exr_path, -1)
 
+    if exr.NumParts > 0 then
+        exr:Close()
+        module.log_error("multipart EXR not supported")
+    end
+
     local layer_images = {}
     if exr:ReadHeader() then
         local channels = exr:GetChannels(partnum)
         local channel_hierarchy = module._get_channel_hierarchy(layer_name, channels)
         if channel_hierarchy == {} or channel_hierarchy[layer_name] == nil then
+            exr:Close()
             module.log_error(string.format("failed to read layer/index/channel information for layer: '%s'", layer_name))
         end
         layer_images = get_layer_images(input_image, layer_name, channel_hierarchy, exr, partnum)
