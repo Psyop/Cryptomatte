@@ -513,7 +513,7 @@ function module._get_channel_hierarchy(layer_name, channels)
 
                 -- skip error for matching layer without index (beauty layer)
                 if layer_index and not internal_channel_name then
-                    module.log_error(string.format("failed to get internal name for channel: %s", full_channel_name))
+                    module.log_error(string.format("failed to get internal name for channel: '%s'", full_channel_name))
                 end
             end
 
@@ -689,6 +689,11 @@ function module.get_cryptomatte_metadata(metadata)
         end
     end
 
+    -- validate layers were found
+    if #layer_names == 0 then
+        module.log_error("no cryptomatte metadata found")
+    end
+
     -- store layer index/id mapping for fast lookup
     table.sort(layer_names)
     for i, layer_name in ipairs(layer_names) do
@@ -769,7 +774,7 @@ function module.get_matte_names(matte_str)
             name = string.sub(matte, 2, matte:len() - 1)
             name_set[name] = true
         else
-            module.log_warning(string.format("invalid syntax for matte: %s", matte))
+            module.log_warning(string.format("invalid syntax for matte: '%s'", matte))
         end
     end
     return name_set
@@ -802,7 +807,7 @@ function module.get_layer_images(input_image, exr_path, layer_name, partnum)
         local channels = exr:GetChannels(partnum)
         local channel_hierarchy = module._get_channel_hierarchy(layer_name, channels)
         if channel_hierarchy == {} or channel_hierarchy[layer_name] == nil then
-            module.log_error(string.format("failed to read layer/index/channel information for layer: %s", layer_name))
+            module.log_error(string.format("failed to read layer/index/channel information for layer: '%s'", layer_name))
         end
         layer_images = get_layer_images(input_image, layer_name, channel_hierarchy, exr, partnum)
     end

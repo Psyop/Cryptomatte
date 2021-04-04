@@ -277,7 +277,7 @@ function Process(req)
     local layer_index = current_layer_index
     local layer_id = metadata["index_to_id"][tostring(current_layer_index)]
     if layer_id == nil then
-        cryptoutils.log_error(string.format("layer %s (index %s) not present in metadata", current_layer_name, current_layer_index))
+        cryptoutils.log_error(string.format("layer '%s' (index %s) not present in metadata", current_layer_name, current_layer_index))
     end
     local layer_name = metadata["id_to_name"][layer_id]
 
@@ -290,7 +290,7 @@ function Process(req)
     end
 
     if layer_name ~= current_layer_name then
-        cryptoutils.log_info(string.format("setting layer name: %s", layer_name))
+        cryptoutils.log_info(string.format("setting layer name: '%s'", layer_name))
         TextCryptoLayer:SetSource(Text(layer_name), req.Time, 0)
     end
 
@@ -298,7 +298,7 @@ function Process(req)
     local manifest_file = metadata["layers"][layer_id]["manif_file"]
     local raw_manifest = metadata["layers"][layer_id]["manifest"]
     if manifest_file ~= nil then
-        cryptoutils.log_info(string.format("reading manifest file: %s", manifest_file))
+        cryptoutils.log_info(string.format("reading manifest file: '%s'", manifest_file))
         raw_manifest = cryptoutils.read_manifest_file(metadata["path"], manifest_file)
     end
 
@@ -329,7 +329,7 @@ function Process(req)
         if callback_add == 1 then
             if matte_name ~= nil then
                 if matte_names[matte_name] == nil then
-                    cryptoutils.log_info(string.format("adding matte: %s", matte_name))
+                    cryptoutils.log_info(string.format("adding matte: '%s'", matte_name))
                     matte_names[matte_name] = true
                     update = true
                 end
@@ -339,7 +339,7 @@ function Process(req)
         if callback_remove == 1 then
             if matte_name ~= nil then
                 if matte_names[matte_name] then
-                    cryptoutils.log_info(string.format("removing matte: %s", matte_name))
+                    cryptoutils.log_info(string.format("removing matte: '%s'", matte_name))
                     matte_names[matte_name] = nil
                     update = true
                 end
@@ -349,11 +349,11 @@ function Process(req)
         if callback_toggle == 1 then
             if matte_name ~= nil then
                 if matte_names[matte_name] then
-                    cryptoutils.log_info(string.format("removing matte: %s", matte_name))
+                    cryptoutils.log_info(string.format("removing matte: '%s'", matte_name))
                     matte_names[matte_name] = nil
                     update = true
                 else
-                    cryptoutils.log_info(string.format("adding matte: %s", matte_name))
+                    cryptoutils.log_info(string.format("adding matte: '%s'", matte_name))
                     matte_names[matte_name] = true
                     update = true
                 end
@@ -393,7 +393,7 @@ function Process(req)
     local view_mode_index = ComboViewMode:GetSource(req.Time).Value
     local view_mode = VIEW_MODES[view_mode_index + 1]
     if view_mode == nil then
-        cryptoutils.log_error(string.format("unknown view mode: %s", view_mode))
+        cryptoutils.log_error(string.format("unknown view mode: '%s'", view_mode))
     end
 
     -- create preview image
