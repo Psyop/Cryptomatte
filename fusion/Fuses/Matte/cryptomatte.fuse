@@ -271,14 +271,14 @@ function Process(req)
     -- read metadata
     cryptoutils.log_info("reading metadata ...")
     local metadata = cryptoutils.get_cryptomatte_metadata(input_image.Metadata)
-
-    -- detect GUI changes
     local layer_count = metadata["layer_count"]
+
+    -- read/check layer data from current index
     local layer_index = current_layer_index
-    if layer_index > layer_count then
-        layer_index = 1
-    end
     local layer_id = metadata["index_to_id"][tostring(current_layer_index)]
+    if layer_id == nil then
+        cryptoutils.log_error(string.format("layer %s (index %s) not present in metadata", current_layer_name, current_layer_index))
+    end
     local layer_name = metadata["id_to_name"][layer_id]
 
     -- apply GUI updates
@@ -287,11 +287,6 @@ function Process(req)
                                     INP_MaxAllowed = layer_count,
                                     INP_MinScale = 1,
                                     INP_MaxScale = layer_count})
-    end
-
-    if layer_index ~= current_layer_index then
-        cryptoutils.log_info(string.format("setting layer index: %s", layer_index))
-        SliderCryptoLayer:SetSource(Number(layer_index), req.Time, 0)
     end
 
     if layer_name ~= current_layer_name then
