@@ -380,6 +380,13 @@ function Process(req)
         local checker_screen_pos = LocatorName:GetSource(req.Time)
         local checker_matte_name = module.get_screen_matte_name(input_image, layer_images, checker_screen_pos, manifest)
         local current_matte_name = TextMatteName:GetSource(req.Time).Value
+
+        if checker_matte_name == nil then
+            checker_matte_name = ""
+        else
+            checker_matte_name = "\"" .. checker_matte_name .. "\""
+        end
+
         if checker_matte_name ~= current_matte_name then
             TextMatteName:SetSource(Text(checker_matte_name), req.Time, 0)
         end
