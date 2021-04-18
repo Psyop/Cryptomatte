@@ -1,3 +1,17 @@
+### 1.4.0
+
+Fusion:
+
+* Fixed memory issue ([#46](https://github.com/Psyop/Cryptomatte/issues/46), [#117](https://github.com/Psyop/Cryptomatte/issues/117))
+* Fixed hex to float decoding bug for Cycles ([#120](https://github.com/Psyop/Cryptomatte/issues/120))
+* Improved performance ([cedricduriau#11](https://github.com/cedricduriau/Cryptomatte/pull/11))
+* Implemented multi-level logging ([cedricduriau#11](https://github.com/cedricduriau/Cryptomatte/pull/11))
+* Improved error management & logging ([#100](https://github.com/Psyop/Cryptomatte/issues/100), [#101](https://github.com/Psyop/Cryptomatte/issues/101), [#116](https://github.com/Psyop/Cryptomatte/issues/116))
+* Simplified GUI ([#136](https://github.com/Psyop/Cryptomatte/issues/136), [cedricduriau#29](https://github.com/cedricduriau/Cryptomatte/issues/29), [cedricduriau#33](https://github.com/cedricduriau/Cryptomatte/issues/33))
+* Added test suite ([cedricduriau#12](https://github.com/cedricduriau/Cryptomatte/issues/12))
+* Allow animatable controls ([cedricduriau#25](https://github.com/cedricduriau/Cryptomatte/issues/25), [cedricduriau#35](https://github.com/cedricduriau/Cryptomatte/issues/35))
+
+
 ### 1.3.0
 
 Nuke:
