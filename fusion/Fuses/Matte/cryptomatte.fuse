@@ -89,6 +89,7 @@ function Create()
         INPID_InputControl = "OffsetControl",
         INPID_PreviewControl = "CrosshairControl",
         INP_External = false,
+        INP_Passive = true
     })
 
     ButtonAdd = self:AddInput("Add", "Add", {
