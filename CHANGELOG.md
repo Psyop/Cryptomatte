@@ -1,28 +1,30 @@
-### 1.4.0-beta4:
+### 1.4.0:
 
-* Updated for Python 3
-* Increased version of beta to 1.4.0-beta4 (to leave 1.3.0 for Python 3 update)
-* Brought in fixes from 1.2.8
+Nuke: 
+
+* Official release of wildcards (Thanks @vtello, @maxnbk, and others!) See documentation. 
 * Fixed unload manifest with special characters in names
-* Fixed #138- load metadata for this view only
 
-### 1.3.0:
+Fusion:
+
+* Fixed memory issue ([#46](https://github.com/Psyop/Cryptomatte/issues/46), [#117](https://github.com/Psyop/Cryptomatte/issues/117))
+* Fixed hex to float decoding bug for Cycles ([#120](https://github.com/Psyop/Cryptomatte/issues/120))
+* Improved performance ([cedricduriau#11](https://github.com/cedricduriau/Cryptomatte/pull/11))
+* Implemented multi-level logging ([cedricduriau#11](https://github.com/cedricduriau/Cryptomatte/pull/11))
+* Improved error management & logging ([#100](https://github.com/Psyop/Cryptomatte/issues/100), [#101](https://github.com/Psyop/Cryptomatte/issues/101), [#116](https://github.com/Psyop/Cryptomatte/issues/116))
+* Simplified GUI ([#136](https://github.com/Psyop/Cryptomatte/issues/136), [cedricduriau#29](https://github.com/cedricduriau/Cryptomatte/issues/29), [cedricduriau#33](https://github.com/cedricduriau/Cryptomatte/issues/33))
+* Added test suite ([cedricduriau#12](https://github.com/cedricduriau/Cryptomatte/issues/12))
+* Allow animatable controls ([cedricduriau#25](https://github.com/cedricduriau/Cryptomatte/issues/25), [cedricduriau#35](https://github.com/cedricduriau/Cryptomatte/issues/35))
+
+### 1.3.0
+
+Nuke:
 
 * Updated to support both Python 3 and Python 2.7 with the same code (#134, thanks @PumpingPixels).
 * Python 2.6 is no longer supported. This means Nuke 6 and Nuke 7 are no longer supported. 
 * Fixed #138- load metadata for this view only
 
-### 1.3.0-beta3:
-
-* Brought in fixes from 1.2.7.
-
-### 1.3.0-beta2:
-
-* Brought in fixes from 1.2.6. 
-
-### 1.3.0-beta1:
-
-An update to the Nuke plugins.
+### 1.2.8
 
 Nuke:
 

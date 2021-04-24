@@ -9,11 +9,7 @@ The goal of releasing Cryptomatte is to turn it into an ecosystem around an open
 
 Cryptomatte is licenced using the BSD 3-clause license. See [license.txt](license.txt).
 
-Version 1.4.0-beta4. See [changelog](CHANGELOG.md) for version history. 
-
-## About Beta (1.4.0-beta4)
-
-This beta is to test wildcards. This is based closely on work submitted by Veronica Tello. See [Nuke Documentation](/docs/nuke.md) for more information.
+Version 1.4.0 See [changelog](CHANGELOG.md) for version history.
 
 ## Repo Contents
 

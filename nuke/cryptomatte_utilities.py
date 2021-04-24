@@ -11,7 +11,7 @@ import nuke
 import struct
 import fnmatch
 
-__version__ = "1.4.0-beta4"
+__version__ = "1.4.0"
 
 GIZMO_CHANNEL_KNOBS = [
     "in00", "in01", "in02", "in03", 

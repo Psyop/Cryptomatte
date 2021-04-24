@@ -1,10 +1,11 @@
 --[[
-Requires   : Fusion 9.0.2+
+Version    : 1.4.0
+Requires   : Fusion 9.0.2 - 17.1.1+
+Requires   : Resolve 15.1 - 17.1.1+
 Optional   : cjson
 Created by : Cédric Duriau         [duriau.cedric@live.be]
              Kristof Indeherberge  [xmnr0x23@gmail.com]
              Andrew Hazelden       [andrew@andrewhazelden.com]
-Version    : 1.2.6
 --]]
 
 {
@@ -19,96 +20,6 @@ Version    : 1.2.6
                     if fuse then
                         if fuse:GetID() == 'Fuse.Cryptomatte' then
                             fuse.Add = 1
-                        end
-                    end
-                ]=]
-            }
-        }
-    },
-    Action {
-        ID = "CryptomatteClear",
-        Category = "Cryptomatte",
-        Name = "Cryptomatte Clear",
-        Targets = {
-            Composition = {
-                Execute = _Lua [=[
-                    fuse = obj:Comp().ActiveTool
-                    if fuse then
-                        if fuse:GetID() == 'Fuse.Cryptomatte' then
-                            fuse.Clear = 1
-                        end
-                    end
-                ]=]
-            }
-        }
-    },
-    Action {
-        ID = "CryptomatteKeyableSurface",
-        Category = "Cryptomatte",
-        Name = "Cryptomatte Keyable Surface",
-        Targets = {
-            Composition = {
-                Execute = _Lua [=[
-                    fuse = obj:Comp().ActiveTool
-                    if fuse then
-                        if fuse:GetID() == 'Fuse.Cryptomatte' then
-                            fuse.KeyableSurface = 1 - fuse.KeyableSurface[fu.TIME_UNDEFINED]
-                        end
-                    end
-                ]=]
-            }
-        }
-    },
-    Action {
-        ID = "CryptomatteLayerMinus",
-        Category = "Cryptomatte",
-        Name = "Cryptomatte Layer Minus",
-        Targets = {
-            Composition = {
-                Execute = _Lua [=[
-                    fuse = obj:Comp().ActiveTool
-                    if fuse then
-                        if fuse:GetID() == 'Fuse.Cryptomatte' then
-                            if fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] ~= 1 then
-                                fuse.CryptoLayerSlider = fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] - 1
-                            end
-                        end
-                    end
-                ]=]
-            }
-        }
-    },
-    Action {
-        ID = "CryptomatteLayerPlus",
-        Category = "Cryptomatte",
-        Name = "Cryptomatte Layer Plus",
-        Targets = {
-                Composition = {
-                Execute = _Lua [=[
-                    fuse = obj:Comp().ActiveTool
-
-                    if fuse then
-                        if fuse:GetID() == 'Fuse.Cryptomatte' then
-                            if fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] ~= fuse.CryptoLayerSlider:GetAttrs("INPN_MaxScale") then
-                                fuse.CryptoLayerSlider = fuse.CryptoLayerSlider[fu.TIME_UNDEFINED] + 1
-                            end
-                        end
-                    end
-                ]=]
-            }
-        }
-    },
-    Action {
-        ID = "CryptomatteMatteOnly",
-        Category = "Cryptomatte",
-        Name = "Cryptomatte Matte Only",
-        Targets = {
-                Composition = {
-                Execute = _Lua [=[
-                    fuse = obj:Comp().ActiveTool
-                    if fuse then
-                        if fuse:GetID() == 'Fuse.Cryptomatte' then
-                            fuse.MatteOnly = 1 - fuse.MatteOnly[fu.TIME_UNDEFINED]
                         end
                     end
                 ]=]
@@ -159,10 +70,69 @@ Version    : 1.2.6
                     fuse = obj:Comp().ActiveTool
                     if fuse then
                         if fuse:GetID() == 'Fuse.Cryptomatte' then
-                            if fuse.ViewMode[fu.TIME_UNDEFINED] ~= 2 then
-                                fuse.ViewMode = fuse.ViewMode[fu.TIME_UNDEFINED] + 1
+                            view_mode = fuse.ViewMode[fu.TIME_UNDEFINED]
+                            if view_mode ~= 3 then
+                                view_mode = view_mode + 1
                             else
-                                fuse.ViewMode = 0
+                                view_mode = 0
+                            end
+                            fuse.ViewMode = view_mode
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Action {
+        ID = "CryptomatteClear",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Clear",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            fuse.Clear = 1
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Action {
+        ID = "CryptomatteLayerMinus",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Layer Minus",
+        Targets = {
+            Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            layer_index = fuse.LayerIndex[fu.TIME_UNDEFINED]
+                            if layer_index ~= 1 then
+                                fuse.LayerIndex = layer_index - 1
+                            end
+                        end
+                    end
+                ]=]
+            }
+        }
+    },
+    Action {
+        ID = "CryptomatteLayerPlus",
+        Category = "Cryptomatte",
+        Name = "Cryptomatte Layer Plus",
+        Targets = {
+                Composition = {
+                Execute = _Lua [=[
+                    fuse = obj:Comp().ActiveTool
+                    if fuse then
+                        if fuse:GetID() == 'Fuse.Cryptomatte' then
+                            layer_index = fuse.LayerIndex[fu.TIME_UNDEFINED]
+                            if layer_index ~= fuse.LayerIndex:GetAttrs("INPN_MaxScale") then
+                                fuse.LayerIndex = layer_index + 1
                             end
                         end
                     end
@@ -174,12 +144,10 @@ Version    : 1.2.6
         Target = "GLView",
         SHIFT_A = "CryptomatteAdd{}",
         SHIFT_C = "CryptomatteClear{}",
-        SHIFT_K = "CryptomatteKeyableSurface{}",
         SHIFT_KEYPAD_MINUS = "CryptomatteLayerMinus{}",
         SHIFT_MINUS = "CryptomatteLayerMinus{}",
         SHIFT_KEYPAD_PLUS = "CryptomatteLayerPlus{}",
         SHIFT_PLUS = "CryptomatteLayerPlus{}",
-        SHIFT_M = "CryptomatteMatteOnly{}",
         SHIFT_R = "CryptomatteRemove{}",
         SHIFT_T = "CryptomatteToggle{}",
         SHIFT_V = "CryptomatteViewMode{}",
