@@ -15,7 +15,7 @@ Version 1.4.0 See [changelog](CHANGELOG.md) for version history.
 
 The contents of this repository are:
 
-**Nuke:** This contains Python files, an image, and a gizmo. Together these are our implementation for The Foundry's Nuke.
+**Nuke:** This contains Python files, an image, and a gizmo. Together these are our implementation for Foundry's Nuke. In Nuke 13, there is also a [native implementation](https://learn.foundry.com/nuke/content/release_notes/nuke_13.0.html) which is similar to this one. This implementation is being kept active to allow for a smooth transition. 
 
 **Fusion:** Fusion integration, including a Fuse file, a Lua module and a Fusion shortcut configuration file.
 
@@ -39,6 +39,7 @@ Encoders:
 * [3Delight for Katana and Maya 9.0](https://3delight.atlassian.net/wiki/spaces/3DFK/pages/220135565/Exporting+CryptoMatte+IDs)
 * [Houdini 16.5 Mantra (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html), [Demo](https://vimeo.com/241036613#t=2862s)
 * Blender 2.8.0 Cycles (By Tangent Animation and Blender Foundation): [Cryptomatte in Blender 2.8 Alpha 2! demo](https://www.youtube.com/watch?v=lTJJqAGnWFM), [Tutorial by Zacharias Reinhardt](https://zachariasreinhardt.com/blender-2-8-cryptomatte-tutorial), [Cycles for Animated Feature Film Production by Stefan Werner](https://www.youtube.com/watch?v=_2Ia4h8q3xs), [Docs](https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Cycles#Cryptomatte)
+* [Blender 2.92 Eevee (By Jeroen Bakker and Blender Foundation)](https://www.blender.org/download/releases/2-92/)
 * [Pixar RenderMan 21.7](https://rmanwiki.pixar.com/display/REN/RenderMan+21.7), [Docs](https://rmanwiki.pixar.com/display/REN/PxrCryptomatte)
 * LightWave 3D 2018 ([DB&W EXRTrader plugin](https://www.db-w.com/products/exrtrader))
 * [Redshift 2.6.11](https://www.redshift3d.com)
@@ -47,11 +48,15 @@ Encoders:
 * Nuke 8+ "Encryptomatte", by Andy Jones. In this repo.
 * [Appleseed 2.1.0 by Sergo Pogosyan, Jon Dent](https://appleseedhq.net/2019/09/21/appleseed-2-1-0-beta-Released.html)
 * [Autodesk VRed](https://knowledge.autodesk.com/support/vred-products/learn-explore/caas/CloudHelp/cloudhelp/2020/ENU/VRED/files/Rendering/VRED-Rendering-How-to-Use-the-Cryptomatte-Options-html-html.html)
-* [Octane for Cinema4D](http://www.aoktar.com/octane/OCTANE%20HELP%20MANUAL.html?Cryptomatte.html)
+* [Otoy OctaneRender for Cinema4D](http://www.aoktar.com/octane/OCTANE%20HELP%20MANUAL.html?Cryptomatte.html)
+* [Unreal Engine 4.26](https://docs.unrealengine.com/en-US/AnimatingObjects/Sequencer/Workflow/RenderAndExport/HighQualityMediaExport/RenderPasses/index.html)
+* [Unity Cryptomatte - Research Project](https://www.schmuckerdaniel.com/unitycryptomatte) By Daniel Schmuker at Filmakademie Baden-Wuerttemberg
+* [Foundry Modo 14.2 mPath Renderer](https://learn.foundry.com/modo/content/help/pages/rendering/render_outputs_cryptomatte.html)
 
 Decoders:
 
 * Nuke 8+, by Jonah Friedman, Andy Jones. In this repo.
+* [Foundry Nuke 13](https://learn.foundry.com/nuke/content/release_notes/nuke_13.0.html)
 * Fusion: by C&eacute;dric Duriau and Kristof Indeherberge at Grid. In this repo.
 * [Houdini 16.5 Compositor (By Sidefx)](http://www.sidefx.com/docs/houdini/render/cryptomatte.html), [Demo](https://vimeo.com/241036613#t=2862s)
 * Blender 2.8.0 Compositor (By Tangent Animation and Blender Foundation): [Cryptomatte in Blender 2.8 Alpha 2! demo](https://www.youtube.com/watch?v=lTJJqAGnWFM), [Tutorial by Zacharias Reinhardt](https://zachariasreinhardt.com/blender-2-8-cryptomatte-tutorial), [Cycles for Animated Feature Film Production by Stefan Werner](https://www.youtube.com/watch?v=_2Ia4h8q3xs), [Docs](https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Cycles#Cryptomatte)
@@ -59,6 +64,7 @@ Decoders:
 * [Adobe After Effects (Fnordware ProEXR plugin 2.0)](https://www.fnordware.com/ProEXR/)[Ships with After Effects 2020](https://theblog.adobe.com/adobe-after-effects-is-faster-than-ever/)
 * [Adobe Photoshop (EXR-IO 2)](https://www.exr-io.com/exr-io-2-00/)
 * [FilmLight Baselight v5](https://www.filmlight.ltd.uk/pdf/datasheets/FL-BL-DS-0847-Baselightv5.pdf)
+* [Natron](https://github.com/NatronGitHub/natron-plugins) 
 
 ## Acknowledgements 
 
