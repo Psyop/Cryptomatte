@@ -1,10 +1,11 @@
 --[[
-Requires   : Fusion 9.0.2+
+Version    : 1.4.0
+Requires   : Fusion 9.0.2 - 17.1.1+
+Requires   : Resolve 15.1 - 17.1.1+
 Optional   : cjson
 Created by : Cédric Duriau         [duriau.cedric@live.be]
              Kristof Indeherberge  [xmnr0x23@gmail.com]
              Andrew Hazelden       [andrew@andrewhazelden.com]
-Version    : 1.4.0
 --]]
 
 local cryptoutils = require("cryptomatte_utilities")
