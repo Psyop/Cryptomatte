@@ -48,6 +48,7 @@ Encoders:
 * [Appleseed 2.1.0 by Sergo Pogosyan, Jon Dent](https://appleseedhq.net/2019/09/21/appleseed-2-1-0-beta-Released.html)
 * [Autodesk VRed](https://knowledge.autodesk.com/support/vred-products/learn-explore/caas/CloudHelp/cloudhelp/2020/ENU/VRED/files/Rendering/VRED-Rendering-How-to-Use-the-Cryptomatte-Options-html-html.html)
 * [Octane for Cinema4D](http://www.aoktar.com/octane/OCTANE%20HELP%20MANUAL.html?Cryptomatte.html)
+* [Unreal Engine 4.26](https://docs.unrealengine.com/en-US/AnimatingObjects/Sequencer/Workflow/RenderAndExport/HighQualityMediaExport/RenderPasses/index.html)
 
 Decoders:
 
