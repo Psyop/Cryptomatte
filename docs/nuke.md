@@ -54,7 +54,9 @@ Advanced Tab:
 * Unload Manifest: Generates a keyer for every name in the manifest.
 * Force Update All Gizmos in Script: Same as "Force Update", but runs the force update functionality on all Gizmos in the script.
 
-#### Wildcards
+#### [Wildcards](#Wildcards)
+
+When `Use Wildcards` is enabled, typing a wildcard expression such as `flower*` into the Matte list will expand it to all names that it matches, such as `flower1`, `flower2`, etc. 
 
 Simple cases:
 
