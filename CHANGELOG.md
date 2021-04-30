@@ -28,9 +28,7 @@ Nuke:
 
 Nuke:
 
-* Added support for wildcard searches of mattes.
-* The "Expand Wildcards" knob controls whether the wildcards are expanded or not.
-  * If the wildcards are not expanded, wildcards are not used.
+Fixed a bug with copy and pasting with "Lock Layer Selection" on (#128)
 
 ### 1.2.7:
 
