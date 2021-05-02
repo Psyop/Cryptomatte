@@ -1,5 +1,17 @@
 ### 1.4.0:
 
+1.4.0 is a major update for both the Fusion and Nuke side. 
+
+The Fusion plugin has been overhauled by C&eacute;dric Duriau. Importantly this fixes a key memory issue causing glitches (#117). It uses less memory in general and is 10-30% faster both interactively and in render times. The user interface has been improved and fine tuned for Resolve. On the development side, it now features a test suite written in Lua.
+
+The Nuke plugin is also updated with a major new feature, Wildcard support. This is based largely on work done by Veronica Tello during her time at Method Studios. See [Nuke Documentation](/docs/nuke.md#Wildcards) for more information on wildcards. 
+
+Also in Nuke news, Foundry's Nuke 13 now has a native Cryptomatte integration, which leads to obvious questions about the future of this Nuke integration and the purpose of this release. This release is likely the last major release for this Nuke plugin. While this is sad for me to write, it's also worth celebrating. "The goal of releasing Cryptomatte is to turn it into an ecosystem around an open standard", as we say on the front page of the repo, and there is now a robust ecosystem of Cryptomatte readers and writers. This repository still hosts the Cryptomatte standard as well, which is the central part, and not any one implementation. 
+
+This release of the Nuke plug-in gets features released that have sat in beta for a long time, is tested in the newest versions of Nuke, and provides an off-ramp for Nuke users to make the transition. It also remains available for users who rely on the current functionality or need their existing Nuke scripts to continue working. 
+
+Thank you to all our users for taking this journey with us, to Psyop for supporting this project, and everyone who contributed with everything from code contributions to bug fixes to encouragement.
+
 Nuke: 
 
 * Official release of wildcards (Thanks @vtello, @maxnbk, and others!) See documentation. 
