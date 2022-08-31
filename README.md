@@ -52,6 +52,7 @@ Encoders:
 * [Unreal Engine 4.26](https://docs.unrealengine.com/en-US/AnimatingObjects/Sequencer/Workflow/RenderAndExport/HighQualityMediaExport/RenderPasses/index.html)
 * [Unity Cryptomatte - Research Project](https://www.schmuckerdaniel.com/unitycryptomatte) By Daniel Schmuker at Filmakademie Baden-Wuerttemberg
 * [Foundry Modo 14.2 mPath Renderer](https://learn.foundry.com/modo/content/help/pages/rendering/render_outputs_cryptomatte.html)
+* [Chaos Group Corona 8](https://corona-renderer.com/features/whats-new) for [Cinema4D](https://support.chaos.com/hc/en-us/articles/4954345529489) and [3ds Max](https://support.chaos.com/hc/en-us/articles/4954305024529)
 
 Decoders:
 
