@@ -405,7 +405,7 @@ function module._get_log_level()
     Setting the log level to a high number than specified log levels will
     result in applying all lower log levels.
 
-    :rtype: number 
+    :rtype: number
     ]]
     local log_level = os.getenv(ENV_VAR_LOG_LEVEL)
     if log_level == nil then
@@ -560,16 +560,16 @@ end
 function module._is_position_in_rect(rect, x, y)
     --[[
     Validates if the given x and y coordinates are in the given rect bounds.
-   
+
     :param rect: Integer rectangle position to validate x and y position with.
     :type rect: FuRectInt
-   
+
     :param x: Y position to validate.
     :type x: number
-   
+
     :param y: Y position to validate.
     :type y: number
-   
+
     :rtype: bool
     --]]
     if x < rect.left or x > rect.right then
@@ -908,6 +908,19 @@ function module.create_matte_image(input_image, layer_images, manifest, matte_na
             matte_values[0.0] = true
         else
             local matte_id = manifest[matte_name]
+
+            if string.match(matte_name, "*") then
+                wildcard = string.gsub(matte_name, "*", ".*.?")
+                for crypto_name, __ in pairs(manifest) do
+                    wildcard_match = string.match(crypto_name, wildcard)
+                    if wildcard_match == crypto_name then
+                        matte_id = manifest[crypto_name]
+                        local matte_value = module._hex_to_float(matte_id)
+                        matte_values[matte_value] = true
+                    end
+                end
+            end
+
             if matte_id == nil then
                 module.log_warning(string.format("matte not present in manifest: %s", matte_name))
             else
