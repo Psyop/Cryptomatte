@@ -63,6 +63,7 @@ Decoders:
 * [Autodesk Flame (Autodesk)](https://knowledge.autodesk.com/support/flame-products/learn-explore/caas/CloudHelp/cloudhelp/2020/ENU/Flame-EffectsandToolsReference/files/GUID-0402116E-B47C-4E32-9010-DB8C334853E0-htm.html)
 * [Adobe After Effects (Fnordware ProEXR plugin 2.0)](https://www.fnordware.com/ProEXR/)[Ships with After Effects 2020](https://theblog.adobe.com/adobe-after-effects-is-faster-than-ever/)
 * [Adobe Photoshop (EXR-IO 2)](https://www.exr-io.com/exr-io-2-00/)
+* [Adobe Photoshop on macOS (CryptoEXR)](https://cryptoexr.gumroad.com/l/cryptoexr-trial)
 * [FilmLight Baselight v5](https://www.filmlight.ltd.uk/pdf/datasheets/FL-BL-DS-0847-Baselightv5.pdf)
 * [Natron](https://github.com/NatronGitHub/natron-plugins) by Fahad Hasan Pathik and Fabrice Fernandez
 
